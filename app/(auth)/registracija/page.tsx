@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { TextField } from '@/components/ui/text-field'
 import PasswordInput from '@/components/auth/PasswordInput'
 import PasswordStrength from '@/components/auth/PasswordStrength'
 import { useSignUp } from '@/hooks/auth/useAuth'
@@ -45,31 +47,15 @@ export default function RegisterPage() {
 
   return (
     <div>
-      <h1
-        style={{
-          margin: '0 0 8px',
-          fontSize: '24px',
-          fontWeight: 700,
-          color: 'var(--color-gray-900)',
-          letterSpacing: '-0.02em',
-          textAlign: 'center',
-        }}
-      >
+      <h1 className="mb-2 text-2xl font-bold tracking-[-0.02em] text-card-foreground">
         Napravi nalog
       </h1>
-      <p
-        style={{
-          margin: '0 0 28px',
-          color: 'var(--color-gray-500)',
-          fontSize: '15px',
-          textAlign: 'center',
-        }}
-      >
+      <p className="mb-7 text-[15px] text-muted-foreground">
         Treba ti samo email i lozinka. Ostalo možeš kasnije.
       </p>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <Input
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <TextField
           label="Email"
           type="email"
           name="email"
@@ -99,63 +85,41 @@ export default function RegisterPage() {
         />
 
         <div>
-          <label
-            style={{
-              display: 'flex',
-              gap: '10px',
-              alignItems: 'flex-start',
-              fontSize: '14px',
-              lineHeight: 1.45,
-              cursor: 'pointer',
-              color: 'var(--color-gray-700)',
-            }}
-          >
-            <input
-              type="checkbox"
+          <div className="flex items-start gap-2.5">
+            <Checkbox
+              id="accepted-terms"
               checked={acceptedTerms}
-              onChange={(e) => {
-                setAcceptedTerms(e.target.checked)
+              aria-invalid={termsError ? true : undefined}
+              className="mt-0.5 size-[18px]"
+              onCheckedChange={(checked) => {
+                const nextAccepted = checked === true
+                setAcceptedTerms(nextAccepted)
                 if (showErrors || termsError) {
-                  setTermsError(e.target.checked ? '' : 'Moraš prihvatiti uslove korišćenja.')
+                  setTermsError(nextAccepted ? '' : 'Moraš prihvatiti uslove korišćenja.')
                 }
               }}
-              style={{
-                marginTop: '2px',
-                width: '18px',
-                height: '18px',
-                accentColor: 'var(--color-brand-500)',
-                flexShrink: 0,
-              }}
             />
-            <span>
+            <Label
+              htmlFor="accepted-terms"
+              className="cursor-pointer text-sm leading-[1.45] font-normal text-foreground"
+            >
               Prihvatam{' '}
-              <Link href="/uslovi" style={{ color: 'var(--color-brand-600)', fontWeight: 500 }}>
+              <Link href="/uslovi" className="font-medium text-brand-600">
                 Uslove korišćenja
               </Link>{' '}
               i{' '}
-              <Link href="/privatnost" style={{ color: 'var(--color-brand-600)', fontWeight: 500 }}>
+              <Link href="/privatnost" className="font-medium text-brand-600">
                 Politiku privatnosti
               </Link>
-            </span>
-          </label>
+            </Label>
+          </div>
           {termsError ? (
-            <p style={{ margin: '6px 0 0', fontSize: '13px', color: 'var(--color-error)' }}>
-              {termsError}
-            </p>
+            <p className="mt-1.5 mb-0 text-[13px] text-destructive">{termsError}</p>
           ) : null}
         </div>
 
         {formErrorMessage ? (
-          <p
-            style={{
-              margin: 0,
-              padding: '12px 14px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-error-soft)',
-              color: 'var(--color-error)',
-              fontSize: '14px',
-            }}
-          >
+          <p className="m-0 rounded-md bg-red-50 px-3.5 py-3 text-sm text-destructive">
             {formErrorMessage}
           </p>
         ) : null}
@@ -165,16 +129,9 @@ export default function RegisterPage() {
         </Button>
       </form>
 
-      <p
-        style={{
-          margin: '24px 0 0',
-          textAlign: 'center',
-          fontSize: '14px',
-          color: 'var(--color-gray-500)',
-        }}
-      >
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         Već imaš nalog?{' '}
-        <Link href="/prijava" style={{ color: 'var(--color-brand-600)', fontWeight: 600 }}>
+        <Link href="/prijava" className="font-semibold text-brand-600">
           Prijavi se
         </Link>
       </p>

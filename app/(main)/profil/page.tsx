@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import Button from '@/components/ui/Button'
+import { Button } from '@/components/ui/button'
 import { useSignOut } from '@/hooks/auth/useAuth'
 import { useCurrentUser } from '@/hooks/user/useUser'
 import { useLocations } from '@/hooks/user/useLocation'
@@ -14,6 +14,7 @@ import {
   getProfileInitials,
   isCompletenessCardDismissed,
 } from '@/lib/profileHelpers'
+import { cn } from '@/lib/utils'
 import { getDisplayName } from '@/types'
 
 const NAV_LINKS = [
@@ -44,84 +45,38 @@ function CompletenessCard({
   }
 
   return (
-    <section
-      style={{
-        position: 'relative',
-        padding: '16px',
-        background: 'var(--color-white)',
-        borderRadius: 'var(--radius-xl)',
-        border: '1px solid var(--color-gray-200)',
-        boxShadow: 'var(--shadow-sm)',
-      }}
-    >
+    <section className="relative rounded-xl border border-border bg-card p-4 shadow-sm">
       <button
         type="button"
         aria-label="Zatvori"
         onClick={onDismiss}
-        style={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px',
-          width: '32px',
-          height: '32px',
-          border: 'none',
-          background: 'transparent',
-          color: 'var(--color-gray-500)',
-          cursor: 'pointer',
-          fontSize: '18px',
-          lineHeight: 1,
-        }}
+        className="absolute top-2.5 right-2.5 size-8 cursor-pointer border-0 bg-transparent text-lg leading-none text-muted-foreground"
       >
         ✕
       </button>
 
-      <p
-        style={{
-          margin: '0 40px 10px 0',
-          fontSize: '15px',
-          fontWeight: 600,
-          color: 'var(--color-gray-900)',
-        }}
-      >
+      <p className="mr-10 mb-2.5 text-[15px] font-semibold text-foreground">
         Tvoj profil je {percentage}% popunjen
       </p>
 
-      <div
+      <svg
         role="progressbar"
         aria-valuenow={percentage}
         aria-valuemin={0}
         aria-valuemax={100}
-        style={{
-          height: '8px',
-          borderRadius: 'var(--radius-full)',
-          background: 'var(--color-gray-200)',
-          overflow: 'hidden',
-          marginBottom: missingItems.length ? '14px' : 0,
-        }}
+        className={cn('block h-2 w-full', missingItems.length ? 'mb-3.5' : 'mb-0')}
+        viewBox="0 0 100 8"
+        preserveAspectRatio="none"
       >
-        <div
-          style={{
-            width: `${percentage}%`,
-            height: '100%',
-            background: 'var(--color-brand-500)',
-            borderRadius: 'var(--radius-full)',
-            transition: 'width 0.3s ease',
-          }}
-        />
-      </div>
+        <rect width="100" height="8" rx="4" className="fill-muted" />
+        <rect width={percentage} height="8" rx="4" className="fill-brand-500" />
+      </svg>
 
       {missingItems.length > 0 ? (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {missingItems.map((item) => (
             <li key={item.name}>
-              <Link
-                href={item.link}
-                style={{
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  color: 'var(--color-brand-600)',
-                }}
-              >
+              <Link href={item.link} className="text-sm font-medium text-brand-600">
                 → {actionLabel(item.name)}
               </Link>
             </li>
@@ -143,19 +98,11 @@ export default function ProfilePage() {
   }, [])
 
   if (userLoading || locationsLoading) {
-    return (
-      <div style={{ padding: '24px 0', color: 'var(--color-gray-500)', fontSize: '14px' }}>
-        Učitavanje profila…
-      </div>
-    )
+    return <div className="py-6 text-sm text-muted-foreground">Učitavanje profila…</div>
   }
 
   if (!user) {
-    return (
-      <div style={{ padding: '24px 0', color: 'var(--color-gray-500)', fontSize: '14px' }}>
-        Nije moguće učitati profil.
-      </div>
-    )
+    return <div className="py-6 text-sm text-muted-foreground">Nije moguće učitati profil.</div>
   }
 
   const profile = user.user_profiles
@@ -165,53 +112,27 @@ export default function ProfilePage() {
   const showCompleteness = !cardHidden && completeness.percentage < 100
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <section
-        style={{
-          padding: '24px 20px',
-          background: 'var(--color-white)',
-          borderRadius: 'var(--radius-xl)',
-          border: '1px solid var(--color-gray-200)',
-          boxShadow: 'var(--shadow-sm)',
-          textAlign: 'center',
-        }}
-      >
+    <div className="flex flex-col gap-4">
+      <section className="rounded-xl border border-border bg-card px-5 py-6 text-center shadow-sm">
         <div
           aria-hidden
-          style={{
-            width: '72px',
-            height: '72px',
-            margin: '0 auto 14px',
-            borderRadius: 'var(--radius-full)',
-            background: colorFromUserId(user.id),
-            color: 'var(--color-white)',
-            display: 'grid',
-            placeItems: 'center',
-            fontWeight: 700,
-            fontSize: '24px',
-          }}
+          className="relative mx-auto mb-3.5 grid size-[72px] place-items-center overflow-hidden rounded-full text-2xl font-bold text-white"
         >
-          {initials}
+          <svg className="absolute inset-0 size-full" viewBox="0 0 72 72" aria-hidden>
+            <circle cx="36" cy="36" r="36" fill={colorFromUserId(user.id)} />
+          </svg>
+          <span className="relative z-[1]">{initials}</span>
         </div>
-        <h1
-          style={{
-            margin: '0 0 4px',
-            fontSize: '22px',
-            fontWeight: 700,
-            color: 'var(--color-gray-900)',
-          }}
-        >
-          {displayName}
-        </h1>
-        <p style={{ margin: '0 0 4px', color: 'var(--color-gray-500)', fontSize: '14px' }}>{user.email}</p>
+        <h1 className="mb-1 text-[22px] font-bold text-foreground">{displayName}</h1>
+        <p className="mb-1 text-sm text-muted-foreground">{user.email}</p>
         {user.created_at ? (
-          <p style={{ margin: '0 0 18px', color: 'var(--color-gray-400)', fontSize: '13px' }}>
+          <p className="mb-[18px] text-[13px] text-muted-foreground/80">
             {formatMemberSince(user.created_at)}
           </p>
         ) : (
-          <div style={{ height: '18px', marginBottom: '18px' }} />
+          <div className="mb-[18px] h-[18px]" />
         )}
-        <Link href="/profil/izmeni" style={{ display: 'inline-block' }}>
+        <Link href="/profil/izmeni" className="inline-block">
           <Button variant="secondary">Izmeni profil</Button>
         </Link>
       </section>
@@ -229,27 +150,16 @@ export default function ProfilePage() {
 
       <nav
         aria-label="Profil stavke"
-        style={{
-          background: 'var(--color-white)',
-          borderRadius: 'var(--radius-xl)',
-          border: '1px solid var(--color-gray-200)',
-          overflow: 'hidden',
-        }}
+        className="overflow-hidden rounded-xl border border-border bg-card"
       >
         {NAV_LINKS.map((item, index) => (
           <Link
             key={item.href}
             href={item.href}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px',
-              fontSize: '15px',
-              fontWeight: 500,
-              color: 'var(--color-gray-900)',
-              borderTop: index === 0 ? 'none' : '1px solid var(--color-gray-200)',
-            }}
+            className={cn(
+              'flex items-center justify-between p-4 text-[15px] font-medium text-foreground',
+              index > 0 && 'border-t border-border'
+            )}
           >
             <span>{item.name}</span>
             <svg
@@ -257,8 +167,9 @@ export default function ProfilePage() {
               height="18"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="var(--color-gray-400)"
+              stroke="currentColor"
               strokeWidth="2"
+              className="text-muted-foreground"
               aria-hidden
             >
               <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
@@ -271,17 +182,10 @@ export default function ProfilePage() {
         type="button"
         onClick={() => signOut.mutate()}
         disabled={signOut.isPending}
-        style={{
-          marginTop: '8px',
-          padding: '14px',
-          border: 'none',
-          background: 'transparent',
-          color: 'var(--color-error)',
-          fontSize: '15px',
-          fontWeight: 600,
-          cursor: signOut.isPending ? 'not-allowed' : 'pointer',
-          opacity: signOut.isPending ? 0.6 : 1,
-        }}
+        className={cn(
+          'mt-2 cursor-pointer border-0 bg-transparent p-3.5 text-[15px] font-semibold text-destructive',
+          signOut.isPending && 'cursor-not-allowed opacity-60'
+        )}
       >
         {signOut.isPending ? 'Odjavljivanje…' : 'Odjavi se'}
       </button>

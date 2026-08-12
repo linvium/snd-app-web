@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
+import { Button } from '@/components/ui/button'
+import { TextField } from '@/components/ui/text-field'
 import { useResetPassword } from '@/hooks/auth/useAuth'
 import { validateEmail } from '@/lib/auth-validation'
 
@@ -26,23 +26,15 @@ export default function ForgotPasswordPage() {
 
   return (
     <div>
-      <h1
-        style={{
-          margin: '0 0 8px',
-          fontSize: '24px',
-          fontWeight: 700,
-          color: 'var(--color-gray-900)',
-          letterSpacing: '-0.02em',
-        }}
-      >
+      <h1 className="mb-2 text-2xl font-bold tracking-[-0.02em] text-card-foreground">
         Zaboravljena lozinka
       </h1>
-      <p style={{ margin: '0 0 28px', color: 'var(--color-gray-500)', fontSize: '15px' }}>
+      <p className="mb-7 text-[15px] text-muted-foreground">
         Unesi email adresu i poslaćemo ti kod za resetovanje.
       </p>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <Input
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <TextField
           label="Email"
           type="email"
           name="email"
@@ -62,16 +54,9 @@ export default function ForgotPasswordPage() {
         </Button>
       </form>
 
-      <p
-        style={{
-          margin: '24px 0 0',
-          textAlign: 'center',
-          fontSize: '14px',
-          color: 'var(--color-gray-500)',
-        }}
-      >
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         Seti se lozinke?{' '}
-        <Link href="/prijava" style={{ color: 'var(--color-brand-600)', fontWeight: 600 }}>
+        <Link href="/prijava" className="font-semibold text-brand-600">
           Prijavi se
         </Link>
       </p>

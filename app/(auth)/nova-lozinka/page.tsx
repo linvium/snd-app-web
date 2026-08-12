@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Button from '@/components/ui/Button'
+import { Button } from '@/components/ui/button'
 import PasswordInput from '@/components/auth/PasswordInput'
 import PasswordStrength from '@/components/auth/PasswordStrength'
 import { useUpdatePassword } from '@/hooks/auth/useAuth'
@@ -36,22 +36,14 @@ export default function NewPasswordPage() {
 
   return (
     <div>
-      <h1
-        style={{
-          margin: '0 0 8px',
-          fontSize: '24px',
-          fontWeight: 700,
-          color: 'var(--color-gray-900)',
-          letterSpacing: '-0.02em',
-        }}
-      >
+      <h1 className="mb-2 text-2xl font-bold tracking-[-0.02em] text-card-foreground">
         Nova lozinka
       </h1>
-      <p style={{ margin: '0 0 28px', color: 'var(--color-gray-500)', fontSize: '15px' }}>
+      <p className="mb-7 text-[15px] text-muted-foreground">
         Unesi novu lozinku za svoj nalog.
       </p>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <PasswordInput
           label="Nova lozinka"
           name="new-password"
@@ -104,16 +96,7 @@ export default function NewPasswordPage() {
         />
 
         {updatePassword.isError ? (
-          <p
-            style={{
-              margin: 0,
-              padding: '12px 14px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-error-soft)',
-              color: 'var(--color-error)',
-              fontSize: '14px',
-            }}
-          >
+          <p className="m-0 rounded-md bg-red-50 px-3.5 py-3 text-sm text-destructive">
             Greška pri promeni lozinke. Pokušaj ponovo.
           </p>
         ) : null}

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import Button from '@/components/ui/Button'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import AddLocationForm from '@/components/profil/AddLocationForm'
 import {
   useDeleteLocation,
@@ -9,6 +10,7 @@ import {
   useSetDefaultLocation,
 } from '@/hooks/user/useLocation'
 import { locationIcon } from '@/lib/profileHelpers'
+import { cn } from '@/lib/utils'
 import type { SndLocation } from '@/types'
 
 export default function LocationsPage() {
@@ -48,48 +50,19 @@ export default function LocationsPage() {
   }
 
   if (isLoading) {
-    return (
-      <div style={{ padding: '24px 0', color: 'var(--color-gray-500)', fontSize: '14px' }}>
-        Učitavanje…
-      </div>
-    )
+    return <div className="py-6 text-sm text-muted-foreground">Učitavanje…</div>
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <h1
-        className="snd-profile-page-title"
-        style={{
-          margin: 0,
-          fontSize: '22px',
-          fontWeight: 700,
-          color: 'var(--color-gray-900)',
-        }}
-      >
-        Moje lokacije
-      </h1>
+    <div className="flex flex-col gap-4">
+      <h1 className="m-0 hidden text-[22px] font-bold text-foreground lg:block">Moje lokacije</h1>
 
       {locations.length === 0 && !showForm ? (
-        <section
-          style={{
-            padding: '32px 20px',
-            textAlign: 'center',
-            background: 'var(--color-white)',
-            borderRadius: 'var(--radius-xl)',
-            border: '1px solid var(--color-gray-200)',
-          }}
-        >
-          <p
-            style={{
-              margin: '0 0 8px',
-              fontSize: '16px',
-              fontWeight: 600,
-              color: 'var(--color-gray-900)',
-            }}
-          >
+        <section className="rounded-xl border border-border bg-card px-5 py-8 text-center">
+          <p className="mb-2 text-base font-semibold text-foreground">
             Još nemaš sačuvanih lokacija.
           </p>
-          <p style={{ margin: '0 0 20px', fontSize: '14px', color: 'var(--color-gray-500)' }}>
+          <p className="mb-5 text-sm text-muted-foreground">
             Lokacije koristiš kada objavljuješ predmet i kada se dogovaraš oko preuzimanja.
           </p>
           <Button onClick={() => setShowForm(true)}>+ Dodaj prvu lokaciju</Button>
@@ -97,66 +70,29 @@ export default function LocationsPage() {
       ) : null}
 
       {locations.length > 0 ? (
-        <ul
-          style={{
-            listStyle: 'none',
-            margin: 0,
-            padding: 0,
-            background: 'var(--color-white)',
-            borderRadius: 'var(--radius-xl)',
-            border: '1px solid var(--color-gray-200)',
-            overflow: 'hidden',
-          }}
-        >
+        <ul className="m-0 list-none overflow-hidden rounded-xl border border-border bg-card p-0">
           {locations.map((location, index) => (
             <li
               key={location.id}
-              style={{
-                padding: '16px',
-                borderTop: index === 0 ? 'none' : '1px solid var(--color-gray-200)',
-              }}
+              className={cn('p-4', index > 0 && 'border-t border-border')}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  gap: '12px',
-                  marginBottom: '8px',
-                }}
-              >
-                <div style={{ display: 'flex', gap: '10px', minWidth: 0 }}>
-                  <span aria-hidden style={{ fontSize: '20px', lineHeight: 1.2 }}>
+              <div className="mb-2 flex items-start justify-between gap-3">
+                <div className="flex min-w-0 gap-2.5">
+                  <span aria-hidden className="text-xl leading-tight">
                     {locationIcon(location.label)}
                   </span>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: '15px',
-                          fontWeight: 600,
-                          color: 'var(--color-gray-900)',
-                        }}
-                      >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="m-0 text-[15px] font-semibold text-foreground">
                         {location.label}
                       </p>
                       {location.is_default ? (
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            color: 'var(--color-brand-600)',
-                            background: 'var(--color-brand-50)',
-                            padding: '2px 8px',
-                            borderRadius: 'var(--radius-full)',
-                          }}
-                        >
+                        <Badge className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-600">
                           Podrazumevana
-                        </span>
+                        </Badge>
                       ) : null}
                     </div>
-                    <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--color-gray-500)' }}>
+                    <p className="mt-1 mb-0 text-[13px] text-muted-foreground">
                       {location.street}, {location.city}
                       {location.postal_code ? ` ${location.postal_code}` : ''}
                     </p>
@@ -164,7 +100,7 @@ export default function LocationsPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="flex flex-wrap justify-end gap-2">
                 {!location.is_default ? (
                   <Button
                     type="button"
@@ -199,26 +135,18 @@ export default function LocationsPage() {
           onSuccess={() => setShowForm(false)}
         />
       ) : locations.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <Button
-            fullWidth
-            disabled={atLimit}
-            onClick={() => setShowForm(true)}
-          >
+        <div className="flex flex-col gap-2">
+          <Button fullWidth disabled={atLimit} onClick={() => setShowForm(true)}>
             + Dodaj lokaciju
           </Button>
           {atLimit ? (
-            <p style={{ margin: 0, textAlign: 'center', fontSize: '13px', color: 'var(--color-gray-500)' }}>
-              10/10 lokacija
-            </p>
+            <p className="m-0 text-center text-[13px] text-muted-foreground">10/10 lokacija</p>
           ) : null}
         </div>
       ) : null}
 
       {actionError ? (
-        <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-error)', textAlign: 'center' }}>
-          {actionError}
-        </p>
+        <p className="m-0 text-center text-sm text-destructive">{actionError}</p>
       ) : null}
     </div>
   )

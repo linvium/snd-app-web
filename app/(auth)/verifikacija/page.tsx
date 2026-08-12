@@ -3,9 +3,11 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Button from '@/components/ui/Button'
+import { CheckIcon, Loader2Icon, MailIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import OtpInput from '@/components/auth/OtpInput'
 import { useResendOtp, useVerifyOtp } from '@/hooks/auth/useAuth'
+import { cn } from '@/lib/utils'
 
 function StatusBanner({
   tone,
@@ -14,62 +16,22 @@ function StatusBanner({
   tone: 'info' | 'success' | 'error'
   children: React.ReactNode
 }) {
-  const styles = {
-    info: {
-      background: 'var(--color-info-soft)',
-      color: 'var(--color-info)',
-    },
-    success: {
-      background: 'var(--color-success-soft)',
-      color: 'var(--color-success)',
-    },
-    error: {
-      background: 'var(--color-error-soft)',
-      color: 'var(--color-error)',
-    },
-  }[tone]
-
   return (
     <div
       role="status"
       aria-live="polite"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '10px',
-        margin: 0,
-        padding: '12px 14px',
-        borderRadius: 'var(--radius-md)',
-        fontSize: '14px',
-        fontWeight: 500,
-        ...styles,
-      }}
+      className={cn(
+        'm-0 flex items-center justify-center gap-2.5 rounded-md px-3.5 py-3 text-sm font-medium',
+        tone === 'info' && 'bg-info-soft text-info',
+        tone === 'success' && 'bg-success-soft text-success',
+        tone === 'error' && 'bg-red-50 text-destructive'
+      )}
     >
-      {tone !== 'error' ? (
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-hidden
-          style={{ animation: tone === 'info' ? 'spin 0.8s linear infinite' : undefined, flexShrink: 0 }}
-        >
-          {tone === 'info' ? (
-            <>
-              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
-              <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-            </>
-          ) : (
-            <path
-              d="M20 6 9 17l-5-5"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-        </svg>
+      {tone === 'info' ? (
+        <Loader2Icon className="size-[18px] shrink-0 animate-spin" aria-hidden />
+      ) : null}
+      {tone === 'success' ? (
+        <CheckIcon className="size-[18px] shrink-0" aria-hidden />
       ) : null}
       {children}
     </div>
@@ -156,39 +118,20 @@ function VerificationForm() {
     flowType === 'reset' ? 'Kod je ispravan. Preusmeravamo te…' : 'Nalog je potvrđen. Preusmeravamo te…'
 
   return (
-    <div style={{ textAlign: 'center' }}>
+    <div className="text-center">
       <div
-        style={{
-          width: '48px',
-          height: '48px',
-          margin: '0 auto 20px',
-          display: 'grid',
-          placeItems: 'center',
-          borderRadius: 'var(--radius-lg)',
-          background: 'var(--color-brand-50)',
-          color: 'var(--color-brand-600)',
-        }}
+        className="mx-auto mb-5 grid size-12 place-items-center rounded-lg bg-brand-50 text-brand-600"
         aria-hidden
       >
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <rect x="3" y="5" width="18" height="14" rx="2" />
-          <path d="M3 7l9 6 9-6" />
-        </svg>
+        <MailIcon className="size-7" strokeWidth={1.8} />
       </div>
 
-      <h1
-        style={{
-          margin: '0 0 8px',
-          fontSize: '24px',
-          fontWeight: 700,
-          color: 'var(--color-gray-900)',
-          letterSpacing: '-0.02em',
-        }}
-      >
+      <h1 className="mb-2 text-2xl font-bold tracking-[-0.02em] text-card-foreground">
         Proveri sanduče
       </h1>
-      <p style={{ margin: '0 0 28px', color: 'var(--color-gray-500)', fontSize: '15px', lineHeight: 1.5 }}>
-        Poslali smo 6-cifreni kod na <strong style={{ color: 'var(--color-gray-900)' }}>{email}</strong>.
+      <p className="mb-7 text-[15px] leading-normal text-muted-foreground">
+        Poslali smo 6-cifreni kod na{' '}
+        <strong className="font-semibold text-card-foreground">{email}</strong>.
       </p>
 
       <form
@@ -196,9 +139,9 @@ function VerificationForm() {
           e.preventDefault()
           handleVerify()
         }}
-        style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+        className="flex flex-col gap-4"
       >
-        <div style={{ opacity: isBusy ? 0.55 : 1, pointerEvents: isBusy ? 'none' : 'auto' }}>
+        <div className={cn(isBusy && 'pointer-events-none opacity-55')}>
           <OtpInput
             value={otp}
             onChange={(value) => {
@@ -220,13 +163,7 @@ function VerificationForm() {
         </Button>
       </form>
 
-      <div
-        style={{
-          margin: '24px 0',
-          height: '1px',
-          background: 'var(--color-gray-200)',
-        }}
-      />
+      <div className="my-6 h-px bg-border" />
 
       <Button
         type="button"
@@ -240,16 +177,13 @@ function VerificationForm() {
       </Button>
 
       <p
-        style={{
-          margin: '20px 0 0',
-          fontSize: '14px',
-          color: 'var(--color-gray-500)',
-          opacity: isBusy ? 0.5 : 1,
-          pointerEvents: isBusy ? 'none' : 'auto',
-        }}
+        className={cn(
+          'mt-5 text-sm text-muted-foreground',
+          isBusy && 'pointer-events-none opacity-50'
+        )}
       >
         Pogrešna adresa?{' '}
-        <Link href={backHref} style={{ color: 'var(--color-brand-600)', fontWeight: 600 }}>
+        <Link href={backHref} className="font-semibold text-brand-600">
           Idi nazad
         </Link>
       </p>
@@ -259,7 +193,7 @@ function VerificationForm() {
 
 export default function VerificationPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '240px' }} />}>
+    <Suspense fallback={<div className="min-h-[240px]" />}>
       <VerificationForm />
     </Suspense>
   )

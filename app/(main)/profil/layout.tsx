@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 
+import { cn } from '@/lib/utils'
+
 const MENU_ITEMS = [
   { name: 'Pregled profila', href: '/profil' },
   { name: 'Izmeni profil', href: '/profil/izmeni' },
@@ -15,44 +17,17 @@ const MENU_ITEMS = [
 
 function BackHeader({ title }: { title: string }) {
   return (
-    <header
-      className="snd-profile-back-header"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '12px 16px',
-        margin: '0 -16px 8px',
-        borderBottom: '1px solid var(--color-gray-200)',
-        background: 'var(--color-white)',
-      }}
-    >
+    <header className="mb-2 -mx-4 flex items-center gap-2 border-b border-border bg-card px-4 py-3 lg:hidden">
       <Link
         href="/profil"
         aria-label="Nazad na profil"
-        style={{
-          display: 'grid',
-          placeItems: 'center',
-          width: '40px',
-          height: '40px',
-          borderRadius: 'var(--radius-md)',
-          color: 'var(--color-gray-700)',
-        }}
+        className="grid size-10 place-items-center rounded-md text-foreground"
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </Link>
-      <h1
-        style={{
-          margin: 0,
-          fontSize: '17px',
-          fontWeight: 600,
-          color: 'var(--color-gray-900)',
-        }}
-      >
-        {title}
-      </h1>
+      <h1 className="m-0 text-[17px] font-semibold text-foreground">{title}</h1>
     </header>
   )
 }
@@ -61,22 +36,9 @@ function DesktopSidebar() {
   const pathname = usePathname()
 
   return (
-    <aside
-      className="snd-profile-sidebar"
-      style={{
-        width: '240px',
-        flexShrink: 0,
-        padding: '8px 0',
-        background: 'var(--color-white)',
-        borderRadius: 'var(--radius-xl)',
-        border: '1px solid var(--color-gray-200)',
-        alignSelf: 'flex-start',
-        position: 'sticky',
-        top: '88px',
-      }}
-    >
+    <aside className="sticky top-[88px] hidden w-60 shrink-0 self-start rounded-xl border border-border bg-card py-2 lg:block">
       <nav aria-label="Profil meni">
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+        <ul className="m-0 list-none p-0">
           {MENU_ITEMS.map((item) => {
             const isActive =
               item.href === '/profil' ? pathname === '/profil' : pathname.startsWith(item.href)
@@ -85,17 +47,12 @@ function DesktopSidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  style={{
-                    display: 'block',
-                    padding: '12px 16px 12px 13px',
-                    fontSize: '14px',
-                    fontWeight: isActive ? 600 : 500,
-                    color: isActive ? 'var(--color-brand-500)' : 'var(--color-gray-700)',
-                    borderLeft: isActive
-                      ? '3px solid var(--color-brand-500)'
-                      : '3px solid transparent',
-                    background: isActive ? 'var(--color-brand-50)' : 'transparent',
-                  }}
+                  className={cn(
+                    'block border-l-[3px] py-3 pr-4 pl-[13px] text-sm',
+                    isActive
+                      ? 'border-brand-500 bg-brand-50 font-semibold text-brand-500'
+                      : 'border-transparent font-medium text-foreground'
+                  )}
                 >
                   {item.name}
                 </Link>
@@ -123,18 +80,12 @@ export default function ProfileLayout({ children }: { children: ReactNode }) {
   const title = subpageTitle(pathname)
 
   return (
-    <div
-      style={{
-        maxWidth: '960px',
-        margin: '0 auto',
-        padding: '16px 16px 40px',
-      }}
-    >
+    <div className="mx-auto max-w-[960px] px-4 pt-4 pb-10">
       {title ? <BackHeader title={title} /> : null}
 
-      <div className="snd-profile-shell" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+      <div className="flex items-start gap-6">
         <DesktopSidebar />
-        <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+        <div className="min-w-0 flex-1">{children}</div>
       </div>
     </div>
   )

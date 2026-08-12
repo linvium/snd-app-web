@@ -1,39 +1,38 @@
 'use client'
 
 import { getPasswordStrength } from '@/lib/auth-validation'
+import { cn } from '@/lib/utils'
 
 interface PasswordStrengthProps {
   password: string
 }
 
 const STRENGTH_MAP = {
-  weak: { level: 1, label: 'Slaba', color: 'var(--color-error)' },
-  medium: { level: 2, label: 'Srednja', color: 'var(--color-warning)' },
-  strong: { level: 3, label: 'Jaka', color: 'var(--color-success)' },
+  weak: { level: 1, label: 'Slaba', barClass: 'bg-destructive', textClass: 'text-destructive' },
+  medium: { level: 2, label: 'Srednja', barClass: 'bg-warning', textClass: 'text-warning' },
+  strong: { level: 3, label: 'Jaka', barClass: 'bg-success', textClass: 'text-success' },
 } as const
 
 export default function PasswordStrength({ password }: PasswordStrengthProps) {
   if (!password) return null
 
   const strength = getPasswordStrength(password)
-  const { level, label, color } = STRENGTH_MAP[strength]
+  const { level, label, barClass, textClass } = STRENGTH_MAP[strength]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      <div style={{ display: 'flex', gap: '4px' }}>
+    <div className="flex flex-col gap-1.5">
+      <div className="flex gap-1">
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            style={{
-              flex: 1,
-              height: '4px',
-              borderRadius: 'var(--radius-full)',
-              background: i <= level ? color : 'var(--color-gray-200)',
-            }}
+            className={cn(
+              'h-1 flex-1 rounded-full',
+              i <= level ? barClass : 'bg-zinc-200'
+            )}
           />
         ))}
       </div>
-      <p style={{ margin: 0, fontSize: '13px', color }}>{label}</p>
+      <p className={cn('m-0 text-[13px]', textClass)}>{label}</p>
     </div>
   )
 }

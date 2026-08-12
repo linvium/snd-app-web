@@ -3,8 +3,8 @@
 import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
+import { Button } from '@/components/ui/button'
+import { TextField } from '@/components/ui/text-field'
 import PasswordInput from '@/components/auth/PasswordInput'
 import { useSignIn } from '@/hooks/auth/useAuth'
 import { validateEmail } from '@/lib/auth-validation'
@@ -53,20 +53,12 @@ function LoginForm() {
 
   return (
     <div>
-      <h1
-        style={{
-          margin: '0 0 28px',
-          fontSize: '24px',
-          fontWeight: 700,
-          color: 'var(--color-gray-900)',
-          letterSpacing: '-0.02em',
-        }}
-      >
+      <h1 className="mb-7 text-2xl font-bold tracking-[-0.02em] text-card-foreground">
         Prijavi se
       </h1>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <Input
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <TextField
           label="Email"
           type="email"
           name="email"
@@ -90,11 +82,7 @@ function LoginForm() {
           trailingLink={
             <Link
               href="/zaboravljena-lozinka"
-              style={{
-                fontSize: '13px',
-                fontWeight: 500,
-                color: 'var(--color-brand-600)',
-              }}
+              className="text-[13px] font-medium text-brand-600"
             >
               Zaboravljena lozinka?
             </Link>
@@ -109,16 +97,7 @@ function LoginForm() {
         />
 
         {formErrorMessage ? (
-          <p
-            style={{
-              margin: 0,
-              padding: '12px 14px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-error-soft)',
-              color: 'var(--color-error)',
-              fontSize: '14px',
-            }}
-          >
+          <p className="m-0 rounded-md bg-red-50 px-3.5 py-3 text-sm text-destructive">
             {formErrorMessage}
           </p>
         ) : null}
@@ -128,16 +107,9 @@ function LoginForm() {
         </Button>
       </form>
 
-      <p
-        style={{
-          margin: '24px 0 0',
-          textAlign: 'center',
-          fontSize: '14px',
-          color: 'var(--color-gray-500)',
-        }}
-      >
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         Nemaš nalog?{' '}
-        <Link href="/registracija" style={{ color: 'var(--color-brand-600)', fontWeight: 600 }}>
+        <Link href="/registracija" className="font-semibold text-brand-600">
           Registruj se
         </Link>
       </p>
@@ -147,7 +119,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '200px' }} />}>
+    <Suspense fallback={<div className="min-h-[200px]" />}>
       <LoginForm />
     </Suspense>
   )

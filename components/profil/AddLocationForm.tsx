@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { TextField } from '@/components/ui/text-field'
 import { useAddLocation } from '@/hooks/user/useLocation'
 import { SERBIAN_CITIES } from '@/lib/profileHelpers'
 
@@ -121,17 +123,9 @@ export default function AddLocationForm({ onCancel, onSuccess }: AddLocationForm
   return (
     <form
       onSubmit={handleSubmit}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        padding: '16px',
-        background: 'var(--color-gray-50)',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--color-gray-200)',
-      }}
+      className="flex flex-col gap-4 rounded-lg border border-border bg-muted p-4"
     >
-      <Input
+      <TextField
         label="Naziv lokacije"
         name="label"
         value={label}
@@ -141,7 +135,7 @@ export default function AddLocationForm({ onCancel, onSuccess }: AddLocationForm
         onChange={(e) => setLabel(e.target.value)}
       />
 
-      <Input
+      <TextField
         label="Ulica i broj"
         name="street"
         value={street}
@@ -150,29 +144,17 @@ export default function AddLocationForm({ onCancel, onSuccess }: AddLocationForm
         onChange={(e) => setStreet(e.target.value)}
       />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-        <label
-          htmlFor="city"
-          style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-gray-700)' }}
-        >
+      <div className="flex w-full flex-col gap-1.5">
+        <Label htmlFor="city" className="text-sm font-medium text-foreground">
           Grad
-        </label>
-        <input
+        </Label>
+        <Input
           id="city"
           name="city"
           list="gradovi"
           value={city}
+          aria-invalid={errors.city ? true : undefined}
           onChange={(e) => setCity(e.target.value)}
-          style={{
-            width: '100%',
-            height: '44px',
-            padding: '0 14px',
-            fontSize: '16px',
-            color: 'var(--color-gray-900)',
-            background: 'var(--color-white)',
-            border: `1px solid ${errors.city ? 'var(--color-error)' : 'var(--color-gray-300)'}`,
-            borderRadius: 'var(--radius-md)',
-          }}
         />
         <datalist id="gradovi">
           {SERBIAN_CITIES.map((cityName) => (
@@ -180,11 +162,11 @@ export default function AddLocationForm({ onCancel, onSuccess }: AddLocationForm
           ))}
         </datalist>
         {errors.city ? (
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-error)' }}>{errors.city}</p>
+          <p className="m-0 text-[13px] text-destructive">{errors.city}</p>
         ) : null}
       </div>
 
-      <Input
+      <TextField
         label="Poštanski broj"
         name="postal_code"
         value={postalCode}
@@ -194,13 +176,11 @@ export default function AddLocationForm({ onCancel, onSuccess }: AddLocationForm
         onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
       />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: 'var(--color-gray-700)' }}>
-          Koordinate
-        </p>
+      <div className="flex flex-col gap-2.5">
+        <p className="m-0 text-sm font-medium text-foreground">Koordinate</p>
 
         {!manualCoords ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="flex flex-col gap-2">
             <Button
               type="button"
               variant="secondary"
@@ -210,37 +190,28 @@ export default function AddLocationForm({ onCancel, onSuccess }: AddLocationForm
               Koristi moju lokaciju
             </Button>
             {hasCoords ? (
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-success)' }}>
+              <p className="m-0 text-[13px] text-success">
                 Lokacija preuzeta ({latitude!.toFixed(5)}, {longitude!.toFixed(5)})
               </p>
             ) : null}
             <button
               type="button"
               onClick={() => setManualCoords(true)}
-              style={{
-                alignSelf: 'flex-start',
-                border: 'none',
-                background: 'transparent',
-                padding: 0,
-                color: 'var(--color-brand-600)',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              className="cursor-pointer self-start border-0 bg-transparent p-0 text-[13px] font-semibold text-brand-600"
             >
               Unesi ručno
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <Input
+          <div className="flex flex-col gap-3">
+            <TextField
               label="Geografska širina"
               name="latitude"
               value={latInput}
               inputMode="decimal"
               onChange={(e) => setLatInput(e.target.value)}
             />
-            <Input
+            <TextField
               label="Geografska dužina"
               name="longitude"
               value={lngInput}
@@ -250,43 +221,38 @@ export default function AddLocationForm({ onCancel, onSuccess }: AddLocationForm
             <button
               type="button"
               onClick={requestGeolocation}
-              style={{
-                alignSelf: 'flex-start',
-                border: 'none',
-                background: 'transparent',
-                padding: 0,
-                color: 'var(--color-brand-600)',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              className="cursor-pointer self-start border-0 bg-transparent p-0 text-[13px] font-semibold text-brand-600"
             >
               Koristi moju lokaciju
             </button>
           </div>
         )}
 
-        <p style={{ margin: 0, fontSize: '12px', color: 'var(--color-gray-500)' }}>
+        <p className="m-0 text-xs text-muted-foreground">
           Koordinate se koriste za prikaz na mapi. Tačna adresa se ne prikazuje javno.
         </p>
         {errors.coords ? (
-          <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-error)' }}>{errors.coords}</p>
+          <p className="m-0 text-[13px] text-destructive">{errors.coords}</p>
         ) : null}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+      <div className="mt-1 flex flex-col gap-2.5">
         <Button type="submit" fullWidth loading={addLocation.isPending}>
           Sačuvaj lokaciju
         </Button>
-        <Button type="button" variant="ghost" fullWidth onClick={onCancel} disabled={addLocation.isPending}>
+        <Button
+          type="button"
+          variant="ghost"
+          fullWidth
+          onClick={onCancel}
+          disabled={addLocation.isPending}
+        >
           Otkaži
         </Button>
       </div>
 
       {formError ? (
-        <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-error)', textAlign: 'center' }}>
-          {formError}
-        </p>
+        <p className="m-0 text-center text-sm text-destructive">{formError}</p>
       ) : null}
     </form>
   )

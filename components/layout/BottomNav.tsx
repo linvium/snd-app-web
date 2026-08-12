@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import { cn } from '@/lib/utils'
+
 const NAV_ITEMS = [
   {
     href: '/',
@@ -60,22 +62,8 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="snd-bottom-nav"
       aria-label="Donja navigacija"
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 40,
-        height: 'calc(56px + env(safe-area-inset-bottom))',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-        background: 'var(--color-white)',
-        borderTop: '1px solid var(--color-gray-200)',
-        display: 'none',
-        gridTemplateColumns: 'repeat(5, 1fr)',
-        alignItems: 'center',
-      }}
+      className="fixed right-0 bottom-0 left-0 z-40 grid h-[calc(56px+env(safe-area-inset-bottom))] grid-cols-5 items-center border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       {NAV_ITEMS.map((item) => {
         const isActive =
@@ -86,36 +74,16 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '2px',
-                marginTop: '-18px',
-                textDecoration: 'none',
-              }}
+              className="-mt-[18px] flex flex-col items-center justify-center gap-0.5 no-underline"
             >
-              <span
-                style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'var(--color-brand-500)',
-                  color: 'var(--color-white)',
-                  display: 'grid',
-                  placeItems: 'center',
-                  boxShadow: 'var(--shadow-md)',
-                }}
-              >
+              <span className="grid size-11 place-items-center rounded-full bg-brand-500 text-white shadow-md">
                 {item.icon}
               </span>
               <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: isActive ? 'var(--color-brand-600)' : 'var(--color-gray-500)',
-                }}
+                className={cn(
+                  'text-[11px] font-semibold',
+                  isActive ? 'text-brand-600' : 'text-zinc-500'
+                )}
               >
                 {item.label}
               </span>
@@ -127,17 +95,10 @@ export default function BottomNav() {
           <Link
             key={item.href}
             href={item.href}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '2px',
-              color: isActive ? 'var(--color-brand-600)' : 'var(--color-gray-500)',
-              fontSize: '11px',
-              fontWeight: isActive ? 600 : 500,
-              textDecoration: 'none',
-            }}
+            className={cn(
+              'flex flex-col items-center justify-center gap-0.5 text-[11px] no-underline',
+              isActive ? 'font-semibold text-brand-600' : 'font-medium text-zinc-500'
+            )}
           >
             {item.icon}
             <span>{item.label}</span>

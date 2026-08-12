@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { TextField } from '@/components/ui/text-field'
 import { useCurrentUser, useUpdateProfile } from '@/hooks/user/useUser'
 import { useLocations } from '@/hooks/user/useLocation'
 import {
@@ -12,6 +14,7 @@ import {
   normalizePhone,
   phoneLocalPart,
 } from '@/lib/profileHelpers'
+import { cn } from '@/lib/utils'
 
 export default function EditProfilePage() {
   const router = useRouter()
@@ -27,7 +30,6 @@ export default function EditProfilePage() {
   const [primaryLocationId, setPrimaryLocationId] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [savedMessage, setSavedMessage] = useState('')
-  const [aboutFocused, setAboutFocused] = useState(false)
 
   useEffect(() => {
     if (!user?.user_profiles) return
@@ -91,29 +93,15 @@ export default function EditProfilePage() {
   }
 
   if (userLoading || locationsLoading) {
-    return (
-      <div style={{ padding: '24px 0', color: 'var(--color-gray-500)', fontSize: '14px' }}>
-        Učitavanje…
-      </div>
-    )
+    return <div className="py-6 text-sm text-muted-foreground">Učitavanje…</div>
   }
 
   return (
     <div>
-      <h1
-        className="snd-profile-page-title"
-        style={{
-          margin: '0 0 24px',
-          fontSize: '22px',
-          fontWeight: 700,
-          color: 'var(--color-gray-900)',
-        }}
-      >
-        Izmeni profil
-      </h1>
+      <h1 className="mb-6 hidden text-[22px] font-bold text-foreground lg:block">Izmeni profil</h1>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-        <Input
+      <form onSubmit={handleSubmit} className="flex flex-col gap-[18px]">
+        <TextField
           label="Ime"
           name="first_name"
           value={firstName}
@@ -122,7 +110,7 @@ export default function EditProfilePage() {
           onChange={(e) => setFirstName(e.target.value)}
         />
 
-        <Input
+        <TextField
           label="Prezime"
           name="last_name"
           value={lastName}
@@ -131,7 +119,7 @@ export default function EditProfilePage() {
           onChange={(e) => setLastName(e.target.value)}
         />
 
-        <Input
+        <TextField
           label="Prikazano ime"
           name="display_name"
           value={displayName}
@@ -145,33 +133,18 @@ export default function EditProfilePage() {
           onChange={(e) => setDisplayName(e.target.value)}
         />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-          <label
-            htmlFor="phone"
-            style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-gray-700)' }}
-          >
+        <div className="flex w-full flex-col gap-1.5">
+          <Label htmlFor="phone" className="text-sm font-medium text-foreground">
             Telefon
-          </label>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          </Label>
+          <div className="flex gap-2">
             <span
               aria-hidden
-              style={{
-                height: '44px',
-                padding: '0 12px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--color-gray-300)',
-                background: 'var(--color-gray-100)',
-                color: 'var(--color-gray-700)',
-                fontWeight: 600,
-                fontSize: '15px',
-                flexShrink: 0,
-              }}
+              className="inline-flex h-11 shrink-0 items-center rounded-md border border-input bg-muted px-3 text-[15px] font-semibold text-foreground"
             >
               +381
             </span>
-            <input
+            <Input
               id="phone"
               name="phone"
               type="tel"
@@ -179,77 +152,52 @@ export default function EditProfilePage() {
               autoComplete="tel-national"
               value={phone}
               placeholder="641234567"
+              aria-invalid={errors.phone ? true : undefined}
               onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ''))}
-              style={{
-                flex: 1,
-                height: '44px',
-                padding: '0 14px',
-                fontSize: '16px',
-                color: 'var(--color-gray-900)',
-                background: 'var(--color-white)',
-                border: `1px solid ${errors.phone ? 'var(--color-error)' : 'var(--color-gray-300)'}`,
-                borderRadius: 'var(--radius-md)',
-              }}
+              className="flex-1"
             />
           </div>
           {errors.phone ? (
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-error)' }}>{errors.phone}</p>
+            <p className="m-0 text-[13px] text-destructive">{errors.phone}</p>
           ) : null}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-          <label
-            htmlFor="about"
-            style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-gray-700)' }}
-          >
+        <div className="flex w-full flex-col gap-1.5">
+          <Label htmlFor="about" className="text-sm font-medium text-foreground">
             O meni
-          </label>
+          </Label>
           <textarea
             id="about"
             name="about"
             value={about}
             maxLength={1000}
             rows={5}
-            onFocus={() => setAboutFocused(true)}
-            onBlur={() => setAboutFocused(false)}
+            aria-invalid={errors.about ? true : undefined}
             onChange={(e) => setAbout(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 14px',
-              fontSize: '16px',
-              fontFamily: 'inherit',
-              lineHeight: 1.5,
-              color: 'var(--color-gray-900)',
-              background: 'var(--color-white)',
-              border: `1px solid ${errors.about ? 'var(--color-error)' : aboutFocused ? 'var(--color-brand-500)' : 'var(--color-gray-300)'}`,
-              borderRadius: 'var(--radius-md)',
-              outline: aboutFocused && !errors.about ? '3px solid var(--color-brand-100)' : 'none',
-              resize: 'vertical',
-            }}
+            className={cn(
+              'w-full resize-y rounded-md border border-input bg-card px-3.5 py-3 font-sans text-base leading-normal text-card-foreground outline-none transition-colors',
+              'focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-100',
+              'aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20'
+            )}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+          <div className="flex justify-between gap-2">
             {errors.about ? (
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-error)' }}>{errors.about}</p>
+              <p className="m-0 text-[13px] text-destructive">{errors.about}</p>
             ) : (
               <span />
             )}
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-gray-500)' }}>
-              {about.length}/1000
-            </p>
+            <p className="m-0 text-[13px] text-muted-foreground">{about.length}/1000</p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-          <label
-            htmlFor="primary_location_id"
-            style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-gray-700)' }}
-          >
+        <div className="flex w-full flex-col gap-1.5">
+          <Label htmlFor="primary_location_id" className="text-sm font-medium text-foreground">
             Podrazumevana lokacija
-          </label>
+          </Label>
           {locations.length === 0 ? (
-            <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-gray-500)' }}>
+            <p className="m-0 text-sm text-muted-foreground">
               Najpre{' '}
-              <Link href="/profil/lokacije" style={{ color: 'var(--color-brand-600)', fontWeight: 600 }}>
+              <Link href="/profil/lokacije" className="font-semibold text-brand-600">
                 dodaj lokaciju
               </Link>
             </p>
@@ -259,16 +207,7 @@ export default function EditProfilePage() {
               name="primary_location_id"
               value={primaryLocationId}
               onChange={(e) => setPrimaryLocationId(e.target.value)}
-              style={{
-                width: '100%',
-                height: '44px',
-                padding: '0 14px',
-                fontSize: '16px',
-                color: 'var(--color-gray-900)',
-                background: 'var(--color-white)',
-                border: '1px solid var(--color-gray-300)',
-                borderRadius: 'var(--radius-md)',
-              }}
+              className="h-11 w-full rounded-md border border-input bg-card px-3.5 text-base text-card-foreground outline-none focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-100"
             >
               <option value="">Nije izabrano</option>
               {locations.map((location) => (
@@ -280,32 +219,24 @@ export default function EditProfilePage() {
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+        <div className="mt-2 flex flex-col gap-3">
           <Button type="submit" fullWidth size="lg" loading={updateProfile.isPending}>
             Sačuvaj promene
           </Button>
           <Link
             href="/profil"
-            style={{
-              textAlign: 'center',
-              fontSize: '15px',
-              fontWeight: 600,
-              color: 'var(--color-gray-500)',
-              padding: '10px',
-            }}
+            className="p-2.5 text-center text-[15px] font-semibold text-muted-foreground"
           >
             Odustani
           </Link>
         </div>
 
         {savedMessage ? (
-          <p style={{ margin: 0, textAlign: 'center', color: 'var(--color-success)', fontWeight: 600 }}>
-            {savedMessage}
-          </p>
+          <p className="m-0 text-center font-semibold text-success">{savedMessage}</p>
         ) : null}
 
         {updateProfile.isError ? (
-          <p style={{ margin: 0, textAlign: 'center', color: 'var(--color-error)', fontSize: '14px' }}>
+          <p className="m-0 text-center text-sm text-destructive">
             {(updateProfile.error as Error)?.message || 'Greška pri čuvanju. Pokušaj ponovo.'}
           </p>
         ) : null}

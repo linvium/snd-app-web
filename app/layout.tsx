@@ -2,12 +2,14 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/context/AuthContext'
 import { QueryProvider } from '@/providers/QueryProvider'
+import { cn } from '@/lib/utils'
 import './globals.css'
 
 const inter = Inter({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   display: 'swap',
+  variable: '--font-sans',
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
@@ -46,7 +48,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="sr-Latn-RS">
+    <html lang="sr-Latn-RS" className={cn('font-sans', inter.variable)}>
       <body className={inter.className}>
         <QueryProvider>
           <AuthProvider>{children}</AuthProvider>

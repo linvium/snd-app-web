@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import Button from '@/components/ui/Button'
+import { Button } from '@/components/ui/button'
 import { useAuthSession } from '@/context/AuthContext'
 import { useSignOut } from '@/hooks/auth/useAuth'
 import { useCurrentUser } from '@/hooks/user/useUser'
+import { cn } from '@/lib/utils'
 import { getDisplayName, type SndUser } from '@/types'
 
 function formatDate(iso: string) {
@@ -31,22 +32,9 @@ function QuickActionCard({
   return (
     <Link
       href={href}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        padding: '20px 16px',
-        background: 'var(--color-white)',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--color-gray-200)',
-        boxShadow: 'var(--shadow-sm)',
-        textDecoration: 'none',
-        color: 'var(--color-gray-900)',
-        fontWeight: 600,
-        fontSize: '15px',
-      }}
+      className="flex flex-col gap-2.5 rounded-lg border border-border bg-card px-4 py-5 text-[15px] font-semibold text-foreground no-underline shadow-sm"
     >
-      <span style={{ fontSize: '22px' }} aria-hidden>
+      <span className="text-[22px]" aria-hidden>
         {icon}
       </span>
       {title}
@@ -56,70 +44,23 @@ function QuickActionCard({
 
 function HomeSkeleton() {
   return (
-    <main style={{ maxWidth: '720px', margin: '0 auto', padding: '24px 16px' }}>
-      <div
-        style={{
-          height: '100px',
-          borderRadius: 'var(--radius-xl)',
-          background: 'var(--color-gray-100)',
-          marginBottom: '16px',
-        }}
-      />
-      <div
-        style={{
-          height: '160px',
-          borderRadius: 'var(--radius-xl)',
-          background: 'var(--color-gray-100)',
-        }}
-      />
+    <main className="mx-auto max-w-[720px] px-4 py-6">
+      <div className="mb-4 h-[100px] rounded-xl bg-muted" />
+      <div className="h-40 rounded-xl bg-muted" />
     </main>
   )
 }
 
 export function GuestHome() {
   return (
-    <main
-      style={{
-        maxWidth: '720px',
-        margin: '0 auto',
-        padding: '48px 20px 32px',
-        textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-      }}
-    >
-      <h1
-        style={{
-          margin: '0 0 12px',
-          fontSize: 'clamp(28px, 7vw, 40px)',
-          fontWeight: 700,
-          letterSpacing: '-0.03em',
-          color: 'var(--color-gray-900)',
-          lineHeight: 1.15,
-        }}
-      >
+    <main className="mx-auto flex max-w-[720px] flex-col items-center px-5 pt-12 pb-8 text-center">
+      <h1 className="mb-3 text-[clamp(28px,7vw,40px)] leading-[1.15] font-bold tracking-[-0.03em] text-foreground">
         Iznajmi umesto da kupuješ
       </h1>
-      <p
-        style={{
-          margin: '0 0 28px',
-          fontSize: '17px',
-          color: 'var(--color-gray-500)',
-          maxWidth: '420px',
-          lineHeight: 1.5,
-        }}
-      >
+      <p className="mb-7 max-w-[420px] text-[17px] leading-normal text-muted-foreground">
         Stvari od ljudi iz tvog kraja. Jeftino, sigurno, garantovano.
       </p>
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '12px',
-          justifyContent: 'center',
-        }}
-      >
+      <div className="flex flex-wrap justify-center gap-3">
         <Link href="/prijava">
           <Button size="lg">Prijavi se</Button>
         </Link>
@@ -143,118 +84,51 @@ export function LoggedInHome({ userData }: { userData: SndUser | null }) {
   const createdAt = userData?.created_at || user?.created_at || ''
 
   return (
-    <main
-      style={{
-        maxWidth: '720px',
-        margin: '0 auto',
-        padding: '24px 16px 40px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px',
-      }}
-    >
-      <section
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-          padding: '20px',
-          background: 'var(--color-white)',
-          borderRadius: 'var(--radius-xl)',
-          border: '1px solid var(--color-gray-200)',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
+    <main className="mx-auto flex max-w-[720px] flex-col gap-5 px-4 pt-6 pb-10">
+      <section className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-sm">
         <div>
-          <h1
-            style={{
-              margin: '0 0 4px',
-              fontSize: '22px',
-              fontWeight: 700,
-              color: 'var(--color-gray-900)',
-            }}
-          >
-            Zdravo, {displayName}!
-          </h1>
-          <p style={{ margin: 0, color: 'var(--color-gray-500)', fontSize: '14px' }}>{email}</p>
+          <h1 className="mb-1 text-[22px] font-bold text-foreground">Zdravo, {displayName}!</h1>
+          <p className="m-0 text-sm text-muted-foreground">{email}</p>
         </div>
         <div
           aria-hidden
-          style={{
-            width: '52px',
-            height: '52px',
-            borderRadius: 'var(--radius-full)',
-            background: 'var(--color-brand-500)',
-            color: 'var(--color-white)',
-            display: 'grid',
-            placeItems: 'center',
-            fontWeight: 700,
-            fontSize: '18px',
-            flexShrink: 0,
-          }}
+          className="grid size-[52px] shrink-0 place-items-center rounded-full bg-brand-500 text-lg font-bold text-white"
         >
           {displayName.charAt(0).toUpperCase()}
         </div>
       </section>
 
-      <section
-        style={{
-          padding: '20px',
-          background: 'var(--color-white)',
-          borderRadius: 'var(--radius-xl)',
-          border: '1px solid var(--color-gray-200)',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
-        <h2
-          style={{
-            margin: '0 0 16px',
-            fontSize: '16px',
-            fontWeight: 600,
-            color: 'var(--color-gray-900)',
-          }}
-        >
-          Status naloga
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-            <span style={{ color: 'var(--color-gray-500)' }}>Email</span>
+      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <h2 className="mb-4 text-base font-semibold text-foreground">Status naloga</h2>
+        <div className="flex flex-col gap-3 text-sm">
+          <div className="flex flex-wrap justify-between gap-3">
+            <span className="text-muted-foreground">Email</span>
             <span
-              style={{
-                fontWeight: 500,
-                color: emailVerified ? 'var(--color-success)' : 'var(--color-warning)',
-              }}
+              className={cn(
+                'font-medium',
+                emailVerified ? 'text-success' : 'text-warning'
+              )}
             >
               {emailVerified ? '✓ Potvrđen' : '⚠ Nije potvrđen'}
             </span>
           </div>
           {!emailVerified ? (
-            <Link
-              href="/verifikacija"
-              style={{ color: 'var(--color-brand-600)', fontWeight: 600, fontSize: '14px' }}
-            >
+            <Link href="/verifikacija" className="text-sm font-semibold text-brand-600">
               Potvrdi email
             </Link>
           ) : null}
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
-            <span style={{ color: 'var(--color-gray-500)' }}>KYC</span>
-            <span style={{ fontWeight: 500 }}>Nije verifikovan</span>
+          <div className="flex justify-between gap-3">
+            <span className="text-muted-foreground">KYC</span>
+            <span className="font-medium">Nije verifikovan</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
-            <span style={{ color: 'var(--color-gray-500)' }}>Nalog kreiran</span>
-            <span style={{ fontWeight: 500 }}>{createdAt ? formatDate(createdAt) : '—'}</span>
+          <div className="flex justify-between gap-3">
+            <span className="text-muted-foreground">Nalog kreiran</span>
+            <span className="font-medium">{createdAt ? formatDate(createdAt) : '—'}</span>
           </div>
         </div>
       </section>
 
-      <section
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '12px',
-        }}
-      >
+      <section className="grid grid-cols-2 gap-3">
         <QuickActionCard href="/profil" icon="👤" title="Moj profil" />
         <QuickActionCard href="/moji-oglasi" icon="📦" title="Moji oglasi" />
         <QuickActionCard href="/rezervacije" icon="📅" title="Rezervacije" />

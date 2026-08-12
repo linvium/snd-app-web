@@ -2,6 +2,8 @@
 
 import { useRef, type ClipboardEvent, type KeyboardEvent } from 'react'
 
+import { cn } from '@/lib/utils'
+
 interface OtpInputProps {
   value: string
   onChange: (value: string) => void
@@ -54,15 +56,7 @@ export default function OtpInput({ value, onChange, error, disabled }: OtpInputP
   }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: '8px',
-        justifyContent: 'center',
-      }}
-      role="group"
-      aria-label="Kod za verifikaciju"
-    >
+    <div className="flex justify-center gap-2" role="group" aria-label="Kod za verifikaciju">
       {digits.map((digit, index) => (
         <input
           key={index}
@@ -79,28 +73,13 @@ export default function OtpInput({ value, onChange, error, disabled }: OtpInputP
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={handlePaste}
           aria-label={`Cifra ${index + 1}`}
-          style={{
-            width: '48px',
-            height: '56px',
-            textAlign: 'center',
-            fontSize: '20px',
-            fontWeight: 600,
-            color: 'var(--color-gray-900)',
-            background: 'var(--color-white)',
-            border: `1.5px solid ${error ? 'var(--color-error)' : 'var(--color-gray-300)'}`,
-            borderRadius: 'var(--radius-md)',
-            outline: 'none',
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = error
-              ? 'var(--color-error)'
-              : 'var(--color-brand-500)'
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = error
-              ? 'var(--color-error)'
-              : 'var(--color-gray-300)'
-          }}
+          aria-invalid={error || undefined}
+          className={cn(
+            'h-14 w-12 rounded-md border-[1.5px] bg-card text-center text-xl font-semibold text-card-foreground outline-none transition-colors',
+            'focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-100',
+            'disabled:pointer-events-none disabled:opacity-50',
+            error ? 'border-destructive' : 'border-input'
+          )}
         />
       ))}
     </div>
