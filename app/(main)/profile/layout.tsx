@@ -7,19 +7,19 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 const MENU_ITEMS = [
-  { name: 'Pregled profila', href: '/profil' },
-  { name: 'Izmeni profil', href: '/profil/izmeni' },
-  { name: 'Moje lokacije', href: '/profil/lokacije' },
-  { name: 'Moji oglasi', href: '/profil/oglasi' },
-  { name: 'Omiljeni', href: '/profil/omiljeni' },
-  { name: 'Podešavanja', href: '/profil/podesavanja' },
+  { name: 'Pregled profila', href: '/profile' },
+  { name: 'Izmeni profil', href: '/profile/edit' },
+  { name: 'Moje lokacije', href: '/profile/locations' },
+  { name: 'Moji oglasi', href: '/profile/listings' },
+  { name: 'Omiljeni', href: '/profile/favorites' },
+  { name: 'Podešavanja', href: '/profile/settings' },
 ]
 
 function BackHeader({ title }: { title: string }) {
   return (
     <header className="mb-2 -mx-4 flex items-center gap-2 border-b border-border bg-card px-4 py-3 lg:hidden">
       <Link
-        href="/profil"
+        href="/profile"
         aria-label="Nazad na profil"
         className="grid size-10 place-items-center rounded-md text-foreground"
       >
@@ -41,7 +41,7 @@ function DesktopSidebar() {
         <ul className="m-0 list-none p-0">
           {MENU_ITEMS.map((item) => {
             const isActive =
-              item.href === '/profil' ? pathname === '/profil' : pathname.startsWith(item.href)
+              item.href === '/profile' ? pathname === '/profile' : pathname.startsWith(item.href)
 
             return (
               <li key={item.href}>
@@ -66,12 +66,12 @@ function DesktopSidebar() {
 }
 
 function subpageTitle(pathname: string): string | null {
-  if (pathname.startsWith('/profil/izmeni')) return 'Izmeni profil'
-  if (pathname.startsWith('/profil/lokacije')) return 'Moje lokacije'
-  if (pathname.startsWith('/profil/oglasi')) return 'Moji oglasi'
-  if (pathname.startsWith('/profil/omiljeni')) return 'Omiljeni'
-  if (pathname.startsWith('/profil/podesavanja')) return 'Podešavanja'
-  if (pathname.startsWith('/profil/verifikacija')) return 'Verifikacija'
+  if (pathname.startsWith('/profile/edit')) return 'Izmeni profil'
+  if (pathname.startsWith('/profile/locations')) return 'Moje lokacije'
+  if (pathname.startsWith('/profile/listings')) return 'Moji oglasi'
+  if (pathname.startsWith('/profile/favorites')) return 'Omiljeni'
+  if (pathname.startsWith('/profile/settings')) return 'Podešavanja'
+  if (pathname.startsWith('/profile/verification')) return 'Verifikacija'
   return null
 }
 

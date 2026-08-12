@@ -61,10 +61,10 @@ export function GuestHome() {
         Stvari od ljudi iz tvog kraja. Jeftino, sigurno, garantovano.
       </p>
       <div className="flex flex-wrap justify-center gap-3">
-        <Link href="/prijava">
+        <Link href="/auth/login">
           <Button size="lg">Prijavi se</Button>
         </Link>
-        <Link href="/registracija">
+        <Link href="/auth/register">
           <Button variant="secondary" size="lg">
             Napravi nalog
           </Button>
@@ -113,7 +113,7 @@ export function LoggedInHome({ userData }: { userData: SndUser | null }) {
             </span>
           </div>
           {!emailVerified ? (
-            <Link href="/verifikacija" className="text-sm font-semibold text-brand-600">
+            <Link href="/auth/verify" className="text-sm font-semibold text-brand-600">
               Potvrdi email
             </Link>
           ) : null}
@@ -129,10 +129,10 @@ export function LoggedInHome({ userData }: { userData: SndUser | null }) {
       </section>
 
       <section className="grid grid-cols-2 gap-3">
-        <QuickActionCard href="/profil" icon="👤" title="Moj profil" />
+        <QuickActionCard href="/profile" icon="👤" title="Moj profil" />
         <QuickActionCard href="/moji-oglasi" icon="📦" title="Moji oglasi" />
-        <QuickActionCard href="/rezervacije" icon="📅" title="Rezervacije" />
-        <QuickActionCard href="/omiljeni" icon="❤️" title="Omiljeni" />
+        <QuickActionCard href="/bookings" icon="📅" title="Rezervacije" />
+        <QuickActionCard href="/profile/favorites" icon="❤️" title="Omiljeni" />
       </section>
 
       <Button variant="danger" fullWidth loading={signOut.isPending} onClick={() => signOut.mutate()}>

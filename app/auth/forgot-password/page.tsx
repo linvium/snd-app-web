@@ -56,7 +56,7 @@ export default function ForgotPasswordPage() {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Seti se lozinke?{' '}
-        <Link href="/prijava" className="font-semibold text-brand-600">
+        <Link href="/auth/login" className="font-semibold text-brand-600">
           Prijavi se
         </Link>
       </p>

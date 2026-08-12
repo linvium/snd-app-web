@@ -42,7 +42,7 @@ function VerificationForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const email = searchParams.get('email') || ''
-  const flowType = searchParams.get('tip') || 'registracija'
+  const flowType = searchParams.get('type') || 'register'
   const verifyOtp = useVerifyOtp()
   const resendOtp = useResendOtp()
 
@@ -52,10 +52,10 @@ function VerificationForm() {
 
   const backHref =
     flowType === 'reset'
-      ? '/zaboravljena-lozinka'
-      : flowType === 'registracija'
-        ? '/registracija'
-        : '/prijava'
+      ? '/auth/forgot-password'
+      : flowType === 'register'
+        ? '/auth/register'
+        : '/auth/login'
 
   const isVerifying = verifyOtp.isPending
   const isRedirecting = verifyOtp.isSuccess
@@ -97,7 +97,7 @@ function VerificationForm() {
     resendOtp.mutate(
       {
         email,
-        flowType: flowType === 'reset' ? 'reset' : 'registracija',
+        flowType: flowType === 'reset' ? 'reset' : 'register',
       },
       {
         onSuccess: () => setSeconds(60),

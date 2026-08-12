@@ -104,11 +104,11 @@ export default function RegisterPage() {
               className="cursor-pointer text-sm leading-[1.45] font-normal text-foreground"
             >
               Prihvatam{' '}
-              <Link href="/uslovi" className="font-medium text-brand-600">
+              <Link href="/terms" className="font-medium text-brand-600">
                 Uslove korišćenja
               </Link>{' '}
               i{' '}
-              <Link href="/privatnost" className="font-medium text-brand-600">
+              <Link href="/privacy" className="font-medium text-brand-600">
                 Politiku privatnosti
               </Link>
             </Label>
@@ -131,7 +131,7 @@ export default function RegisterPage() {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Već imaš nalog?{' '}
-        <Link href="/prijava" className="font-semibold text-brand-600">
+        <Link href="/auth/login" className="font-semibold text-brand-600">
           Prijavi se
         </Link>
       </p>

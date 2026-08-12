@@ -2,15 +2,21 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 const AUTH_ROUTES = [
-  '/prijava',
-  '/registracija',
-  '/zaboravljena-lozinka',
-  '/verifikacija',
+  '/auth/login',
+  '/auth/register',
+  '/auth/forgot-password',
+  '/auth/verify',
 ]
 
-// /nova-lozinka requires a recovery session — do not redirect signed-in users away
-const RECOVERY_ROUTES = ['/nova-lozinka']
-const PROTECTED_ROUTES = ['/profil', '/poruke', '/rezervacije', '/objavi', '/dobrodosli']
+// /auth/new-password requires a recovery session — do not redirect signed-in users away
+const RECOVERY_ROUTES = ['/auth/new-password']
+const PROTECTED_ROUTES = [
+  '/profile',
+  '/messages',
+  '/bookings',
+  '/listings/new',
+  '/auth/welcome',
+]
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -50,11 +56,11 @@ export async function middleware(request: NextRequest) {
 
   // New password — requires a session (after recovery OTP)
   if (!user && RECOVERY_ROUTES.some((r) => path.startsWith(r))) {
-    return NextResponse.redirect(new URL('/zaboravljena-lozinka', request.url))
+    return NextResponse.redirect(new URL('/auth/forgot-password', request.url))
   }
 
   if (!user && PROTECTED_ROUTES.some((r) => path.startsWith(r))) {
-    const loginUrl = new URL('/prijava', request.url)
+    const loginUrl = new URL('/auth/login', request.url)
     loginUrl.searchParams.set('next', path)
     return NextResponse.redirect(loginUrl)
   }

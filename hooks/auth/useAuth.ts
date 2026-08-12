@@ -21,7 +21,7 @@ export function useSignUp() {
     onSuccess: (_data, variables) => {
       // session is null when Confirm email = ON → user must enter OTP
       router.push(
-        `/verifikacija?email=${encodeURIComponent(variables.email.trim().toLowerCase())}&tip=registracija`
+        `/auth/verify?email=${encodeURIComponent(variables.email.trim().toLowerCase())}&type=register`
       )
     },
   })
@@ -61,11 +61,11 @@ export function useVerifyOtp() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.user.all })
 
-      const flowType = new URLSearchParams(window.location.search).get('tip')
-      if (flowType === 'registracija') {
-        router.push('/dobrodosli')
+      const flowType = new URLSearchParams(window.location.search).get('type')
+      if (flowType === 'register') {
+        router.push('/auth/welcome')
       } else if (flowType === 'reset') {
-        router.push('/nova-lozinka')
+        router.push('/auth/new-password')
       } else {
         router.push('/')
       }
@@ -78,7 +78,7 @@ export function useResetPassword() {
   const router = useRouter()
 
   const redirectToVerification = (email: string) => {
-    router.push(`/verifikacija?email=${encodeURIComponent(email.trim().toLowerCase())}&tip=reset`)
+    router.push(`/auth/verify?email=${encodeURIComponent(email.trim().toLowerCase())}&type=reset`)
   }
 
   return useMutation({

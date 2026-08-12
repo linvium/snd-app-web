@@ -75,23 +75,23 @@ Identifikatori u kodu su na **engleskom**. UI tekst je na **srpskom** (latinica,
 ### Auth
 | Ruta | Opis |
 |---|---|
-| `/prijava` | Prijava |
-| `/registracija` | Registracija |
-| `/verifikacija` | OTP verifikacija emaila |
-| `/dobrodosli` | Onboarding nakon registracije |
-| `/zaboravljena-lozinka` | Reset lozinke |
-| `/nova-lozinka` | Nova lozinka |
+| `/auth/login` | Prijava |
+| `/auth/register` | Registracija |
+| `/auth/verify` | OTP verifikacija emaila |
+| `/auth/welcome` | Onboarding nakon registracije |
+| `/auth/forgot-password` | Reset lozinke |
+| `/auth/new-password` | Nova lozinka |
 
 ### Glavne
 | Ruta | Opis |
 |---|---|
 | `/` | Početna |
-| `/profil` | Pregled profila |
-| `/profil/izmeni` | Izmena ličnih podataka |
-| `/profil/lokacije` | Lokacije korisnika |
+| `/profile` | Pregled profila |
+| `/profile/edit` | Izmena ličnih podataka |
+| `/profile/locations` | Lokacije korisnika |
 | `/kyc` | KYC tok (Didit) |
 
-Zaštićene rute (middleware): `/profil`, `/dobrodosli`, `/poruke`, `/rezervacije`, `/objavi`.
+Zaštićene rute (middleware): `/profile`, `/auth/welcome`, `/messages`, `/bookings`, `/listings/new`.
 
 ## Dizajn tokeni
 

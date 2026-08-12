@@ -28,7 +28,7 @@ export default function NotFoundPage() {
               Idi na početnu
             </Button>
           </Link>
-          <Link href="/pretraga">
+          <Link href="/search">
             <Button fullWidth variant="secondary">
               Pretraži stvari
             </Button>

@@ -16,37 +16,37 @@ export function calculateProfileCompleteness(
     {
       name: 'Ime i prezime',
       completed: !!(profile?.first_name && profile?.last_name),
-      link: '/profil/izmeni',
+      link: '/profile/edit',
       weight: 15,
     },
     {
       name: 'Profilna slika',
       completed: !!profile?.avatar_url,
-      link: '/profil/izmeni',
+      link: '/profile/edit',
       weight: 15,
     },
     {
       name: 'Broj telefona',
       completed: !!profile?.phone,
-      link: '/profil/izmeni',
+      link: '/profile/edit',
       weight: 15,
     },
     {
       name: 'Lokacija',
       completed: locations.length > 0,
-      link: '/profil/lokacije',
+      link: '/profile/locations',
       weight: 15,
     },
     {
       name: 'O meni',
       completed: !!(profile?.about && profile.about.length >= 20),
-      link: '/profil/izmeni',
+      link: '/profile/edit',
       weight: 10,
     },
     {
       name: 'KYC verifikacija',
       completed: false, // implement when KYC module lands
-      link: '/profil/verifikacija',
+      link: '/profile/verification',
       weight: 10,
     },
   ]

@@ -17,7 +17,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    href: '/pretraga',
+    href: '/search',
     label: 'Pretraga',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -27,7 +27,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    href: '/objavi',
+    href: '/listings/new',
     label: 'Objavi',
     emphasized: true,
     icon: (
@@ -37,7 +37,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    href: '/poruke',
+    href: '/messages',
     label: 'Poruke',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -46,7 +46,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    href: '/profil',
+    href: '/profile',
     label: 'Profil',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">

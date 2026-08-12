@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import AddLocationForm from '@/components/profil/AddLocationForm'
+import AddLocationForm from '@/components/profile/AddLocationForm'
 import {
   useDeleteLocation,
   useLocations,

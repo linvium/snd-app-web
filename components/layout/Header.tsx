@@ -17,10 +17,10 @@ import { useAuthSession } from '@/context/AuthContext'
 import { useSignOut } from '@/hooks/auth/useAuth'
 
 const ACCOUNT_MENU_ITEMS = [
-  { href: '/profil', label: 'Moj profil' },
+  { href: '/profile', label: 'Moj profil' },
   { href: '/moji-oglasi', label: 'Moji oglasi' },
-  { href: '/rezervacije', label: 'Moje rezervacije' },
-  { href: '/poruke', label: 'Poruke' },
+  { href: '/bookings', label: 'Moje rezervacije' },
+  { href: '/messages', label: 'Poruke' },
   { href: '/omiljeni', label: 'Omiljeni' },
 ] as const
 
@@ -68,7 +68,7 @@ export default function Header() {
 
         <div className="flex items-center gap-2.5">
           {user ? (
-            <Link href="/objavi" className="hidden lg:inline-flex">
+            <Link href="/listings/new" className="hidden lg:inline-flex">
               <Button size="sm">Objavi predmet</Button>
             </Link>
           ) : null}
@@ -107,16 +107,16 @@ export default function Header() {
             </DropdownMenu>
           ) : (
             <>
-              <Link href="/prijava" className="hidden md:inline-flex">
+              <Link href="/auth/login" className="hidden md:inline-flex">
                 <Button variant="secondary" size="sm">
                   Prijavi se
                 </Button>
               </Link>
-              <Link href="/registracija" className="hidden md:inline-flex">
+              <Link href="/auth/register" className="hidden md:inline-flex">
                 <Button size="sm">Registruj se</Button>
               </Link>
               <Link
-                href="/prijava"
+                href="/auth/login"
                 aria-label="Prijavi se"
                 className="grid size-9 place-items-center rounded-full border border-zinc-300 text-zinc-500 md:hidden"
               >

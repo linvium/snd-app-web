@@ -70,7 +70,7 @@ export interface AddLocationInput {
 
 export interface UpdateLocationInput extends Partial<AddLocationInput> {}
 
-/** Profile completeness score for the /profil completeness card */
+/** Profile completeness score for the /profile completeness card */
 export interface ProfileCompleteness {
   percentage: number
   items: {

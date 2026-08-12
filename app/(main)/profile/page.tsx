@@ -18,11 +18,11 @@ import { cn } from '@/lib/utils'
 import { getDisplayName } from '@/types'
 
 const NAV_LINKS = [
-  { name: 'Izmeni profil', href: '/profil/izmeni' },
-  { name: 'Moje lokacije', href: '/profil/lokacije' },
-  { name: 'Moji oglasi', href: '/profil/oglasi' },
-  { name: 'Omiljeni', href: '/profil/omiljeni' },
-  { name: 'Podešavanja', href: '/profil/podesavanja' },
+  { name: 'Izmeni profil', href: '/profile/edit' },
+  { name: 'Moje lokacije', href: '/profile/locations' },
+  { name: 'Moji oglasi', href: '/profile/listings' },
+  { name: 'Omiljeni', href: '/profile/favorites' },
+  { name: 'Podešavanja', href: '/profile/settings' },
 ]
 
 function CompletenessCard({
@@ -132,7 +132,7 @@ export default function ProfilePage() {
         ) : (
           <div className="mb-[18px] h-[18px]" />
         )}
-        <Link href="/profil/izmeni" className="inline-block">
+        <Link href="/profile/edit" className="inline-block">
           <Button variant="secondary">Izmeni profil</Button>
         </Link>
       </section>

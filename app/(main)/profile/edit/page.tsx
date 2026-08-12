@@ -86,7 +86,7 @@ export default function EditProfilePage() {
         primary_location_id: primaryLocationId || null,
       })
       setSavedMessage('Sačuvano')
-      setTimeout(() => router.push('/profil'), 600)
+      setTimeout(() => router.push('/profile'), 600)
     } catch {
       // error surfaced via updateProfile.isError
     }
@@ -197,7 +197,7 @@ export default function EditProfilePage() {
           {locations.length === 0 ? (
             <p className="m-0 text-sm text-muted-foreground">
               Najpre{' '}
-              <Link href="/profil/lokacije" className="font-semibold text-brand-600">
+              <Link href="/profile/locations" className="font-semibold text-brand-600">
                 dodaj lokaciju
               </Link>
             </p>
@@ -224,7 +224,7 @@ export default function EditProfilePage() {
             Sačuvaj promene
           </Button>
           <Link
-            href="/profil"
+            href="/profile"
             className="p-2.5 text-center text-[15px] font-semibold text-muted-foreground"
           >
             Odustani

@@ -24,5 +24,5 @@ export interface UpdatePasswordInput {
 
 export interface ResendOtpInput {
   email: string
-  flowType: 'registracija' | 'reset'
+  flowType: 'register' | 'reset'
 }
