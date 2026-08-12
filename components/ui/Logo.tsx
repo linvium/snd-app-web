@@ -1,9 +1,9 @@
 import Image from 'next/image'
 
 const SIZE_MAP = {
-  sm: { width: 96, height: 72 },
-  md: { width: 160, height: 120 },
-  lg: { width: 220, height: 165 },
+  sm: { width: 40, height: 40 },
+  md: { width: 72, height: 72 },
+  lg: { width: 100, height: 100 },
 } as const
 
 export default function Logo({
@@ -15,14 +15,14 @@ export default function Logo({
 
   return (
     <Image
-      src="/logo-snd.png"
+      src="/images/snd_logo_symbol.png"
       alt="Stvar na Dan"
       width={width}
       height={height}
       priority
       style={{
-        width: 'auto',
-        height: size === 'sm' ? '40px' : size === 'md' ? '72px' : '100px',
+        width: `${width}px`,
+        height: `${height}px`,
         objectFit: 'contain',
         display: 'block',
       }}
