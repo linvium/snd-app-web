@@ -55,7 +55,7 @@ export default function LocationsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="m-0 hidden text-[22px] font-bold text-foreground lg:block">Moje lokacije</h1>
+      <h1 className="m-0 hidden text-[22px] font-normal text-foreground lg:block">Moje lokacije</h1>
 
       {locations.length === 0 && !showForm ? (
         <section className="rounded-xl border border-border bg-card px-5 py-8 text-center">

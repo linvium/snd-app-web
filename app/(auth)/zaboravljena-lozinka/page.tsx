@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div>
-      <h1 className="mb-2 text-2xl font-bold tracking-[-0.02em] text-card-foreground">
+      <h1 className="mb-2 text-2xl font-normal tracking-[-0.02em] text-card-foreground">
         Zaboravljena lozinka
       </h1>
       <p className="mb-7 text-[15px] text-muted-foreground">

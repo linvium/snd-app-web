@@ -10,7 +10,7 @@ export default function AuthMarketingPanel({
 }) {
   return (
     <aside
-      className="relative hidden min-h-screen flex-col justify-center overflow-hidden px-10 py-12 text-white lg:flex xl:px-12 xl:py-14 bg-[radial-gradient(ellipse_80%_60%_at_70%_40%,rgba(240,176,16,0.45)_0%,transparent_55%),radial-gradient(ellipse_70%_70%_at_20%_80%,rgba(32,144,128,0.75)_0%,transparent_50%),radial-gradient(ellipse_60%_50%_at_90%_90%,rgba(32,144,128,0.5)_0%,transparent_45%),linear-gradient(145deg,#001a36_0%,#002040_35%,#0a4a4a_65%,#1a6b5c_100%)]"
+      className="relative hidden min-h-screen flex-col items-center justify-center overflow-hidden px-10 py-12 text-white lg:flex xl:px-12 xl:py-14 bg-[radial-gradient(ellipse_80%_60%_at_70%_40%,rgba(240,176,16,0.45)_0%,transparent_55%),radial-gradient(ellipse_70%_70%_at_20%_80%,rgba(32,144,128,0.75)_0%,transparent_50%),radial-gradient(ellipse_60%_50%_at_90%_90%,rgba(32,144,128,0.5)_0%,transparent_45%),linear-gradient(145deg,#001a36_0%,#002040_35%,#0a4a4a_65%,#1a6b5c_100%)]"
       aria-label="Stvar na Dan"
     >
       <div
@@ -19,14 +19,14 @@ export default function AuthMarketingPanel({
       />
 
       <div className="relative flex max-w-[440px] flex-col gap-7">
-        <h2 className="m-0 text-[clamp(22px,2.4vw,32px)] font-extrabold leading-tight tracking-[-0.02em] whitespace-nowrap">
+        <h2 className="m-0 text-[clamp(22px,2.4vw,32px)] font-normal leading-tight tracking-[-0.02em] whitespace-nowrap">
           IZNAJMI. KORISTI. VRATI.
         </h2>
 
         <blockquote className="m-0 border-none p-0">
           <span
             aria-hidden
-            className="mb-3 block font-serif text-[56px] font-bold leading-[0.75] text-[rgba(240,176,16,0.85)]"
+            className="mb-3 block font-sans text-[56px] font-light leading-[0.75] text-[rgba(240,176,16,0.85)]"
           >
             “
           </span>

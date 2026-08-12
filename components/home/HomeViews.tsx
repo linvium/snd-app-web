@@ -54,7 +54,7 @@ function HomeSkeleton() {
 export function GuestHome() {
   return (
     <main className="mx-auto flex max-w-[720px] flex-col items-center px-5 pt-12 pb-8 text-center">
-      <h1 className="mb-3 text-[clamp(28px,7vw,40px)] leading-[1.15] font-bold tracking-[-0.03em] text-foreground">
+      <h1 className="mb-3 text-[clamp(28px,7vw,40px)] leading-[1.15] font-normal tracking-[-0.03em] text-foreground">
         Iznajmi umesto da kupuješ
       </h1>
       <p className="mb-7 max-w-[420px] text-[17px] leading-normal text-muted-foreground">
@@ -87,7 +87,7 @@ export function LoggedInHome({ userData }: { userData: SndUser | null }) {
     <main className="mx-auto flex max-w-[720px] flex-col gap-5 px-4 pt-6 pb-10">
       <section className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-sm">
         <div>
-          <h1 className="mb-1 text-[22px] font-bold text-foreground">Zdravo, {displayName}!</h1>
+          <h1 className="mb-1 text-[22px] font-normal text-foreground">Zdravo, {displayName}!</h1>
           <p className="m-0 text-sm text-muted-foreground">{email}</p>
         </div>
         <div
@@ -99,7 +99,7 @@ export function LoggedInHome({ userData }: { userData: SndUser | null }) {
       </section>
 
       <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="mb-4 text-base font-semibold text-foreground">Status naloga</h2>
+        <h2 className="mb-4 text-base font-normal text-foreground">Status naloga</h2>
         <div className="flex flex-col gap-3 text-sm">
           <div className="flex flex-wrap justify-between gap-3">
             <span className="text-muted-foreground">Email</span>

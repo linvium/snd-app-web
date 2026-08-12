@@ -27,7 +27,7 @@ function BackHeader({ title }: { title: string }) {
           <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </Link>
-      <h1 className="m-0 text-[17px] font-semibold text-foreground">{title}</h1>
+      <h1 className="m-0 text-[17px] font-normal text-foreground">{title}</h1>
     </header>
   )
 }

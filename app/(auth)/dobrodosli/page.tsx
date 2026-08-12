@@ -89,7 +89,7 @@ export default function WelcomeOnboardingPage() {
 
   return (
     <div>
-      <h1 className="mb-2 text-center text-2xl font-bold tracking-[-0.02em] text-card-foreground">
+      <h1 className="mb-2 text-center text-2xl font-normal tracking-[-0.02em] text-card-foreground">
         Dobro došao na SND
       </h1>
       <p className="mb-7 text-center text-[15px] leading-normal text-muted-foreground">

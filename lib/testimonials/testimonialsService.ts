@@ -4,7 +4,7 @@ const MOCK_TESTIMONIALS: Testimonial[] = [
   {
     id: '1',
     quote:
-      'Preko Stvar na Dan sam iznajmila projektor za vikend — brzo, jeftino i bez komplikacija. Tačno ono što mi je trebalo.',
+      'Preko Stvar na Dan sam iznajmila projektor za vikend - brzo, jeftino i bez komplikacija. Tačno ono što mi je trebalo.',
     authorName: 'Milica Jovanović',
     authorRole: 'Organizator događaja, Beograd',
     avatarSeed: 'milica-jovanovic',
@@ -28,7 +28,7 @@ const MOCK_TESTIMONIALS: Testimonial[] = [
   {
     id: '4',
     quote:
-      'Kao student, ne mogu da kupim sve što mi zatreba. Ovde nađem kameru, šator, pa čak i bicikl — za razuman novac.',
+      'Kao student, ne mogu da kupim sve što mi zatreba. Ovde nađem kameru, šator, pa čak i bicikl - za razuman novac.',
     authorName: 'Luka Marković',
     authorRole: 'Student, Kragujevac',
     avatarSeed: 'luka-markovic',
@@ -36,7 +36,7 @@ const MOCK_TESTIMONIALS: Testimonial[] = [
   {
     id: '5',
     quote:
-      'Platforma je jasna i pouzdana. Dogovorim se sa vlasnikom, preuzmem stvar i vratim — bez stresa.',
+      'Platforma je jasna i pouzdana. Dogovorim se sa vlasnikom, preuzmem stvar i vratim - bez stresa.',
     authorName: 'Jelena Ilić',
     authorRole: 'Dizajnerka, Beograd',
     avatarSeed: 'jelena-ilic',
@@ -44,7 +44,7 @@ const MOCK_TESTIMONIALS: Testimonial[] = [
   {
     id: '6',
     quote:
-      'Iznajmio sam bušilicu za renoviranje stana umesto da kupujem novu. Ušteda i manje otpada — win-win.',
+      'Iznajmio sam bušilicu za renoviranje stana umesto da kupujem novu. Ušteda i manje otpada - win-win.',
     authorName: 'Stefan Đorđević',
     authorRole: 'Inženjer, Subotica',
     avatarSeed: 'stefan-djordjevic',

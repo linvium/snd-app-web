@@ -14,7 +14,7 @@ export default function NotFoundPage() {
           Greška 404
         </p>
 
-        <h1 className="mb-3 text-[28px] leading-tight font-bold tracking-[-0.02em] text-foreground">
+        <h1 className="mb-3 text-[28px] leading-tight font-normal tracking-[-0.02em] text-foreground">
           Ova stranica trenutno ne postoji
         </h1>
 

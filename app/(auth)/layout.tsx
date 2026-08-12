@@ -13,8 +13,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="grid min-h-screen grid-cols-1 bg-card lg:grid-cols-2">
       <div className="flex min-h-screen flex-col justify-center px-6 py-8 lg:px-14 lg:py-12 xl:px-20 xl:py-14">
         <div className="mx-auto w-full max-w-[400px]">
-          <Link href="/" className="mb-9 inline-block">
-            <Logo />
+          <Link href="/" className="mb-9 flex justify-center" aria-label="SND početna">
+            <Logo variant="vertical" size="lg" />
           </Link>
           {children}
         </div>

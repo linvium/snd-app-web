@@ -53,7 +53,7 @@ function LoginForm() {
 
   return (
     <div>
-      <h1 className="mb-7 text-2xl font-bold tracking-[-0.02em] text-card-foreground">
+      <h1 className="mb-7 text-2xl font-normal tracking-[-0.02em] text-card-foreground">
         Prijavi se
       </h1>
 

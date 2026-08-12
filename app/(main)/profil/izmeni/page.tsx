@@ -98,7 +98,7 @@ export default function EditProfilePage() {
 
   return (
     <div>
-      <h1 className="mb-6 hidden text-[22px] font-bold text-foreground lg:block">Izmeni profil</h1>
+      <h1 className="mb-6 hidden text-[22px] font-normal text-foreground lg:block">Izmeni profil</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-[18px]">
         <TextField

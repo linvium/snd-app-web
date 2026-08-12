@@ -123,7 +123,7 @@ export default function ProfilePage() {
           </svg>
           <span className="relative z-[1]">{initials}</span>
         </div>
-        <h1 className="mb-1 text-[22px] font-bold text-foreground">{displayName}</h1>
+        <h1 className="mb-1 text-[22px] font-normal text-foreground">{displayName}</h1>
         <p className="mb-1 text-sm text-muted-foreground">{user.email}</p>
         {user.created_at ? (
           <p className="mb-[18px] text-[13px] text-muted-foreground/80">

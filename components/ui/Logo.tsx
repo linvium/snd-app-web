@@ -14,18 +14,25 @@ const SIZE_PX = {
   lg: 100,
 } as const
 
+const VARIANT_SRC = {
+  symbol: '/images/snd_logo_symbol.png',
+  vertical: '/images/snd_logo_vertical.png',
+} as const
+
 export default function Logo({
   size = 'md',
+  variant = 'symbol',
   className,
 }: {
   size?: 'sm' | 'md' | 'lg'
+  variant?: keyof typeof VARIANT_SRC
   className?: string
 }) {
   const px = SIZE_PX[size]
 
   return (
     <Image
-      src="/images/snd_logo_symbol.png"
+      src={VARIANT_SRC[variant]}
       alt="Stvar na Dan"
       width={px}
       height={px}

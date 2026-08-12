@@ -7,9 +7,9 @@ import './globals.css'
 
 const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['300', '400', '500', '600', '700'],
   display: 'swap',
-  variable: '--font-sans',
+  variable: '--font-inter',
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
@@ -48,8 +48,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="sr-Latn-RS" className={cn('font-sans', inter.variable)}>
-      <body className={inter.className}>
+    <html lang="sr-Latn-RS" className={cn(inter.variable, 'font-sans')}>
+      <body className={cn(inter.className, 'font-sans antialiased')}>
         <QueryProvider>
           <AuthProvider>{children}</AuthProvider>
         </QueryProvider>
