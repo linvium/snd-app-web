@@ -1,0 +1,71 @@
+---
+description: SND project coding rules — identifiers, architecture, UI language
+alwaysApply: true
+---
+
+# SND project rules
+
+## English identifiers only
+
+All code identifiers must be in **English**. UI copy stays Serbian (latinica, ekavica); names in source code do not.
+
+Applies to: variables, constants, functions, methods, parameters, props, types, interfaces, enums, class names, file names for modules/helpers, hook names.
+
+```typescript
+// ❌ BAD
+const infoPoruka = '...'
+const jacinaLozinke = 'slaba'
+function validirajEmail(v: string) {}
+const [ucitavanje, setUcitavanje] = useState(false)
+interface DugmeProps { punasirina?: boolean }
+
+// ✅ GOOD
+const infoMessage = '...'
+const passwordStrength = 'weak'
+function validateEmail(v: string) {}
+const [loading, setLoading] = useState(false)
+interface ButtonProps { fullWidth?: boolean }
+```
+
+Allowed Serbian:
+- User-facing strings only (labels, errors, titles, aria-labels shown in UI)
+
+CSS custom properties must be English (e.g. `--color-brand-500`, `--radius-md`).
+
+Prefer clear English (`passwordStrength`, `formError`, `isLoading`) over transliteration.
+
+---
+
+## Data layer architecture
+
+```
+Component → Hook (React Query) → Service (Supabase) → Database
+```
+
+Folder layout:
+- `services/<domain>/` — Supabase calls only (auth, user, …)
+- `hooks/<domain>/` — React Query hooks that call services
+- `lib/queryKeys.ts` — all query keys
+- `lib/queryClient.ts` — QueryClient defaults
+- `providers/QueryProvider.tsx` — wraps the app
+
+Future domains get matching folders under both `services/` and `hooks/` (items, bookings, messages).
+
+Hard rules:
+- Components **never** call Supabase or import from `services/`
+- Components call **only** hooks from `hooks/`
+- Hooks call **only** services from `services/`
+- Services call **only** `lib/supabase/*`
+- Query keys always come from `lib/queryKeys.ts` — never hardcode strings
+- Cache updates via `queryClient.invalidateQueries` / `clear` — no ad-hoc refetch in components
+- Session presence may still live in `context/AuthContext` for UI; mutations/queries go through hooks
+
+```typescript
+// ✅ Component
+const signUp = useSignUp()
+signUp.mutate({ email, password })
+
+// ❌ Component
+const supabase = createClient()
+await supabase.auth.signUp(...)
+```

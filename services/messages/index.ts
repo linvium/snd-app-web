@@ -1,0 +1,2 @@
+// Future: messages domain
+export {}

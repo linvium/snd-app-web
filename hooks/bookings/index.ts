@@ -1,0 +1,2 @@
+// Future: bookings domain
+export {}
