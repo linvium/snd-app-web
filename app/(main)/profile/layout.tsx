@@ -11,6 +11,7 @@ const MENU_ITEMS = [
   { name: 'Pregled profila', href: '/profile' },
   { name: 'Izmeni profil', href: '/profile/edit' },
   { name: 'Moje lokacije', href: '/profile/locations' },
+  { name: 'Verifikacija', href: '/profile/verification' },
   { name: 'Moji oglasi', href: '/profile/listings' },
   { name: 'Omiljeni', href: '/profile/favorites' },
   { name: 'Podešavanja', href: '/profile/settings' },

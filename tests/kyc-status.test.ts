@@ -1,67 +1,134 @@
-import { describe, it, expect } from "vitest";
-import { applyDecision, store } from "@/lib/kyc";
-import type { DiditWebhookPayload, SessionStatus } from "@/types/didit";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { DiditWebhookPayload, SessionStatus } from '@/types/didit'
+import type { KycVerificationRecord } from '@/types/kyc'
+
+const USER_ID = '11111111-1111-4111-8111-111111111111'
+
+const store = {
+  upsertVerification: vi.fn(),
+  getVerificationByUserId: vi.fn(),
+  getVerificationBySessionId: vi.fn(),
+  recordWebhookEvent: vi.fn(),
+  hasWebhookEvent: vi.fn(),
+}
+
+vi.mock('@/lib/kyc/kyc.store', () => ({ store }))
+
+const { applyDecision } = await import('@/lib/kyc/kyc.status')
 
 const ALL_STATUSES: SessionStatus[] = [
-  "Not Started",
-  "In Progress",
-  "Awaiting User",
-  "In Review",
-  "Approved",
-  "Declined",
-  "Resubmitted",
-  "Abandoned",
-  "Expired",
-  "Kyc Expired",
-];
+  'Not Started',
+  'In Progress',
+  'Awaiting User',
+  'In Review',
+  'Approved',
+  'Declined',
+  'Resubmitted',
+  'Abandoned',
+  'Expired',
+  'Kyc Expired',
+]
 
 function payloadFor(status: SessionStatus, sessionId: string): DiditWebhookPayload {
   return {
     event_id: `evt-${sessionId}`,
-    webhook_type: "status.updated",
+    webhook_type: 'status.updated',
     session_id: sessionId,
     status,
-    vendor_data: `vendor-${sessionId}`,
-  };
+    vendor_data: USER_ID,
+  }
 }
 
-describe("applyDecision", () => {
-  it("has an explicit branch for all 10 statuses (none throw)", async () => {
+describe('applyDecision', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    store.getVerificationByUserId.mockResolvedValue(null)
+    store.upsertVerification.mockResolvedValue(undefined)
+  })
+
+  it('has an explicit branch for all 10 statuses (none throw)', async () => {
     for (const status of ALL_STATUSES) {
-      const sessionId = `sess-${status.replace(/\s/g, "")}`;
-      await expect(applyDecision(payloadFor(status, sessionId))).resolves.not.toThrow();
+      const sessionId = `sess-${status.replace(/\s/g, '')}`
+      await expect(applyDecision(payloadFor(status, sessionId))).resolves.not.toThrow()
     }
-  });
+  })
 
-  it("marks Approved as verified", async () => {
-    const sessionId = "sess-approved-check";
-    await applyDecision(payloadFor("Approved", sessionId));
-    const record = await store.getVerificationBySessionId(sessionId);
-    expect(record?.verifiedAt).not.toBeNull();
-    expect(record?.status).toBe("Approved");
-  });
+  it('marks Approved as verified', async () => {
+    await applyDecision(payloadFor('Approved', 'sess-approved-check'))
+    expect(store.upsertVerification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: USER_ID,
+        sessionId: 'sess-approved-check',
+        status: 'verified',
+        verifiedAt: expect.any(String),
+      })
+    )
+  })
 
-  it("marks Kyc Expired as not verified", async () => {
-    const sessionId = "sess-kycexpired-check";
-    await applyDecision(payloadFor("Kyc Expired", sessionId));
-    const record = await store.getVerificationBySessionId(sessionId);
-    expect(record?.verifiedAt).toBeNull();
-  });
+  it('marks Kyc Expired as not verified', async () => {
+    await applyDecision(payloadFor('Kyc Expired', 'sess-kycexpired-check'))
+    expect(store.upsertVerification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'expired',
+        verifiedAt: null,
+      })
+    )
+  })
 
-  it("Awaiting User is a no-op and does not create a record", async () => {
-    const sessionId = "sess-awaiting-check";
-    await applyDecision(payloadFor("Awaiting User", sessionId));
-    const record = await store.getVerificationBySessionId(sessionId);
-    expect(record).toBeNull();
-  });
-});
+  it('Awaiting User is a no-op and does not write', async () => {
+    await applyDecision(payloadFor('Awaiting User', 'sess-awaiting-check'))
+    expect(store.upsertVerification).not.toHaveBeenCalled()
+    expect(store.getVerificationByUserId).not.toHaveBeenCalled()
+  })
 
-describe("webhook event dedupe", () => {
-  it("only records the first occurrence of an event_id", async () => {
-    const eventId = `dedupe-test-${Date.now()}`;
-    const first = await store.recordWebhookEvent(eventId);
-    const second = await store.recordWebhookEvent(eventId);
-    expect(first).toBe(true);
-    expect(second).toBe(false);
-  });
-});
+  it('does not regress verified back to in_progress', async () => {
+    const existing: KycVerificationRecord = {
+      userId: USER_ID,
+      sessionId: 'sess-verified',
+      provider: 'didit',
+      status: 'verified',
+      verifiedAt: '2026-08-13T10:00:00.000Z',
+      rejectedReason: null,
+      expiresAt: null,
+      updatedAt: '2026-08-13T10:00:00.000Z',
+    }
+    store.getVerificationByUserId.mockResolvedValue(existing)
+
+    await applyDecision(payloadFor('In Progress', 'sess-later'))
+    expect(store.upsertVerification).not.toHaveBeenCalled()
+  })
+
+  it('allows Kyc Expired to clear a verified row', async () => {
+    const existing: KycVerificationRecord = {
+      userId: USER_ID,
+      sessionId: 'sess-verified',
+      provider: 'didit',
+      status: 'verified',
+      verifiedAt: '2026-08-13T10:00:00.000Z',
+      rejectedReason: null,
+      expiresAt: null,
+      updatedAt: '2026-08-13T10:00:00.000Z',
+    }
+    store.getVerificationByUserId.mockResolvedValue(existing)
+
+    await applyDecision(payloadFor('Kyc Expired', 'sess-stale'))
+    expect(store.upsertVerification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'expired',
+        verifiedAt: null,
+      })
+    )
+  })
+
+  it('ignores non-UUID vendor_data', async () => {
+    await applyDecision({
+      event_id: 'evt-demo',
+      webhook_type: 'status.updated',
+      session_id: 'sess-demo',
+      status: 'Approved',
+      vendor_data: 'demo-user',
+    })
+    expect(store.upsertVerification).not.toHaveBeenCalled()
+    expect(store.getVerificationByUserId).not.toHaveBeenCalled()
+  })
+})

@@ -1,5 +1,5 @@
 ---
-description: SND project coding rules — identifiers, architecture, UI language
+description: SND project coding rules — identifiers, architecture, UI language, Server Components
 alwaysApply: true
 ---
 
@@ -119,3 +119,41 @@ signUp.mutate({ email, password })
 const supabase = createClient()
 await supabase.auth.signUp(...)
 ```
+
+---
+
+## Server Components first
+
+Pages and layouts stay **Server Components** by default. Do **not** add `'use client'` unless the file needs browser APIs: form state, event handlers, `useState` / `useEffect`, or React Query hooks.
+
+React Query belongs in client islands (forms, mutations, live session UI) — not on whole pages that only render data.
+
+If a page is mostly static, keep it a server component and extract the interactive bit into a small client child.
+
+```typescript
+// ❌ BAD — whole page is a client bundle, no SSR for the shell
+'use client'
+export default function VerificationPage() {
+  return <p>Identitet je potvrđen.</p>
+}
+
+// ✅ GOOD — server page
+export default function VerificationPage() {
+  return <p>Identitet je potvrđen.</p>
+}
+
+// ✅ GOOD — client only where interactivity lives
+// page.tsx (server)
+export default function LoginPage() {
+  return <LoginForm />
+}
+
+// LoginForm.tsx
+'use client'
+export function LoginForm() {
+  const signIn = useSignIn()
+  // form state + mutate
+}
+```
+
+Do not add `'use client'` just to use `Link`, `Image`, `className`, or lucide icons — those work in Server Components.

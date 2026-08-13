@@ -98,6 +98,68 @@ export interface Database {
           },
         ]
       }
+      kyc_verifications: {
+        Row: {
+          id: string
+          user_id: string
+          provider: string
+          provider_session_id: string | null
+          status: 'not_started' | 'pending_payment' | 'in_progress' | 'verified' | 'rejected' | 'expired'
+          verified_at: string | null
+          rejected_reason: string | null
+          expires_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          provider: string
+          provider_session_id?: string | null
+          status?: 'not_started' | 'pending_payment' | 'in_progress' | 'verified' | 'rejected' | 'expired'
+          verified_at?: string | null
+          rejected_reason?: string | null
+          expires_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          provider?: string
+          provider_session_id?: string | null
+          status?: 'not_started' | 'pending_payment' | 'in_progress' | 'verified' | 'rejected' | 'expired'
+          verified_at?: string | null
+          rejected_reason?: string | null
+          expires_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'kyc_verifications_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: true
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      kyc_webhook_events: {
+        Row: {
+          event_id: string
+          received_at: string
+        }
+        Insert: {
+          event_id: string
+          received_at?: string
+        }
+        Update: {
+          event_id?: string
+          received_at?: string
+        }
+        Relationships: []
+      }
       waitlist_emails: {
         Row: {
           id: string
