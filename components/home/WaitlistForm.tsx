@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { CircleCheckBigIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useJoinWaitlist } from '@/hooks/waitlist'
@@ -27,9 +28,12 @@ export default function WaitlistForm() {
 
   if (submitted) {
     return (
-      <p className="m-0 text-[15px] font-medium text-brand-700" role="status">
-        Super. Javićemo ti čim krenemo.
-      </p>
+      <div className="flex w-full flex-col items-center gap-4" role="status">
+        <CircleCheckBigIcon className="size-24 text-[#209080]" strokeWidth={1.75} aria-hidden />
+        <p className="m-0 text-[22px] leading-snug font-medium tracking-[-0.03em] text-[#001a36]">
+          Super. Javićemo ti čim krenemo.
+        </p>
+      </div>
     )
   }
 
@@ -39,7 +43,7 @@ export default function WaitlistForm() {
   })()
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3 sm:flex-row sm:items-start">
+    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3 text-left sm:flex-row sm:items-start">
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <label htmlFor="waitlist-email" className="sr-only">
           Email

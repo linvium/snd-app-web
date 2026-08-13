@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MapPin, ShieldCheck, Wallet } from 'lucide-react'
+import { MapPinIcon, ShieldCheckIcon, WalletIcon } from 'lucide-react'
 import Logo from '@/components/ui/Logo'
 import WaitlistForm from '@/components/home/WaitlistForm'
 import { cn } from '@/lib/utils'
@@ -8,19 +8,19 @@ const BENEFITS = [
   {
     title: 'Plaćaš korišćenje',
     description: 'Dan bušilice, vikend kamere, proslava sa šatorom. Bez kupovine koju ćeš požaliti.',
-    icon: Wallet,
+    icon: WalletIcon,
     iconClass: 'bg-[#fef3c7] text-[#c4850a]',
   },
   {
     title: 'Od ljudi iz kraja',
     description: 'Preuzmi u blizini, dogovori se direktno. Brzo, jednostavno, ljudski.',
-    icon: MapPin,
+    icon: MapPinIcon,
     iconClass: 'bg-[#d8f0ea] text-[#1a6b5c]',
   },
   {
     title: 'Pokriveno garancijom',
     description: 'Proveren identitet i zaštita na svaku transakciju. Iznajmljuješ bez stresa.',
-    icon: ShieldCheck,
+    icon: ShieldCheckIcon,
     iconClass: 'bg-[#fde6dc] text-[#c85a28]',
   },
 ] as const
@@ -60,7 +60,7 @@ export default function LandingHome() {
           </p>
         </section>
 
-        <section className="mx-auto w-full max-w-[1120px] px-5 pb-14 md:pb-20">
+        <section className="mx-auto w-full max-w-[1120px] px-5 pb-6 md:pb-8">
           <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-3 sm:gap-5">
             {BENEFITS.map((benefit) => {
               const Icon = benefit.icon
@@ -89,7 +89,7 @@ export default function LandingHome() {
           </ul>
         </section>
 
-        <section className="px-5 py-14 md:py-16">
+        <section className="px-5 pt-2 pb-14 md:pt-4 md:pb-16">
           <div className="mx-auto flex w-full max-w-[520px] flex-col items-center text-center">
             <h2 className="m-0 text-[clamp(24px,5vw,32px)] font-normal tracking-[-0.03em] text-[#001a36]">
               Saznaj prvi

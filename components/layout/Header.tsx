@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { UserIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthSession } from '@/context/AuthContext'
 import { useSignOut } from '@/hooks/auth'
@@ -120,10 +121,7 @@ export default function Header() {
                 aria-label="Prijavi se"
                 className="grid size-9 place-items-center rounded-full border border-zinc-300 text-zinc-500 md:hidden"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                </svg>
+                <UserIcon className="size-[18px]" strokeWidth={1.8} aria-hidden />
               </Link>
             </>
           )}

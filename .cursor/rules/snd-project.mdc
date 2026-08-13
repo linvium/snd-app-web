@@ -36,6 +36,20 @@ Prefer clear English (`passwordStrength`, `formError`, `isLoading`) over transli
 
 ---
 
+## Icons
+
+Use **lucide-react** for UI icons. Do not hand-draw SVG icons.
+
+Keep custom SVG only for non-icon graphics (progress bars, avatars, illustrations).
+
+```typescript
+import { CircleCheckBigIcon, UserIcon } from 'lucide-react'
+
+<CircleCheckBigIcon className="size-24" aria-hidden />
+```
+
+---
+
 ## File naming
 
 Domain files use lowercase dotted names: `<name>.<kind>.ts`.

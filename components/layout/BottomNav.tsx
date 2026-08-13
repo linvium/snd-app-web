@@ -2,59 +2,21 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { HouseIcon, MessageSquareIcon, PlusIcon, SearchIcon, UserIcon, type LucideIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
-const NAV_ITEMS = [
-  {
-    href: '/',
-    label: 'Početna',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M3 10.5 12 3l9 7.5" />
-        <path d="M5 9.5V21h14V9.5" />
-      </svg>
-    ),
-  },
-  {
-    href: '/search',
-    label: 'Pretraga',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <circle cx="11" cy="11" r="7" />
-        <path d="m20 20-3.5-3.5" />
-      </svg>
-    ),
-  },
-  {
-    href: '/listings/new',
-    label: 'Objavi',
-    emphasized: true,
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-        <path d="M12 5v14M5 12h14" />
-      </svg>
-    ),
-  },
-  {
-    href: '/messages',
-    label: 'Poruke',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M4 6h16v10H8l-4 4V6z" />
-      </svg>
-    ),
-  },
-  {
-    href: '/profile',
-    label: 'Profil',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-      </svg>
-    ),
-  },
+const NAV_ITEMS: {
+  href: string
+  label: string
+  icon: LucideIcon
+  emphasized?: boolean
+}[] = [
+  { href: '/', label: 'Početna', icon: HouseIcon },
+  { href: '/search', label: 'Pretraga', icon: SearchIcon },
+  { href: '/listings/new', label: 'Objavi', icon: PlusIcon, emphasized: true },
+  { href: '/messages', label: 'Poruke', icon: MessageSquareIcon },
+  { href: '/profile', label: 'Profil', icon: UserIcon },
 ]
 
 export default function BottomNav() {
@@ -68,6 +30,7 @@ export default function BottomNav() {
       {NAV_ITEMS.map((item) => {
         const isActive =
           item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
+        const Icon = item.icon
 
         if (item.emphasized) {
           return (
@@ -77,7 +40,7 @@ export default function BottomNav() {
               className="-mt-[18px] flex flex-col items-center justify-center gap-0.5 no-underline"
             >
               <span className="grid size-11 place-items-center rounded-full bg-brand-500 text-white shadow-md">
-                {item.icon}
+                <Icon className="size-[22px]" strokeWidth={2.2} aria-hidden />
               </span>
               <span
                 className={cn(
@@ -100,7 +63,7 @@ export default function BottomNav() {
               isActive ? 'font-semibold text-brand-600' : 'font-medium text-zinc-500'
             )}
           >
-            {item.icon}
+            <Icon className="size-[22px]" strokeWidth={1.8} aria-hidden />
             <span>{item.label}</span>
           </Link>
         )

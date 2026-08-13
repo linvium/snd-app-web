@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 
+import { ChevronLeftIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const MENU_ITEMS = [
@@ -23,9 +24,7 @@ function BackHeader({ title }: { title: string }) {
         aria-label="Nazad na profil"
         className="grid size-10 place-items-center rounded-md text-foreground"
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <ChevronLeftIcon className="size-[22px]" strokeWidth={2} aria-hidden />
       </Link>
       <h1 className="m-0 text-[17px] font-normal text-foreground">{title}</h1>
     </header>
