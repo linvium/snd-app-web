@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TextField } from '@/components/ui/text-field'
-import { useAddLocation } from '@/hooks/user/useLocation'
-import { SERBIAN_CITIES } from '@/lib/profileHelpers'
+import { useAddLocation } from '@/hooks/user'
+import { SERBIAN_CITIES } from '@/lib/profiles'
 
 interface AddLocationFormProps {
   onCancel: () => void

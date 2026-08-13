@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckIcon, Loader2Icon, MailIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import OtpInput from '@/components/auth/OtpInput'
-import { useResendOtp, useVerifyOtp } from '@/hooks/auth/useAuth'
+import { useResendOtp, useVerifyOtp } from '@/hooks/auth'
 import { cn } from '@/lib/utils'
 
 function StatusBanner({

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { applyDecision, verifyWebhook } from "@/lib/kyc";
-import { store } from "@/lib/store";
+import { applyDecision, store, verifyWebhook } from "@/lib/kyc";
 import type { DiditWebhookPayload } from "@/types/didit";
 
 export const runtime = "nodejs";

@@ -1,13 +1,12 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { locationService } from '@/lib/user'
-import { queryKeys } from '@/lib/queryKeys'
+import { locationService, userQueryKeys } from '@/lib/user'
 import type { AddLocationInput } from '@/types'
 
 export function useLocations() {
   return useQuery({
-    queryKey: queryKeys.user.locations(),
+    queryKey: userQueryKeys.locations(),
     queryFn: () => locationService.getLocations(),
     staleTime: 5 * 60 * 1000,
   })
@@ -19,8 +18,8 @@ export function useAddLocation() {
   return useMutation({
     mutationFn: (input: AddLocationInput) => locationService.addLocation(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.locations() })
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.current() })
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.locations() })
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.current() })
     },
   })
 }
@@ -31,7 +30,7 @@ export function useDeleteLocation() {
   return useMutation({
     mutationFn: (locationId: string) => locationService.deleteLocation(locationId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.locations() })
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.locations() })
     },
   })
 }
@@ -42,8 +41,8 @@ export function useSetDefaultLocation() {
   return useMutation({
     mutationFn: (locationId: string) => locationService.setDefaultLocation(locationId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.locations() })
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.current() })
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.locations() })
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.current() })
     },
   })
 }

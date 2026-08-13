@@ -6,8 +6,7 @@ import { CrosshairIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useUpdateProfile } from '@/hooks/user/useUser'
-import { useAddLocation } from '@/hooks/user/useLocation'
+import { useAddLocation, useUpdateProfile } from '@/hooks/user'
 import { cn } from '@/lib/utils'
 
 function normalizePhone(input: string): string | null {

@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { authService } from '@/lib/auth'
-import { queryKeys } from '@/lib/queryKeys'
+import { userQueryKeys } from '@/lib/user'
 import type {
   SignUpInput,
   SignInInput,
@@ -33,7 +33,7 @@ export function useSignIn() {
   return useMutation({
     mutationFn: (input: SignInInput) => authService.signIn(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.all })
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.all })
     },
   })
 }
@@ -59,7 +59,7 @@ export function useVerifyOtp() {
   return useMutation({
     mutationFn: (input: VerifyOtpInput) => authService.verifyOtp(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.all })
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.all })
 
       const flowType = new URLSearchParams(window.location.search).get('type')
       if (flowType === 'register') {

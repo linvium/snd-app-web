@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useAuthSession } from '@/context/AuthContext'
-import { useSignOut } from '@/hooks/auth/useAuth'
-import { useCurrentUser } from '@/hooks/user/useUser'
+import { useSignOut } from '@/hooks/auth'
+import { useCurrentUser } from '@/hooks/user'
 import { cn } from '@/lib/utils'
 import { getDisplayName, type SndUser } from '@/types'
 

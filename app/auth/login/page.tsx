@@ -6,8 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { TextField } from '@/components/ui/text-field'
 import PasswordInput from '@/components/auth/PasswordInput'
-import { useSignIn } from '@/hooks/auth/useAuth'
-import { validateEmail } from '@/lib/auth-validation'
+import { useSignIn } from '@/hooks/auth'
+import { validateEmail } from '@/lib/auth'
 
 function LoginForm() {
   const router = useRouter()

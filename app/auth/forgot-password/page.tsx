@@ -4,8 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { TextField } from '@/components/ui/text-field'
-import { useResetPassword } from '@/hooks/auth/useAuth'
-import { validateEmail } from '@/lib/auth-validation'
+import { useResetPassword } from '@/hooks/auth'
+import { validateEmail } from '@/lib/auth'
 
 export default function ForgotPasswordPage() {
   const resetPassword = useResetPassword()

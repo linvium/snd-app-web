@@ -36,6 +36,43 @@ Prefer clear English (`passwordStrength`, `formError`, `isLoading`) over transli
 
 ---
 
+## File naming
+
+Domain files use lowercase dotted names: `<name>.<kind>.ts`.
+
+| Kind | File | Role |
+|---|---|---|
+| service | `auth.service.ts` | External I/O (Supabase, HTTP APIs) |
+| query | `user.query.ts` | React Query keys for that domain |
+| hooks | `auth.hooks.ts` | React Query hooks |
+| helpers | `profile.helpers.ts` | Pure helpers (no I/O) |
+| validation | `auth.validation.ts` | Input validation |
+| types | `testimonials.types.ts` | Domain types |
+| webhook | `didit.webhook.ts` | Webhook verify / parse |
+| store | `kyc.store.ts` | Local/demo store |
+
+Other descriptive kinds follow the same pattern (`profile.completeness.ts`, `query.client.ts`).
+
+```typescript
+// ❌ BAD
+authService.ts
+useAuth.ts
+queryKeys.ts
+profileHelpers.ts
+
+// ✅ GOOD
+auth.service.ts
+auth.hooks.ts
+user.query.ts
+profile.helpers.ts
+```
+
+Do **not** nest a `services/` or `queries/` folder. Put the file in `lib/<domain>/` or `hooks/<domain>/`.
+
+React components stay PascalCase (`AddLocationForm.tsx`). ShadCN UI primitives stay kebab-case (`dropdown-menu.tsx`).
+
+---
+
 ## Data layer architecture
 
 ```
@@ -43,22 +80,19 @@ Component → Hook (React Query) → Service (Supabase) → Database
 ```
 
 Folder layout:
-- `lib/<domain>/` — domain modules, including Supabase services (auth, user, items, …)
-- `hooks/<domain>/` — React Query hooks that call `lib/<domain>/` services
-- `lib/queryKeys.ts` — all query keys
-- `lib/queryClient.ts` — QueryClient defaults
+- `lib/<domain>/` — domain modules, including `.service.ts` and `.query.ts` (auth, user, profiles, …)
+- `hooks/<domain>/` — `.hooks.ts` that call `lib/<domain>/` services
+- `lib/query.client.ts` — QueryClient defaults
 - `providers/QueryProvider.tsx` — wraps the app
-
-Do **not** nest a `services/` folder. Put `*Service.ts` next to other files in that domain (`lib/auth/authService.ts`, `lib/user/userService.ts`).
 
 Future domains get matching folders under both `lib/` and `hooks/` (items, bookings, messages).
 
 Hard rules:
-- Components **never** call Supabase or import `*Service` from `lib/`
+- Components **never** call Supabase or import `.service.ts` from `lib/`
 - Components call **only** hooks from `hooks/`
 - Hooks call **only** services from `lib/<domain>/`
-- Services call **only** `lib/supabase/*`
-- Query keys always come from `lib/queryKeys.ts` — never hardcode strings
+- Services call **only** `lib/supabase/*` (or the domain's external API)
+- Query keys always come from `lib/<domain>/*.query.ts` — never hardcode strings
 - Cache updates via `queryClient.invalidateQueries` / `clear` — no ad-hoc refetch in components
 - Session presence may still live in `context/AuthContext` for UI; mutations/queries go through hooks
 

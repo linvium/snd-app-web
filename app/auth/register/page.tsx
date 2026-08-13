@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label'
 import { TextField } from '@/components/ui/text-field'
 import PasswordInput from '@/components/auth/PasswordInput'
 import PasswordStrength from '@/components/auth/PasswordStrength'
-import { useSignUp } from '@/hooks/auth/useAuth'
-import { validateEmail, validatePassword } from '@/lib/auth-validation'
+import { useSignUp } from '@/hooks/auth'
+import { validateEmail, validatePassword } from '@/lib/auth'
 
 export default function RegisterPage() {
   const signUp = useSignUp()

@@ -8,8 +8,8 @@ import {
   useDeleteLocation,
   useLocations,
   useSetDefaultLocation,
-} from '@/hooks/user/useLocation'
-import { locationIcon } from '@/lib/profileHelpers'
+} from '@/hooks/user'
+import { locationIcon } from '@/lib/profiles'
 import { cn } from '@/lib/utils'
 import type { SndLocation } from '@/types'
 

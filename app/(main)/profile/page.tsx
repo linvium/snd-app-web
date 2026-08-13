@@ -3,17 +3,16 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { useSignOut } from '@/hooks/auth/useAuth'
-import { useCurrentUser } from '@/hooks/user/useUser'
-import { useLocations } from '@/hooks/user/useLocation'
-import { calculateProfileCompleteness } from '@/lib/profileCompleteness'
+import { useSignOut } from '@/hooks/auth'
+import { useCurrentUser, useLocations } from '@/hooks/user'
 import {
+  calculateProfileCompleteness,
   colorFromUserId,
   dismissCompletenessCard,
   formatMemberSince,
   getProfileInitials,
   isCompletenessCardDismissed,
-} from '@/lib/profileHelpers'
+} from '@/lib/profiles'
 import { cn } from '@/lib/utils'
 import { getDisplayName } from '@/types'
 

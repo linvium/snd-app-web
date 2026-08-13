@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyDecision } from "@/lib/kyc";
-import { store } from "@/lib/store";
+import { applyDecision, store } from "@/lib/kyc";
 import type { DiditWebhookPayload, SessionStatus } from "@/types/didit";
 
 const ALL_STATUSES: SessionStatus[] = [

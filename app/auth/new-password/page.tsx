@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import PasswordInput from '@/components/auth/PasswordInput'
 import PasswordStrength from '@/components/auth/PasswordStrength'
-import { useUpdatePassword } from '@/hooks/auth/useAuth'
-import { validatePassword } from '@/lib/auth-validation'
+import { useUpdatePassword } from '@/hooks/auth'
+import { validatePassword } from '@/lib/auth'
 
 export default function NewPasswordPage() {
   const updatePassword = useUpdatePassword()

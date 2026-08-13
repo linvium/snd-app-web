@@ -1,3 +1,5 @@
-export { createSession, getDecision } from './didit'
-export { verifyWebhook, isTimestampFresh } from './didit-webhook'
-export { applyDecision } from './kyc-status'
+export { createSession, getDecision } from './didit.service'
+export { verifyWebhook, isTimestampFresh } from './didit.webhook'
+export { applyDecision } from './kyc.status'
+export { store } from './kyc.store'
+export type { KycStore, KycVerification } from './kyc.store'

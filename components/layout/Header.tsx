@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { useAuthSession } from '@/context/AuthContext'
-import { useSignOut } from '@/hooks/auth/useAuth'
+import { useSignOut } from '@/hooks/auth'
 
 const ACCOUNT_MENU_ITEMS = [
   { href: '/profile', label: 'Moj profil' },

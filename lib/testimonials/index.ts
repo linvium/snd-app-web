@@ -1,2 +1,2 @@
-export { testimonialsService } from './testimonialsService'
-export type { Testimonial } from './types'
+export { testimonialsService } from './testimonials.service'
+export type { Testimonial } from './testimonials.types'

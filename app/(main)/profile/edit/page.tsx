@@ -7,13 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TextField } from '@/components/ui/text-field'
-import { useCurrentUser, useUpdateProfile } from '@/hooks/user/useUser'
-import { useLocations } from '@/hooks/user/useLocation'
+import { useCurrentUser, useLocations, useUpdateProfile } from '@/hooks/user'
 import {
   isValidSerbianPhone,
   normalizePhone,
   phoneLocalPart,
-} from '@/lib/profileHelpers'
+} from '@/lib/profiles'
 import { cn } from '@/lib/utils'
 
 export default function EditProfilePage() {

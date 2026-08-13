@@ -1,13 +1,12 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { userService } from '@/lib/user'
-import { queryKeys } from '@/lib/queryKeys'
+import { userQueryKeys, userService } from '@/lib/user'
 import type { UpdateProfileInput } from '@/types'
 
 export function useCurrentUser(enabled = true) {
   return useQuery({
-    queryKey: queryKeys.user.current(),
+    queryKey: userQueryKeys.current(),
     queryFn: () => userService.getCurrentUser(),
     staleTime: 5 * 60 * 1000,
     enabled,
@@ -20,14 +19,14 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: (input: UpdateProfileInput) => userService.updateProfile(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.all })
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.all })
     },
   })
 }
 
 export function usePublicProfile(userId: string) {
   return useQuery({
-    queryKey: queryKeys.user.public(userId),
+    queryKey: userQueryKeys.public(userId),
     queryFn: () => userService.getPublicProfile(userId),
     staleTime: 10 * 60 * 1000,
     enabled: !!userId,

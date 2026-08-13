@@ -54,20 +54,21 @@ Component → Hook (React Query) → Service (Supabase) → Database
 |---|---|
 | `app/` | Next.js rute (App Router) |
 | `components/` | UI komponente |
-| `hooks/<domain>/` | React Query hookovi |
-| `lib/<domain>/` | Domen moduli i Supabase servisi (`*Service.ts`) |
+| `hooks/<domain>/` | React Query hookovi (`*.hooks.ts`) |
+| `lib/<domain>/` | Domen moduli: `*.service.ts`, `*.query.ts`, `*.helpers.ts`, … |
 | `lib/supabase/` | Supabase klijenti |
-| `lib/queryKeys.ts` | Query keys |
 | `types/` | TypeScript tipovi |
 | `context/` | Auth session context (UI) |
 | `providers/` | React Query provider |
 
+**Imenovanje fajlova:** `<name>.<kind>.ts` — npr. `auth.service.ts`, `user.query.ts`, `auth.hooks.ts`, `profile.helpers.ts`.
+
 **Pravila:**
 
-- Komponente **ne** zovu Supabase i **ne** importuju `*Service` iz `lib/`
+- Komponente **ne** zovu Supabase i **ne** importuju `.service.ts` iz `lib/`
 - Komponente koriste samo hookove iz `hooks/`
 - Hookovi zovu samo servise iz `lib/<domain>/`
-- Query keyevi idu isključivo kroz `lib/queryKeys.ts`
+- Query keyevi idu isključivo kroz `lib/<domain>/*.query.ts`
 
 Identifikatori u kodu su na **engleskom**. UI tekst je na **srpskom** (latinica, ekavica).
 

@@ -1,4 +1,4 @@
-import { store } from "@/lib/store";
+import { store } from "./kyc.store";
 import type { DiditWebhookPayload, Decision } from "@/types/didit";
 
 const FEATURE_ARRAY_KEYS = [

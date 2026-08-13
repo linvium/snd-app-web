@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { store } from "@/lib/store";
+import { store } from "@/lib/kyc";
 
 interface DoneSearchParams {
   verificationSessionId?: string;

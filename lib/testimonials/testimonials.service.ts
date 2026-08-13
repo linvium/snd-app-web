@@ -1,4 +1,4 @@
-import type { Testimonial } from './types'
+import type { Testimonial } from './testimonials.types'
 
 const MOCK_TESTIMONIALS: Testimonial[] = [
   {

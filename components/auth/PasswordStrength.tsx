@@ -1,6 +1,6 @@
 'use client'
 
-import { getPasswordStrength } from '@/lib/auth-validation'
+import { getPasswordStrength } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 
 interface PasswordStrengthProps {
