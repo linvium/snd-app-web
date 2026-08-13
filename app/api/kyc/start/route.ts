@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSession } from "@/lib/kyc";
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentUserId } from "@/lib/auth/current-user.helpers";
 
 export async function POST() {
   const workflowId = process.env.DIDIT_WORKFLOW_ID;
