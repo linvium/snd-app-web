@@ -30,9 +30,12 @@ Aplikacija radi na [http://localhost:3000](http://localhost:3000).
 | `NEXT_PUBLIC_SUPABASE_URL` | URL Supabase projekta |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon/public ključ |
 | `NEXT_PUBLIC_APP_URL` | Javni URL aplikacije (npr. `http://localhost:3000`) |
+| `NEXT_PUBLIC_HOMEPAGE_MODE` | `landing` (privremena početna) ili `app` (prava platforma) |
 | `DIDIT_API_KEY` | Didit API ključ (KYC) |
 | `DIDIT_WORKFLOW_ID` | Didit workflow ID |
 | `DIDIT_WEBHOOK_SECRET` | Secret za Didit webhook |
+
+Waitlist emailovi sa landing početne idu u tabelu `waitlist_emails`. SQL je u `supabase/migrations/20260813120000_waitlist_emails.sql`.
 
 ## Skripte
 
