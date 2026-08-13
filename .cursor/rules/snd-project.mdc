@@ -43,18 +43,20 @@ Component → Hook (React Query) → Service (Supabase) → Database
 ```
 
 Folder layout:
-- `services/<domain>/` — Supabase calls only (auth, user, …)
-- `hooks/<domain>/` — React Query hooks that call services
+- `lib/<domain>/` — domain modules, including Supabase services (auth, user, items, …)
+- `hooks/<domain>/` — React Query hooks that call `lib/<domain>/` services
 - `lib/queryKeys.ts` — all query keys
 - `lib/queryClient.ts` — QueryClient defaults
 - `providers/QueryProvider.tsx` — wraps the app
 
-Future domains get matching folders under both `services/` and `hooks/` (items, bookings, messages).
+Do **not** nest a `services/` folder. Put `*Service.ts` next to other files in that domain (`lib/auth/authService.ts`, `lib/user/userService.ts`).
+
+Future domains get matching folders under both `lib/` and `hooks/` (items, bookings, messages).
 
 Hard rules:
-- Components **never** call Supabase or import from `services/`
+- Components **never** call Supabase or import `*Service` from `lib/`
 - Components call **only** hooks from `hooks/`
-- Hooks call **only** services from `services/`
+- Hooks call **only** services from `lib/<domain>/`
 - Services call **only** `lib/supabase/*`
 - Query keys always come from `lib/queryKeys.ts` — never hardcode strings
 - Cache updates via `queryClient.invalidateQueries` / `clear` — no ad-hoc refetch in components

@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { locationService } from '@/services/user/locationService'
+import { locationService } from '@/lib/user'
 import { queryKeys } from '@/lib/queryKeys'
 import type { AddLocationInput } from '@/types'
 

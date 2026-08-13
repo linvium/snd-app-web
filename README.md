@@ -55,17 +55,18 @@ Component → Hook (React Query) → Service (Supabase) → Database
 | `app/` | Next.js rute (App Router) |
 | `components/` | UI komponente |
 | `hooks/<domain>/` | React Query hookovi |
-| `services/<domain>/` | Supabase pozivi |
-| `lib/` | Shared utiliti, query keys, Supabase klijenti |
+| `lib/<domain>/` | Domen moduli i Supabase servisi (`*Service.ts`) |
+| `lib/supabase/` | Supabase klijenti |
+| `lib/queryKeys.ts` | Query keys |
 | `types/` | TypeScript tipovi |
 | `context/` | Auth session context (UI) |
 | `providers/` | React Query provider |
 
 **Pravila:**
 
-- Komponente **ne** zovu Supabase i **ne** importuju `services/`
+- Komponente **ne** zovu Supabase i **ne** importuju `*Service` iz `lib/`
 - Komponente koriste samo hookove iz `hooks/`
-- Hookovi zovu samo servise iz `services/`
+- Hookovi zovu samo servise iz `lib/<domain>/`
 - Query keyevi idu isključivo kroz `lib/queryKeys.ts`
 
 Identifikatori u kodu su na **engleskom**. UI tekst je na **srpskom** (latinica, ekavica).
