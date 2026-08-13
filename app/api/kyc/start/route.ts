@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSession } from "@/lib/didit";
+import { createSession } from "@/lib/kyc";
 import { getCurrentUserId } from "@/lib/auth";
 
 export async function POST() {

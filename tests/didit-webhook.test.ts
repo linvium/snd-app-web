@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createHmac } from "crypto";
-import { verifyWebhook } from "@/lib/didit-webhook";
+import { verifyWebhook } from "@/lib/kyc";
 
 const SECRET = "test-secret";
 

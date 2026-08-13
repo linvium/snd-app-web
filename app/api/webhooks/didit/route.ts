@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyWebhook } from "@/lib/didit-webhook";
-import { applyDecision } from "@/lib/kyc-status";
+import { applyDecision, verifyWebhook } from "@/lib/kyc";
 import { store } from "@/lib/store";
 import type { DiditWebhookPayload } from "@/types/didit";
 
