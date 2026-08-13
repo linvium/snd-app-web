@@ -64,7 +64,11 @@ export default function WaitlistForm() {
           <p className="m-0 text-[13px] text-destructive">{formErrorMessage}</p>
         ) : null}
       </div>
-      <Button type="submit" loading={joinWaitlist.isPending} className="h-11 sm:w-auto">
+      <Button
+        type="submit"
+        loading={joinWaitlist.isPending}
+        className="h-11 border-transparent bg-[#f0b010] text-[#001a36] hover:bg-[#e0a40e] hover:text-[#001a36] sm:w-auto"
+      >
         Prijavi me
       </Button>
     </form>
