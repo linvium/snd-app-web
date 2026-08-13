@@ -1,8 +1,10 @@
 import type { SndUser, SndLocation, ProfileCompleteness } from '@/types'
+import type { KycDbStatus } from '@/types/kyc'
 
 export function calculateProfileCompleteness(
   user: SndUser | null | undefined,
-  locations: SndLocation[]
+  locations: SndLocation[],
+  kycStatus?: KycDbStatus | null
 ): ProfileCompleteness {
   const profile = user?.user_profiles
 
@@ -45,7 +47,7 @@ export function calculateProfileCompleteness(
     },
     {
       name: 'KYC verifikacija',
-      completed: false, // implement when KYC module lands
+      completed: kycStatus === 'verified',
       link: '/profile/verification',
       weight: 10,
     },

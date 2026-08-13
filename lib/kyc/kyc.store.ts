@@ -1,58 +1,77 @@
-import type { Decision, SessionStatus } from "@/types/didit";
+import { createAdminClient } from '@/lib/supabase/admin'
+import type { KycVerificationRecord } from '@/types/kyc'
+import type { Database } from '@/types/supabase'
 
-export interface KycVerification {
-  vendorData: string;
-  sessionId: string;
-  status: SessionStatus;
-  verifiedAt: string | null;
-  decision: Decision | null;
-  updatedAt: string;
+type KycRow = Database['public']['Tables']['kyc_verifications']['Row']
+
+function rowToRecord(row: KycRow): KycVerificationRecord {
+  return {
+    userId: row.user_id,
+    sessionId: row.provider_session_id,
+    provider: row.provider,
+    status: row.status,
+    verifiedAt: row.verified_at,
+    rejectedReason: row.rejected_reason,
+    expiresAt: row.expires_at,
+    updatedAt: row.updated_at,
+  }
 }
 
-export interface KycStore {
-  upsertVerification(v: KycVerification): Promise<void>;
-  getVerificationByVendorData(vendorData: string): Promise<KycVerification | null>;
-  getVerificationBySessionId(sessionId: string): Promise<KycVerification | null>;
+export const store = {
+  async upsertVerification(v: KycVerificationRecord): Promise<void> {
+    const { error } = await createAdminClient().from('kyc_verifications').upsert(
+      {
+        user_id: v.userId,
+        provider: v.provider,
+        provider_session_id: v.sessionId,
+        status: v.status,
+        verified_at: v.verifiedAt,
+        rejected_reason: v.rejectedReason,
+        expires_at: v.expiresAt,
+        updated_at: v.updatedAt,
+      },
+      { onConflict: 'user_id' }
+    )
+    if (error) throw error
+  },
+
+  async getVerificationByUserId(userId: string): Promise<KycVerificationRecord | null> {
+    const { data, error } = await createAdminClient()
+      .from('kyc_verifications')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (error) throw error
+    return data ? rowToRecord(data) : null
+  },
+
+  async getVerificationBySessionId(sessionId: string): Promise<KycVerificationRecord | null> {
+    const { data, error } = await createAdminClient()
+      .from('kyc_verifications')
+      .select('*')
+      .eq('provider_session_id', sessionId)
+      .maybeSingle()
+    if (error) throw error
+    return data ? rowToRecord(data) : null
+  },
 
   /** Returns false (no-op) if event_id was already seen. */
-  recordWebhookEvent(eventId: string): Promise<boolean>;
-  hasWebhookEvent(eventId: string): Promise<boolean>;
-}
-
-class InMemoryKycStore implements KycStore {
-  private byVendorData = new Map<string, KycVerification>();
-  private bySessionId = new Map<string, KycVerification>();
-  private webhookEventIds = new Set<string>();
-
-  async upsertVerification(v: KycVerification): Promise<void> {
-    this.byVendorData.set(v.vendorData, v);
-    this.bySessionId.set(v.sessionId, v);
-  }
-
-  async getVerificationByVendorData(vendorData: string): Promise<KycVerification | null> {
-    return this.byVendorData.get(vendorData) ?? null;
-  }
-
-  async getVerificationBySessionId(sessionId: string): Promise<KycVerification | null> {
-    return this.bySessionId.get(sessionId) ?? null;
-  }
-
   async recordWebhookEvent(eventId: string): Promise<boolean> {
-    if (this.webhookEventIds.has(eventId)) return false;
-    this.webhookEventIds.add(eventId);
-    return true;
-  }
+    const { error } = await createAdminClient().from('kyc_webhook_events').insert({ event_id: eventId })
+    if (error) {
+      if (error.code === '23505') return false
+      throw error
+    }
+    return true
+  },
 
   async hasWebhookEvent(eventId: string): Promise<boolean> {
-    return this.webhookEventIds.has(eventId);
-  }
+    const { data, error } = await createAdminClient()
+      .from('kyc_webhook_events')
+      .select('event_id')
+      .eq('event_id', eventId)
+      .maybeSingle()
+    if (error) throw error
+    return Boolean(data)
+  },
 }
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __kycStore: KycStore | undefined;
-}
-
-// Survives HMR/module reloads in dev; a real DB wouldn't need this.
-export const store: KycStore = globalThis.__kycStore ?? new InMemoryKycStore();
-globalThis.__kycStore = store;
