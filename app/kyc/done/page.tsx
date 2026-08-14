@@ -1,12 +1,9 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import Logo from '@/components/ui/Logo'
-import { getDecision } from '@/lib/kyc/didit.service'
 import { isTerminalKycStatus, kycStatusLabel } from '@/lib/kyc/kyc.helpers'
-import { applyDecision } from '@/lib/kyc/kyc.status'
-import { store } from '@/lib/kyc/kyc.store'
 import { cn } from '@/lib/utils'
-import type { DiditWebhookPayload, SessionStatus } from '@/types/didit'
+import type { SessionStatus } from '@/types/didit'
 import type { KycDbStatus, KycVerificationRecord } from '@/types/kyc'
 import { KycDoneFollowUp } from './KycDoneFollowUp'
 
@@ -54,27 +51,25 @@ function leadCopy(status: KycDbStatus | undefined): string {
 }
 
 async function loadRecord(sessionId: string): Promise<KycVerificationRecord | null> {
-  const existing = await store.getVerificationBySessionId(sessionId)
-  if (existing && isTerminalKycStatus(existing.status)) return existing
-
-  try {
-    const decision = await getDecision(sessionId)
-    const payload: DiditWebhookPayload = {
-      event_id: `decision-fallback:${sessionId}:${decision.status}`,
-      webhook_type: 'status.updated',
-      session_id: decision.session_id,
-      status: decision.status,
-      vendor_data: decision.vendor_data,
-      environment: decision.environment,
-      decision,
-    }
-    await applyDecision(payload)
-  } catch (err) {
-    console.error('KYC decision fallback failed:', err)
-    if (existing) return existing
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !anonKey) {
+    console.error('NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set')
+    return null
   }
 
-  return store.getVerificationBySessionId(sessionId)
+  const res = await fetch(
+    `${url}/functions/v1/kyc-sync?session_id=${encodeURIComponent(sessionId)}`,
+    {
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+      },
+      cache: 'no-store',
+    }
+  )
+  if (!res.ok) return null
+  return res.json() as Promise<KycVerificationRecord>
 }
 
 export default async function KycDonePage({

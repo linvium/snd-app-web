@@ -25,15 +25,14 @@ Aplikacija radi na [http://localhost:3000](http://localhost:3000).
 
 ### Env varijable
 
-| Varijabla | Opis |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | URL Supabase projekta |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon/public ključ |
-| `NEXT_PUBLIC_APP_URL` | Javni URL aplikacije (npr. `http://localhost:3000`) |
-| `NEXT_PUBLIC_HOMEPAGE_MODE` | `landing` (privremena početna) ili `app` (prava platforma) |
-| `DIDIT_API_KEY` | Didit API ključ (KYC) |
-| `DIDIT_WORKFLOW_ID` | Didit workflow ID |
-| `DIDIT_WEBHOOK_SECRET` | Secret za Didit webhook |
+| Varijabla                       | Opis                                                       |
+| ------------------------------- | ---------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | URL Supabase projekta                                      |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon/public ključ                                          |
+| `NEXT_PUBLIC_APP_URL`           | Javni URL aplikacije (npr. `http://localhost:3000`)        |
+| `NEXT_PUBLIC_HOMEPAGE_MODE`     | `landing` (privremena početna) ili `app` (prava platforma) |
+
+Didit KYC (`DIDIT_API_KEY`, `DIDIT_WORKFLOW_ID`, `DIDIT_WEBHOOK_SECRET`, `DIDIT_ENVIRONMENT`, `APP_URL`) ide u **Supabase Edge secrets**, ne na Vercel.
 
 Waitlist emailovi sa landing početne idu u tabelu `waitlist_emails`. SQL je u `supabase/migrations/20260813120000_waitlist_emails.sql`.
 
@@ -53,16 +52,16 @@ npm test         # Vitest
 Component → Hook (React Query) → Service (Supabase) → Database
 ```
 
-| Folder | Uloga |
-|---|---|
-| `app/` | Next.js rute (App Router) |
-| `components/` | UI komponente |
-| `hooks/<domain>/` | React Query hookovi (`*.hooks.ts`) |
-| `lib/<domain>/` | Domen moduli: `*.service.ts`, `*.query.ts`, `*.helpers.ts`, … |
-| `lib/supabase/` | Supabase klijenti |
-| `types/` | TypeScript tipovi |
-| `context/` | Auth session context (UI) |
-| `providers/` | React Query provider |
+| Folder            | Uloga                                                         |
+| ----------------- | ------------------------------------------------------------- |
+| `app/`            | Next.js rute (App Router)                                     |
+| `components/`     | UI komponente                                                 |
+| `hooks/<domain>/` | React Query hookovi (`*.hooks.ts`)                            |
+| `lib/<domain>/`   | Domen moduli: `*.service.ts`, `*.query.ts`, `*.helpers.ts`, … |
+| `lib/supabase/`   | Supabase klijenti                                             |
+| `types/`          | TypeScript tipovi                                             |
+| `context/`        | Auth session context (UI)                                     |
+| `providers/`      | React Query provider                                          |
 
 **Imenovanje fajlova:** `<name>.<kind>.ts` — npr. `auth.service.ts`, `user.query.ts`, `auth.hooks.ts`, `profile.helpers.ts`.
 
@@ -78,36 +77,39 @@ Identifikatori u kodu su na **engleskom**. UI tekst je na **srpskom** (latinica,
 ## Rute (trenutno)
 
 ### Auth
-| Ruta | Opis |
-|---|---|
-| `/auth/login` | Prijava |
-| `/auth/register` | Registracija |
-| `/auth/verify` | OTP verifikacija emaila |
-| `/auth/welcome` | Onboarding nakon registracije |
-| `/auth/forgot-password` | Reset lozinke |
-| `/auth/new-password` | Nova lozinka |
+
+| Ruta                    | Opis                          |
+| ----------------------- | ----------------------------- |
+| `/auth/login`           | Prijava                       |
+| `/auth/register`        | Registracija                  |
+| `/auth/verify`          | OTP verifikacija emaila       |
+| `/auth/welcome`         | Onboarding nakon registracije |
+| `/auth/forgot-password` | Reset lozinke                 |
+| `/auth/new-password`    | Nova lozinka                  |
 
 ### Glavne
-| Ruta | Opis |
-|---|---|
-| `/` | Početna |
-| `/search` | Pretraga, lista rezultata i mapa |
-| `/categories` | Sve popunjene kategorije |
-| `/category/<slug>` | Prečica na `/search?category=<slug>` |
-| `/profile` | Pregled profila |
-| `/profile/edit` | Izmena ličnih podataka |
-| `/profile/locations` | Lokacije korisnika |
-| `/kyc` | KYC tok (Didit) |
+
+| Ruta                 | Opis                                 |
+| -------------------- | ------------------------------------ |
+| `/`                  | Početna                              |
+| `/search`            | Pretraga, lista rezultata i mapa     |
+| `/categories`        | Sve popunjene kategorije             |
+| `/category/<slug>`   | Prečica na `/search?category=<slug>` |
+| `/profile`           | Pregled profila                      |
+| `/profile/edit`      | Izmena ličnih podataka               |
+| `/profile/locations` | Lokacije korisnika                   |
+| `/kyc`               | KYC tok (Didit)                      |
 
 Zaštićene rute (middleware): `/profile`, `/auth/welcome`, `/messages`, `/bookings`, `/listings/new`.
 
 ### API
-| Ruta | Opis |
-|---|---|
-| `GET /api/v1/listings/search` | Pretraga oglasa |
-| `GET /api/v1/listings/search/pins` | Pinovi za mapu (lakši upit, maks. 500) |
-| `GET /api/v1/listings/recent` | Nedavno objavljeni (sekcija „Možda te zanima") |
-| `GET /api/v1/categories` | Stablo popunjenih kategorija |
+
+| Ruta                               | Opis                                           |
+| ---------------------------------- | ---------------------------------------------- |
+| `GET /api/v1/listings/search`      | Pretraga oglasa                                |
+| `GET /api/v1/listings/search/pins` | Pinovi za mapu (lakši upit, maks. 500)         |
+| `GET /api/v1/listings/recent`      | Nedavno objavljeni (sekcija „Možda te zanima") |
+| `GET /api/v1/categories`           | Stablo popunjenih kategorija                   |
 
 ## Pretraga
 
@@ -117,13 +119,13 @@ Filtriranje se radi u bazi, jer su filteri međuzavisni — radijus određuje ko
 redovi postoje, dostupnost koji od njih preživljavaju, i tek onda se može
 prebrojati ukupan broj.
 
-| Funkcija | Uloga |
-|---|---|
-| `snd_filter_listings` | Koraci 1–6 iz §7.1. Interna, nije dostupna klijentu. |
-| `snd_search_listings` | Jedna strana rezultata |
-| `snd_search_pins` | Pinovi za mapu |
-| `snd_search_suggestion` | „Da li si mislio…" |
-| `snd_category_tree` | Popunjene kategorije sa zbirnim brojevima |
+| Funkcija                | Uloga                                                |
+| ----------------------- | ---------------------------------------------------- |
+| `snd_filter_listings`   | Koraci 1–6 iz §7.1. Interna, nije dostupna klijentu. |
+| `snd_search_listings`   | Jedna strana rezultata                               |
+| `snd_search_pins`       | Pinovi za mapu                                       |
+| `snd_search_suggestion` | „Da li si mislio…"                                   |
+| `snd_category_tree`     | Popunjene kategorije sa zbirnim brojevima            |
 
 **Bezbednosno pravilo:** funkcije su `SECURITY DEFINER` da bi mogle da čitaju
 `locations` (koji je pod RLS-om vidljiv samo vlasniku), ali čitaju **isključivo**
@@ -140,14 +142,14 @@ identifikatorima i putanjama
 (`docs/superpowers/specs/2026-08-12-english-routes-identifiers-design.md`).
 Značenje parametara je nepromenjeno, samo naziv:
 
-| Dokument 03 | Ovde |
-|---|---|
-| `grad` | `city` |
-| `od` / `do` | `from` / `to` |
-| `kategorija` | `category` |
+| Dokument 03             | Ovde                      |
+| ----------------------- | ------------------------- |
+| `grad`                  | `city`                    |
+| `od` / `do`             | `from` / `to`             |
+| `kategorija`            | `category`                |
 | `cena_min` / `cena_max` | `price_min` / `price_max` |
-| `radijus` | `radius` |
-| `mapa` | `map` |
+| `radijus`               | `radius`                  |
+| `mapa`                  | `map`                     |
 
 Demo podaci za rad na stranici: `supabase/seed/demo_listings.sql` (pokreće se
 ručno, nije migracija).
