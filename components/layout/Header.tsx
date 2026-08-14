@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import Logo from '@/components/ui/Logo'
+import HeaderSearch from '@/components/search/HeaderSearch'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -33,7 +35,12 @@ function getInitials(email?: string | null) {
 export default function Header() {
   const { user, loading } = useAuthSession()
   const signOut = useSignOut()
+  const pathname = usePathname()
   const [hasShadow, setHasShadow] = useState(false)
+
+  // Every page but the home page carries the search bar, so a new search can
+  // be started from wherever the user happens to be (doc 03 §4).
+  const showsSearch = pathname !== '/'
 
   useEffect(() => {
     const onScroll = () => setHasShadow(window.scrollY > 20)
@@ -49,11 +56,11 @@ export default function Header() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 h-14 bg-card transition-shadow duration-200 ease-in-out md:h-[72px]',
+        'sticky top-0 z-30 bg-card transition-shadow duration-200 ease-in-out',
         hasShadow && 'shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
       )}
     >
-      <div className="mx-auto flex h-full max-w-[1120px] items-center justify-between gap-4 px-4">
+      <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between gap-4 px-4 md:h-[72px]">
         <Link href="/" aria-label="SND početna">
           <Logo size="sm" />
         </Link>
@@ -127,6 +134,17 @@ export default function Header() {
           )}
         </div>
       </div>
+
+      {showsSearch ? (
+        <div className="border-t border-border px-4 py-2.5 md:border-none md:pt-0 md:pb-3">
+          <div className="mx-auto max-w-[1120px]">
+            {/* useSearchParams needs a boundary; the bar is not worth blocking on. */}
+            <Suspense fallback={<div className="h-11" />}>
+              <HeaderSearch />
+            </Suspense>
+          </div>
+        </div>
+      ) : null}
     </header>
   )
 }

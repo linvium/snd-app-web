@@ -1,4 +1,6 @@
 export * from './auth'
 export * from './user'
 export * from './kyc'
+export * from './category'
+export * from './search'
 export type { Database } from './supabase'
