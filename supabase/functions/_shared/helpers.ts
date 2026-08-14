@@ -1,11 +1,14 @@
-import type { SessionStatus } from '@/types/didit'
-import type { KycDbStatus } from '@/types/kyc'
+import type { KycDbStatus, SessionStatus } from './types.ts'
 
 const USER_ID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export function isUserIdVendorData(value: string | undefined | null): value is string {
   return typeof value === 'string' && USER_ID_RE.test(value)
+}
+
+export function getDiditEnvironment(): 'sandbox' | 'live' {
+  return Deno.env.get('DIDIT_ENVIRONMENT') === 'live' ? 'live' : 'sandbox'
 }
 
 export type MappedKycStatus = {
@@ -42,7 +45,6 @@ export function isTerminalKycStatus(status: KycDbStatus): boolean {
   return status === 'verified' || status === 'rejected' || status === 'expired'
 }
 
-/** Do not regress a verified row back to in_progress. Kyc Expired → expired is allowed. */
 export function shouldApplyMappedStatus(
   existing: KycDbStatus | null | undefined,
   next: KycDbStatus
@@ -51,19 +53,17 @@ export function shouldApplyMappedStatus(
   return true
 }
 
-export function kycStatusLabel(status: KycDbStatus): string {
-  switch (status) {
-    case 'verified':
-      return 'Identitet potvrđen'
-    case 'rejected':
-      return 'Verifikacija odbijena'
-    case 'expired':
-      return 'Verifikacija istekla'
-    case 'in_progress':
-      return 'Verifikacija u toku'
-    case 'pending_payment':
-      return 'Čeka se plaćanje'
-    case 'not_started':
-      return 'Nije započeto'
-  }
+export function jsonResponse(body: unknown, status = 200, extraHeaders?: HeadersInit): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      ...extraHeaders,
+    },
+  })
+}
+
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }

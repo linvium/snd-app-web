@@ -31,9 +31,21 @@ Aplikacija radi na [http://localhost:3000](http://localhost:3000).
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon/public ključ |
 | `NEXT_PUBLIC_APP_URL` | Javni URL aplikacije (npr. `http://localhost:3000`) |
 | `NEXT_PUBLIC_HOMEPAGE_MODE` | `landing` (privremena početna) ili `app` (prava platforma) |
-| `DIDIT_API_KEY` | Didit API ključ (KYC) |
-| `DIDIT_WORKFLOW_ID` | Didit workflow ID |
-| `DIDIT_WEBHOOK_SECRET` | Secret za Didit webhook |
+
+Didit KYC (`DIDIT_API_KEY`, `DIDIT_WORKFLOW_ID`, `DIDIT_WEBHOOK_SECRET`, `DIDIT_ENVIRONMENT`, `APP_URL`) ide u **Supabase Edge secrets**, ne na Vercel.
+
+```bash
+supabase secrets set \
+  DIDIT_API_KEY=... \
+  DIDIT_WORKFLOW_ID=... \
+  DIDIT_WEBHOOK_SECRET=... \
+  DIDIT_ENVIRONMENT=live \
+  APP_URL=https://dev.stvarnadan.rs \
+  --project-ref xdthlucvjobsfcknypwe
+```
+
+Webhook destinacija (samo event `status.updated`):
+`https://xdthlucvjobsfcknypwe.supabase.co/functions/v1/didit-webhook`
 
 Waitlist emailovi sa landing početne idu u tabelu `waitlist_emails`. SQL je u `supabase/migrations/20260813120000_waitlist_emails.sql`.
 

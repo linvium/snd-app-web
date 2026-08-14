@@ -45,13 +45,21 @@ export const kycService = {
   },
 
   start: async (): Promise<StartKycResult> => {
-    const res = await fetch('/api/kyc/start', { method: 'POST' })
-    if (res.status === 401) {
-      throw new Error('Nije prijavljen')
-    }
-    if (!res.ok) {
+    const supabase = createClient()
+    const { data, error } = await supabase.functions.invoke<StartKycResult>('kyc-start', {
+      method: 'POST',
+    })
+
+    if (error) {
+      const status = (error as { context?: Response }).context?.status
+      if (status === 401) {
+        throw new Error('Nije prijavljen')
+      }
       throw new Error('Ne mogu da pokrenem verifikaciju. Pokušaj ponovo.')
     }
-    return res.json() as Promise<StartKycResult>
+    if (!data) {
+      throw new Error('Ne mogu da pokrenem verifikaciju. Pokušaj ponovo.')
+    }
+    return data
   },
 }
