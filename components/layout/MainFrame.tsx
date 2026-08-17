@@ -8,6 +8,7 @@ import { isLandingHomepage } from '@/lib/home/homepage-mode'
 export default function MainFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isLandingHome = isLandingHomepage() && pathname === '/'
+  const isPublishFlow = pathname.startsWith('/listings/new')
 
   if (isLandingHome) {
     return <>{children}</>
@@ -16,8 +17,10 @@ export default function MainFrame({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">{children}</div>
-      <BottomNav />
+      <div className={isPublishFlow ? 'pb-0' : 'pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0'}>
+        {children}
+      </div>
+      {isPublishFlow ? null : <BottomNav />}
     </div>
   )
 }

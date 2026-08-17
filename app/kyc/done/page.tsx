@@ -47,7 +47,7 @@ function leadCopy(status: KycDbStatus | undefined): string {
   if (status === 'expired') {
     return 'Verifikacija je istekla. Možeš da je pokreneš ponovo sa profila.'
   }
-  return 'Još uvek obrađujemo verifikaciju. Ostani na stranici — čim bude gotovo, vraćamo te na profil.'
+  return 'Još uvek obrađujemo verifikaciju. Ostani na stranici - čim bude gotovo, vraćamo te na profil.'
 }
 
 async function loadRecord(sessionId: string): Promise<KycVerificationRecord | null> {
