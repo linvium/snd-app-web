@@ -161,3 +161,40 @@
     font: inherit;
   }
 }
+
+/* Full-screen mobile sheets rise from the bottom in 250 ms (doc 03 §5.3). */
+@keyframes snd-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [style*='snd-slide-up'] {
+    animation: none !important;
+  }
+}
+
+/* Leaflet paints its own controls; these align them with the design system. */
+.leaflet-container {
+  font: inherit;
+  background: var(--muted);
+}
+
+.leaflet-container a {
+  color: var(--brand-600);
+}
+
+.leaflet-control-attribution {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Markers are rendered as HTML so a pin can be a real, focusable button. */
+.snd-marker {
+  background: transparent;
+  border: none;
+}

@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRightIcon, XIcon } from 'lucide-react'
+import { BadgeCheckIcon, ChevronRightIcon, XIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSignOut } from '@/hooks/auth'
+import { useKycVerification } from '@/hooks/kyc'
 import { useCurrentUser, useLocations } from '@/hooks/user'
 import {
   calculateProfileCompleteness,
@@ -20,6 +21,7 @@ import { getDisplayName } from '@/types'
 const NAV_LINKS = [
   { name: 'Izmeni profil', href: '/profile/edit' },
   { name: 'Moje lokacije', href: '/profile/locations' },
+  { name: 'Verifikacija', href: '/profile/verification' },
   { name: 'Moji oglasi', href: '/profile/listings' },
   { name: 'Omiljeni', href: '/profile/favorites' },
   { name: 'Podešavanja', href: '/profile/settings' },
@@ -59,18 +61,21 @@ function CompletenessCard({
         Tvoj profil je {percentage}% popunjen
       </p>
 
-      <svg
+      <div
         role="progressbar"
         aria-valuenow={percentage}
         aria-valuemin={0}
         aria-valuemax={100}
-        className={cn('block h-2 w-full', missingItems.length ? 'mb-3.5' : 'mb-0')}
-        viewBox="0 0 100 8"
-        preserveAspectRatio="none"
+        className={cn(
+          'h-1.5 w-full overflow-hidden rounded-full bg-muted',
+          missingItems.length ? 'mb-3.5' : 'mb-0'
+        )}
       >
-        <rect width="100" height="8" rx="4" className="fill-muted" />
-        <rect width={percentage} height="8" rx="4" className="fill-brand-500" />
-      </svg>
+        <div
+          className="h-full bg-brand-500"
+          style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+        />
+      </div>
 
       {missingItems.length > 0 ? (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
@@ -90,6 +95,7 @@ function CompletenessCard({
 export default function ProfilePage() {
   const { data: user, isLoading: userLoading } = useCurrentUser()
   const { data: locations = [], isLoading: locationsLoading } = useLocations()
+  const { data: kyc, isLoading: kycLoading } = useKycVerification()
   const signOut = useSignOut()
   const [cardHidden, setCardHidden] = useState(true)
 
@@ -97,7 +103,7 @@ export default function ProfilePage() {
     setCardHidden(isCompletenessCardDismissed())
   }, [])
 
-  if (userLoading || locationsLoading) {
+  if (userLoading || locationsLoading || kycLoading) {
     return <div className="py-6 text-sm text-muted-foreground">Učitavanje profila…</div>
   }
 
@@ -108,8 +114,9 @@ export default function ProfilePage() {
   const profile = user.user_profiles
   const displayName = getDisplayName(profile, user.email)
   const initials = getProfileInitials(profile?.first_name, profile?.last_name, user.email)
-  const completeness = calculateProfileCompleteness(user, locations)
+  const completeness = calculateProfileCompleteness(user, locations, kyc?.status)
   const showCompleteness = !cardHidden && completeness.percentage < 100
+  const isVerified = kyc?.status === 'verified'
 
   return (
     <div className="flex flex-col gap-4">
@@ -123,7 +130,16 @@ export default function ProfilePage() {
           </svg>
           <span className="relative z-[1]">{initials}</span>
         </div>
-        <h1 className="mb-1 text-[22px] font-normal text-foreground">{displayName}</h1>
+        <h1 className="mb-1 flex items-center justify-center gap-1.5 text-[22px] font-normal text-foreground">
+          <span>{displayName}</span>
+          {isVerified ? (
+            <BadgeCheckIcon
+              className="size-5 shrink-0 text-brand-500"
+              strokeWidth={2}
+              aria-label="Identitet potvrđen"
+            />
+          ) : null}
+        </h1>
         <p className="mb-1 text-sm text-muted-foreground">{user.email}</p>
         {user.created_at ? (
           <p className="mb-[18px] text-[13px] text-muted-foreground/80">

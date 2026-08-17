@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useJoinWaitlist } from '@/hooks/waitlist'
 import { validateEmail } from '@/lib/waitlist'
+import { cn } from '@/lib/utils'
 
-export default function WaitlistForm() {
+export default function WaitlistForm({ tone = 'light' }: { tone?: 'light' | 'dark' }) {
   const joinWaitlist = useJoinWaitlist()
   const [email, setEmail] = useState('')
   const [emailError, setEmailError] = useState('')
   const [showErrors, setShowErrors] = useState(false)
+  const isDark = tone === 'dark'
 
   const submitted = joinWaitlist.isSuccess
 
@@ -29,9 +31,18 @@ export default function WaitlistForm() {
   if (submitted) {
     return (
       <div className="flex w-full flex-col items-center gap-4" role="status">
-        <CircleCheckBigIcon className="size-24 text-[#209080]" strokeWidth={1.75} aria-hidden />
-        <p className="m-0 text-[22px] leading-snug font-medium tracking-[-0.03em] text-[#001a36]">
-          Super. Javićemo ti čim krenemo.
+        <CircleCheckBigIcon
+          className={cn('size-20', isDark ? 'text-[#f0b010]' : 'text-[#209080]')}
+          strokeWidth={1.75}
+          aria-hidden
+        />
+        <p
+          className={cn(
+            'm-0 text-[22px] leading-snug font-medium tracking-[-0.03em]',
+            isDark ? 'text-white' : 'text-[#001a36]'
+          )}
+        >
+          Super. Javićemo ti pre 15. septembra.
         </p>
       </div>
     )
@@ -62,16 +73,27 @@ export default function WaitlistForm() {
             if (showErrors || emailError) setEmailError(validateEmail(event.target.value))
           }}
           onBlur={() => setEmailError(validateEmail(email))}
+          className={cn(
+            isDark &&
+              'h-12 border-white/20 bg-white/10 text-white placeholder:text-white/40 focus-visible:border-[#f0b010] focus-visible:ring-[#f0b010]/25'
+          )}
         />
-        {emailError ? <p className="m-0 text-[13px] text-destructive">{emailError}</p> : null}
+        {emailError ? (
+          <p className={cn('m-0 text-[13px]', isDark ? 'text-red-300' : 'text-destructive')}>{emailError}</p>
+        ) : null}
         {formErrorMessage ? (
-          <p className="m-0 text-[13px] text-destructive">{formErrorMessage}</p>
+          <p className={cn('m-0 text-[13px]', isDark ? 'text-red-300' : 'text-destructive')}>
+            {formErrorMessage}
+          </p>
         ) : null}
       </div>
       <Button
         type="submit"
         loading={joinWaitlist.isPending}
-        className="h-11 border-transparent bg-[#f0b010] text-[#001a36] hover:bg-[#e0a40e] hover:text-[#001a36] sm:w-auto"
+        className={cn(
+          'h-11 border-transparent bg-[#f0b010] text-[#001a36] hover:bg-[#e0a40e] hover:text-[#001a36] sm:w-auto',
+          isDark && 'h-12 px-6'
+        )}
       >
         Prijavi me
       </Button>
