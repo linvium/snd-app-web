@@ -6,7 +6,7 @@ import { ListingCardSkeleton } from '@/components/listings/ListingCard'
 
 export const metadata: Metadata = {
   title: 'Pretraga | SND',
-  description: 'Pronađi šta ti treba u svom kraju — za datume koji ti odgovaraju.',
+  description: 'Pronađi šta ti treba u svom kraju - za datume koji ti odgovaraju.',
 }
 
 export default function SearchPage() {

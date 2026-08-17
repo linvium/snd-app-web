@@ -128,7 +128,7 @@ export function resultsHeading(
   }
 
   if (source === 'user_gps' || source === 'user_profile') {
-    return `${items} — najbliže tebi u ${locativeCity(cityName)}`
+    return `${items} - najbliže tebi u ${locativeCity(cityName)}`
   }
 
   return `${items} u ${locativeCity(cityName)}`

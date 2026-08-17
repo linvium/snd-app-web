@@ -289,7 +289,7 @@ function PriceFilter({
                 className="h-11 w-full rounded-md border border-input bg-card px-3 text-base outline-none focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-100"
               />
             </label>
-            <span className="mt-6 text-zinc-400">–</span>
+            <span className="mt-6 text-zinc-400">-</span>
             <label className="flex-1">
               <span className="mb-1 block text-[13px] font-medium text-zinc-700">Do</span>
               <input

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { PageLoading } from '@/components/ui/page-loading'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TextField } from '@/components/ui/text-field'
@@ -92,7 +93,7 @@ export default function EditProfilePage() {
   }
 
   if (userLoading || locationsLoading) {
-    return <div className="py-6 text-sm text-muted-foreground">Učitavanje…</div>
+    return <PageLoading>Učitavanje…</PageLoading>
   }
 
   return (
@@ -211,7 +212,7 @@ export default function EditProfilePage() {
               <option value="">Nije izabrano</option>
               {locations.map((location) => (
                 <option key={location.id} value={location.id}>
-                  {location.label} — {location.street}, {location.city}
+                  {location.label} - {location.street}, {location.city}
                 </option>
               ))}
             </select>

@@ -21,7 +21,7 @@ import { useSignOut } from '@/hooks/auth'
 
 const ACCOUNT_MENU_ITEMS = [
   { href: '/profile', label: 'Moj profil' },
-  { href: '/moji-oglasi', label: 'Moji oglasi' },
+  { href: '/profile/listings', label: 'Moji oglasi' },
   { href: '/bookings', label: 'Moje rezervacije' },
   { href: '/messages', label: 'Poruke' },
   { href: '/omiljeni', label: 'Omiljeni' },

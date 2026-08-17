@@ -10,4 +10,6 @@ export const categoryKeys = {
       lng === null ? null : Number(lng.toFixed(1)),
       radiusKm,
     ] as const,
+  catalog: () => [...categoryKeys.all, 'catalog'] as const,
+  suggest: (title: string) => [...categoryKeys.all, 'suggest', title.trim().toLowerCase()] as const,
 }

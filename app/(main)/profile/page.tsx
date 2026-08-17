@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BadgeCheckIcon, ChevronRightIcon, XIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { PageLoading } from '@/components/ui/page-loading'
 import { useSignOut } from '@/hooks/auth'
 import { useKycVerification } from '@/hooks/kyc'
 import { useCurrentUser, useLocations } from '@/hooks/user'
@@ -104,7 +105,7 @@ export default function ProfilePage() {
   }, [])
 
   if (userLoading || locationsLoading || kycLoading) {
-    return <div className="py-6 text-sm text-muted-foreground">Učitavanje profila…</div>
+    return <PageLoading>Učitavanje profila…</PageLoading>
   }
 
   if (!user) {

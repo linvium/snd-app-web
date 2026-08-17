@@ -1,9 +1,24 @@
 import { ApiError } from '@/lib/search/search.service'
-import type { SndCategory } from '@/types/category'
+import type { SndCategory, SndCategoryCatalog } from '@/types/category'
 import type { ApiErrorBody } from '@/types/search'
 
 interface CategoriesResponse {
   data: SndCategory[]
+}
+
+interface CatalogResponse {
+  data: SndCategoryCatalog[]
+}
+
+async function parseJson<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as ApiErrorBody | null
+    throw new ApiError(
+      response.status,
+      body?.error ?? { code: 'UNKNOWN', message: 'Nešto je krenulo naopako.' }
+    )
+  }
+  return (await response.json()) as T
 }
 
 export const categoriesService = {
@@ -28,16 +43,25 @@ export const categoriesService = {
       signal,
       headers: { Accept: 'application/json' },
     })
+    const payload = await parseJson<CategoriesResponse>(response)
+    return payload.data
+  },
 
-    if (!response.ok) {
-      const body = (await response.json().catch(() => null)) as ApiErrorBody | null
-      throw new ApiError(
-        response.status,
-        body?.error ?? { code: 'UNKNOWN', message: 'Nešto je krenulo naopako.' }
-      )
-    }
+  getCatalog: async (signal?: AbortSignal): Promise<SndCategoryCatalog[]> => {
+    const response = await fetch('/api/v1/categories/all', {
+      signal,
+      headers: { Accept: 'application/json' },
+    })
+    const payload = await parseJson<CatalogResponse>(response)
+    return payload.data
+  },
 
-    const payload = (await response.json()) as CategoriesResponse
+  suggest: async (title: string, signal?: AbortSignal): Promise<SndCategoryCatalog[]> => {
+    const response = await fetch(
+      `/api/v1/categories/suggest?title=${encodeURIComponent(title)}`,
+      { signal, headers: { Accept: 'application/json' } }
+    )
+    const payload = await parseJson<CatalogResponse>(response)
     return payload.data
   },
 }

@@ -92,7 +92,7 @@ export default function WelcomeOnboardingPage() {
         Dobro došao na SND
       </h1>
       <p className="mb-7 text-center text-[15px] leading-normal text-muted-foreground">
-        Dva podatka i spreman si. Možeš i da preskočiš — dodaćeš ih kasnije.
+        Dva podatka i spreman si. Možeš i da preskočiš - dodaćeš ih kasnije.
       </p>
 
       <div className="flex flex-col gap-5">
