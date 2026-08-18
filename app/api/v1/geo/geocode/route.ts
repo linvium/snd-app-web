@@ -41,9 +41,10 @@ export async function GET(request: NextRequest) {
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json',
+      'Accept-Language': 'sr,en',
       'User-Agent': 'SND-StvarNaDan/1.0 (listings geocode)',
     },
-    next: { revalidate: 0 },
+    next: { revalidate: 3600 },
   })
 
   if (!response.ok) {

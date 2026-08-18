@@ -26,12 +26,14 @@ export async function POST(
     return apiError(422, ERROR_CODES.VALIDATION_FAILED, 'Samo pauziran oglas može da se vrati.')
   }
 
-  const { error } = await auth.supabase
+  const { data, error } = await auth.supabase
     .from('listings')
     .update({ status: 'published' })
     .eq('id', id)
+    .select('status')
+    .maybeSingle()
 
-  if (error) {
+  if (error || data?.status !== 'published') {
     console.error('[listings] resume failed', error)
     return apiError(500, ERROR_CODES.INTERNAL, 'Nešto je krenulo naopako.')
   }

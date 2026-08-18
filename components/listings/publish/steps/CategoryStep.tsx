@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ChevronLeftIcon, ChevronDownIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronDownIcon, Loader2Icon } from 'lucide-react'
 
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -18,6 +18,7 @@ export function CategoryStep({
   categoryId,
   error,
   locked,
+  loading,
   onSelect,
 }: {
   title: string
@@ -25,6 +26,7 @@ export function CategoryStep({
   categoryId: string | null
   error?: string
   locked?: boolean
+  loading?: boolean
   onSelect: (id: string) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -59,27 +61,33 @@ export function CategoryStep({
   return (
     <div className="flex flex-col gap-3">
       <Popover
-        open={locked ? false : open}
+        open={locked || loading ? false : open}
         onOpenChange={(next) => {
-          if (locked) return
+          if (locked || loading) return
           setOpen(next)
         }}
       >
         <PopoverTrigger asChild>
           <button
             type="button"
-            disabled={locked}
+            disabled={locked || loading}
             data-testid="category-picker"
             className={cn(
               'flex w-full items-center justify-between rounded-md border bg-card px-3.5 py-2.5 text-left',
               error ? 'border-destructive' : 'border-input',
               'focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-100',
-              locked && 'cursor-not-allowed opacity-70'
+              (locked || loading) && 'cursor-not-allowed opacity-70'
             )}
             aria-invalid={error ? true : undefined}
+            aria-busy={loading || undefined}
           >
             <span className="min-w-0">
-              {selected ? (
+              {loading ? (
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2Icon className="size-4 animate-spin" data-testid="category-loading" />
+                  Učitavam kategorije…
+                </span>
+              ) : selected ? (
                 <>
                   {path?.parentPath ? (
                     <span className="block truncate text-[13px] text-muted-foreground">
@@ -183,7 +191,14 @@ export function CategoryStep({
               : 'Pokriće zavisi od kategorije.'}
           </p>
           <Button variant="link" className="h-auto p-0 text-[13px]" asChild>
-            <a href="/garancija">Više o garanciji →</a>
+            <a
+              href="/garancija"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="guarantee-link"
+            >
+              Više o garanciji →
+            </a>
           </Button>
         </div>
       ) : null}

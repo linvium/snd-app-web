@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 
 import { MyListings } from '@/components/listings/MyListings'
-import { listOwnPublishedListings } from '@/lib/listings/listings.server'
+import { listOwnListings } from '@/lib/listings/listings.server'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function ProfileListingsPage({
@@ -22,9 +22,9 @@ export default async function ProfileListingsPage({
 
   let listings
   try {
-    listings = await listOwnPublishedListings(supabase, user.id)
+    listings = await listOwnListings(supabase, user.id)
   } catch (error) {
-    console.error('[listings] list own published failed', error)
+    console.error('[listings] list own listings failed', error)
     return <p className="text-sm text-muted-foreground">Nismo mogli da učitamo oglase. Pokušaj ponovo.</p>
   }
 

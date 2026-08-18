@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 
 import { IMAGE_PATHS } from '../fixtures/listing-data'
-import { cleanupCreatedListings, trackListingFromPage } from '../helpers/cleanup'
+import { cleanupCreatedListings, listingIdFromUrl, trackListingFromPage } from '../helpers/cleanup'
 import {
   expectToast,
   moveSecondPhotoToCover,
@@ -33,17 +34,29 @@ test.describe('listing photos', () => {
     )
     await chooser.setFiles(IMAGE_PATHS.landscape)
     await expect(page.getByTestId('photo-upload-progress').first()).toBeVisible()
-    await upload
+    const response = await upload
+    const body = (await response.json()) as { data?: Record<string, unknown> }
+    expect(body.data).toMatchObject({
+      id: expect.any(String),
+      thumbnail_url: expect.any(String),
+      sort_order: 0,
+    })
+    expect(body.data).not.toHaveProperty('width')
+    expect(body.data).not.toHaveProperty('height')
     await waitForCoverPhoto(page)
   })
 
   test('blokada devete slike', async ({ page }) => {
     await start(page)
-    const files = Array.from({ length: 8 }, () => IMAGE_PATHS.landscape)
+    const jpeg = readFileSync(IMAGE_PATHS.landscape)
+    const files = Array.from({ length: 8 }, (_, index) => ({
+      name: `photo-${index}.jpg`,
+      mimeType: 'image/jpeg',
+      buffer: jpeg,
+    }))
     await page.getByTestId('photo-file-input').setInputFiles(files)
-    await expect(visible(page, 'photo-slot-7').locator('img')).toBeVisible({ timeout: 60_000 })
+    await expect(page.getByTestId('photo-remove')).toHaveCount(8, { timeout: 60_000 })
     await expect(page.getByTestId('photo-upload-progress')).toHaveCount(0)
-    await expect(page.getByTestId('photo-remove')).toHaveCount(8)
 
     await page.getByTestId('photo-file-input').setInputFiles(IMAGE_PATHS.landscapeAlt)
     await expectToast(page, 'Možeš dodati najviše 8 slika.')
@@ -62,7 +75,9 @@ test.describe('listing photos', () => {
 
   test('promena redosleda', async ({ page }) => {
     await start(page)
-    await uploadPhotos(page, [IMAGE_PATHS.landscape])
+    const firstUpload = await uploadPhotos(page, [IMAGE_PATHS.landscape])
+    const listingId = listingIdFromUrl(firstUpload.url())
+    if (listingId) created.add(listingId)
     await waitForCoverPhoto(page)
     await uploadPhotos(page, [IMAGE_PATHS.landscapeAlt])
     await expect(page.getByTestId('photo-remove')).toHaveCount(2)
@@ -72,7 +87,8 @@ test.describe('listing photos', () => {
     await expect(visible(page, 'photo-slot-0').getByText('Naslovna')).toBeVisible()
     await expect(visible(page, 'photo-slot-0').locator('img')).not.toHaveAttribute('src', firstSrc ?? '')
 
-    await page.reload()
+    if (!listingId) throw new Error('Missing listing id after photo upload')
+    await page.goto(`/profile/listings/${listingId}/edit`)
     await expect(visible(page, 'publish-form')).toBeVisible()
     await expect(visible(page, 'photo-slot-0').locator('img')).not.toHaveAttribute('src', firstSrc ?? '')
     await expect(visible(page, 'photo-slot-0').getByText('Naslovna')).toBeVisible()

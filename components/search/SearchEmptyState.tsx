@@ -113,7 +113,7 @@ export default function SearchEmptyState({
             <Button onClick={onClearFilters}>Obriši sve filtere</Button>
           ) : (
             <Button asChild>
-              <Link href="/listings/new">Objavi predmet</Link>
+              <Link href="/profile/listings/new">Objavi predmet</Link>
             </Button>
           )}
         </div>

@@ -76,7 +76,7 @@ export default function Header() {
 
         <div className="flex items-center gap-2.5">
           {user ? (
-            <Link href="/listings/new" className="hidden lg:inline-flex">
+            <Link href="/profile/listings/new" className="hidden lg:inline-flex">
               <Button size="sm">Objavi predmet</Button>
             </Link>
           ) : null}
