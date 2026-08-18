@@ -4,15 +4,23 @@ import { EmailUnverifiedGate } from '@/components/listings/publish/EmailUnverifi
 import { PublishListingForm } from '@/components/listings/publish/PublishListingForm'
 import { PageLoading } from '@/components/ui/page-loading'
 import { useCurrentUser } from '@/hooks/user'
+import type { Listing } from '@/types/listing'
 
-export function PublishListingPage({ listingId }: { listingId?: string }) {
+export function PublishListingPage({
+  listingId,
+  initialListing,
+}: {
+  listingId?: string
+  initialListing?: Listing
+}) {
   const { data: user, isLoading } = useCurrentUser()
+  const isEdit = Boolean(listingId)
 
-  if (isLoading) {
+  if (!isEdit && isLoading) {
     return <PageLoading>Učitavanje…</PageLoading>
   }
 
-  if (!user?.email_verified_at) {
+  if (!isLoading && !user?.email_verified_at) {
     return (
       <div className="px-4 py-10">
         <EmailUnverifiedGate />
@@ -20,5 +28,5 @@ export function PublishListingPage({ listingId }: { listingId?: string }) {
     )
   }
 
-  return <PublishListingForm listingId={listingId} />
+  return <PublishListingForm listingId={listingId} initialListing={initialListing} />
 }

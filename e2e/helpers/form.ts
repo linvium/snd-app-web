@@ -115,6 +115,12 @@ export async function expectToast(page: Page, text: string | RegExp) {
   await expect(page.getByLabel('Notifications alt+T').getByText(text).first()).toBeVisible()
 }
 
+export async function confirmStatusChange(page: Page) {
+  const confirm = page.getByTestId('status-confirm-button')
+  await expect(confirm).toBeVisible()
+  await confirm.click()
+}
+
 export async function mockGeocode(page: Page) {
   await page.route('**/api/v1/geo/geocode**', async (route) => {
     await route.fulfill({

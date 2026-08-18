@@ -25,3 +25,42 @@ export function listingStatusAction(
   if (next === 'draft' && (current === 'published' || current === 'paused')) return 'unpublish'
   return null
 }
+
+export function listingStatusAfterAction(action: ListingStatusAction): ListingUiStatus {
+  if (action === 'publish' || action === 'resume') return 'published'
+  if (action === 'pause') return 'paused'
+  return 'draft'
+}
+
+export function listingStatusConfirm(action: ListingStatusAction): {
+  title: string
+  description: string
+  confirmLabel: string
+} {
+  if (action === 'publish') {
+    return {
+      title: 'Objaviti oglas?',
+      description: 'Oglas će biti vidljiv u pretrazi. Možeš ga kasnije arhivirati ili vratiti u nacrt.',
+      confirmLabel: 'Objavi',
+    }
+  }
+  if (action === 'pause') {
+    return {
+      title: 'Arhivirati oglas?',
+      description: 'Oglas više neće biti vidljiv u pretrazi. Možeš ga kasnije vratiti.',
+      confirmLabel: 'Arhiviraj',
+    }
+  }
+  if (action === 'resume') {
+    return {
+      title: 'Ponovo objaviti oglas?',
+      description: 'Oglas će opet biti vidljiv u pretrazi.',
+      confirmLabel: 'Objavi',
+    }
+  }
+  return {
+    title: 'Vratiti oglas u nacrt?',
+    description: 'Oglas više neće biti javan. Možeš ga kasnije ponovo objaviti.',
+    confirmLabel: 'Vrati u nacrt',
+  }
+}

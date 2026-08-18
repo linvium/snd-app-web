@@ -6,6 +6,7 @@ import { EllipsisVerticalIcon, ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { ListingPublishedToast } from '@/components/listings/ListingPublishedToast'
+import { StatusConfirmDialog } from '@/components/listings/StatusConfirmDialog'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -39,6 +40,8 @@ import {
   LISTING_STATUS_LABELS,
   LISTING_UI_STATUSES,
   listingStatusAction,
+  listingStatusAfterAction,
+  type ListingStatusAction,
   type ListingUiStatus,
 } from '@/lib/listings/listings.status'
 import { formatPricePerDay } from '@/lib/search'
@@ -75,13 +78,22 @@ function OwnerListingActions({
   const unpublish = useUnpublishListing()
   const remove = useDeleteListing()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [pendingAction, setPendingAction] = useState<ListingStatusAction | null>(null)
   const isPending = publish.isPending || pause.isPending || resume.isPending || unpublish.isPending
 
-  const changeStatus = (next: ListingUiStatus) => {
+  const requestStatusChange = (next: ListingUiStatus) => {
     const action = listingStatusAction(listing.status, next)
     if (!action || isPending) return
+    setPendingAction(action)
+  }
+
+  const confirmStatusChange = () => {
+    const action = pendingAction
+    if (!action || isPending) return
     const previous = listing.status
+    const next = listingStatusAfterAction(action)
     onStatusChange(next)
+    setPendingAction(null)
 
     const rollback = (error: unknown, fallback: string) => {
       onStatusChange(previous)
@@ -146,7 +158,7 @@ function OwnerListingActions({
             <DropdownMenuSubContent>
               <DropdownMenuRadioGroup
                 value={listing.status}
-                onValueChange={(value) => changeStatus(value as ListingUiStatus)}
+                onValueChange={(value) => requestStatusChange(value as ListingUiStatus)}
               >
                 {LISTING_UI_STATUSES.map((status) => {
                   const enabled = listingStatusAction(listing.status, status) !== null
@@ -168,12 +180,22 @@ function OwnerListingActions({
           <DropdownMenuItem
             variant="destructive"
             data-testid="listing-delete"
-            onClick={() => setDeleteOpen(true)}
+            onSelect={() => setDeleteOpen(true)}
           >
             Obriši
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <StatusConfirmDialog
+        action={pendingAction}
+        open={pendingAction !== null}
+        loading={isPending}
+        onOpenChange={(open) => {
+          if (!open) setPendingAction(null)
+        }}
+        onConfirm={confirmStatusChange}
+      />
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
