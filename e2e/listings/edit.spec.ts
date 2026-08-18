@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { VALID_LISTING } from '../fixtures/listing-data'
 import { cleanupCreatedListings, listingIdFromUrl, trackListingFromPage } from '../helpers/cleanup'
 import {
+  confirmStatusChange,
   fillRequiredSteps,
   mockGeocode,
   openAddLocation,
@@ -43,6 +44,8 @@ test.describe('edit published listing', () => {
     const slug = ((await before.json()) as { data: { slug: string } }).data.slug
 
     await openEdit(page, listingId)
+    await expect(page.getByTestId('page-loading')).toHaveCount(0)
+    await expect(page.getByTestId('edit-form-skeleton')).toHaveCount(0)
     await expect(page).toHaveURL(new RegExp(`/profile/listings/${listingId}/edit`))
     await expect(page.getByRole('heading', { name: 'Izmeni oglas' })).toBeVisible()
     await expect(visible(page, 'publish-button')).toHaveText('Sačuvaj izmene')
@@ -64,6 +67,7 @@ test.describe('edit published listing', () => {
     const listingId = await publishOwnListing(page)
     await openEdit(page, listingId)
     await visible(page, 'pause-button').click()
+    await confirmStatusChange(page)
     await expectToast(page, 'Oglas je arhiviran.')
 
     await page.goto(`/search?q=${encodeURIComponent(VALID_LISTING.title)}`)
@@ -85,6 +89,14 @@ test.describe('edit published listing', () => {
     await expect(page.getByTestId('listing-status-paused')).toBeVisible()
     await expect(page.getByTestId('listing-status-published')).toBeDisabled()
     await page.getByTestId('listing-status-paused').click()
+    await expect(page.getByRole('heading', { name: 'Arhivirati oglas?' })).toBeVisible()
+    await page.getByRole('button', { name: 'Otkaži' }).click()
+    await expect(card).toHaveAttribute('data-listing-status', 'published')
+
+    await card.getByTestId('listing-actions').click()
+    await page.getByTestId('listing-status-menu').click()
+    await page.getByTestId('listing-status-paused').click()
+    await confirmStatusChange(page)
     await expectToast(page, 'Oglas je arhiviran.')
     await expect(card).toHaveAttribute('data-listing-status', 'paused')
     await expect(card.getByText('Arhiviran')).toBeVisible()
@@ -92,6 +104,7 @@ test.describe('edit published listing', () => {
     await card.getByTestId('listing-actions').click()
     await page.getByTestId('listing-status-menu').click()
     await page.getByTestId('listing-status-published').click()
+    await confirmStatusChange(page)
     await expectToast(page, 'Oglas je ponovo aktivan.')
     await expect(card).toHaveAttribute('data-listing-status', 'published')
     await expect(card.getByText('Objavljen')).toBeVisible()
@@ -108,6 +121,7 @@ test.describe('edit published listing', () => {
     await card.getByTestId('listing-actions').click()
     await page.getByTestId('listing-status-menu').click()
     await page.getByTestId('listing-status-draft').click()
+    await confirmStatusChange(page)
     await expectToast(page, 'Oglas je vraćen u nacrt.')
     await expect(card).toHaveAttribute('data-listing-status', 'draft')
     await expect(card.getByText('Nacrt')).toBeVisible()
@@ -118,6 +132,7 @@ test.describe('edit published listing', () => {
     await card.getByTestId('listing-actions').click()
     await page.getByTestId('listing-status-menu').click()
     await page.getByTestId('listing-status-published').click()
+    await confirmStatusChange(page)
     await expectToast(page, 'Oglas je objavljen.')
     await expect(card).toHaveAttribute('data-listing-status', 'published')
     const republished = await page.request.get(`/listings/${slug}`)
@@ -139,6 +154,22 @@ test.describe('edit published listing', () => {
 
     const response = await page.request.get(`/listings/${slug}`)
     expect(response.status()).toBe(404)
+  })
+
+  test('action meni briše oglas', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'verified', 'Koristi nalog bez aktivne rezervacije')
+    const listingId = await publishOwnListing(page)
+    await page.goto('/profile/listings')
+    const card = page.locator(`[data-listing-id="${listingId}"]`)
+    await card.getByTestId('listing-actions').click()
+    await page.getByTestId('listing-delete').click()
+    await expect(page.getByText('Ovo se ne može poništiti')).toBeVisible()
+    await page.getByTestId('listing-delete-confirm').click()
+    await expectToast(page, 'Oglas je obrisan.')
+    await expect(card).toHaveCount(0)
+    const api = await page.request.get(`/api/v1/listings/${listingId}`)
+    expect(api.status()).toBe(404)
+    created.delete(listingId)
   })
 
   test('stari edit URL radi redirect', async ({ page }, testInfo) => {

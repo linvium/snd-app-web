@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation'
 import { Loader2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { StatusConfirmDialog } from '@/components/listings/StatusConfirmDialog'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Dialog,
   DialogContent,
@@ -39,9 +41,10 @@ import {
   type FieldErrors,
   type StepError,
 } from '@/lib/listings'
+import { type ListingStatusAction } from '@/lib/listings/listings.status'
 import { ApiError } from '@/lib/search/search.service'
 import { cn } from '@/lib/utils'
-import type { CancellationPolicy, SaveListingInput, StepKey } from '@/types/listing'
+import type { CancellationPolicy, Listing, SaveListingInput, StepKey } from '@/types/listing'
 
 import { AddLocationModal } from './AddLocationModal'
 import { LocationsTipCard, PhotoTipCard, PublishSidebar } from './PublishSidebar'
@@ -63,6 +66,42 @@ const STEPS: { key: StepKey; title: string }[] = [
   { key: 'cancellation', title: 'Uslovi otkazivanja' },
   { key: 'value', title: 'Vrednost predmeta' },
 ]
+
+function formFieldsFromListing(listing: Listing) {
+  return {
+    title: listing.title ?? '',
+    description: listing.description ?? '',
+    categoryId: listing.category_id,
+    price1: listing.price_1_day_minor == null ? '' : String(Math.round(minorToRsd(listing.price_1_day_minor))),
+    price3: listing.price_3_days_minor == null ? '' : String(Math.round(minorToRsd(listing.price_3_days_minor))),
+    price7: listing.price_7_days_minor == null ? '' : String(Math.round(minorToRsd(listing.price_7_days_minor))),
+    locationIds: listing.location_ids,
+    policy: listing.cancellation_policy,
+    itemValue: listing.item_value_minor == null ? '' : String(Math.round(minorToRsd(listing.item_value_minor))),
+  }
+}
+
+function EditFormSkeleton() {
+  return (
+    <div className="flex flex-col gap-6" data-testid="edit-form-skeleton" aria-busy="true" aria-label="Učitavanje oglasa">
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-11 w-full" />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-28 w-full" />
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <Skeleton key={index} className="aspect-[4/3] w-full" />
+        ))}
+      </div>
+      <Skeleton className="h-11 w-full" />
+      <Skeleton className="h-11 w-40" />
+    </div>
+  )
+}
 
 function ErrorSummary({
   steps,
@@ -115,14 +154,21 @@ function mapApiFields(fields: Record<string, string>): FieldErrors {
   return mapped
 }
 
-export function PublishListingForm({ listingId: initialListingId }: { listingId?: string }) {
+export function PublishListingForm({
+  listingId: initialListingId,
+  initialListing,
+}: {
+  listingId?: string
+  initialListing?: Listing
+}) {
   const router = useRouter()
   const isCreate = !initialListingId
+  const seeded = initialListing ? formFieldsFromListing(initialListing) : null
   const [draftId, setDraftId] = useState<string | null>(initialListingId ?? null)
   const listingIdRef = useRef<string | null>(initialListingId ?? null)
   const createDraftOnceRef = useRef<(() => Promise<string>) | null>(null)
 
-  const listingQuery = useListing(draftId)
+  const listingQuery = useListing(draftId, { initialData: initialListing })
   const listing = listingQuery.data
   const createDraft = useCreateDraft()
   const save = useSaveListing()
@@ -135,16 +181,16 @@ export function PublishListingForm({ listingId: initialListingId }: { listingId?
   const categories = categoriesQuery.flat
   const locations = locationsQuery.data ?? []
 
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [categoryId, setCategoryId] = useState<string | null>(null)
-  const [price1, setPrice1] = useState('')
-  const [price3, setPrice3] = useState('')
-  const [price7, setPrice7] = useState('')
-  const [locationIds, setLocationIds] = useState<string[]>([])
-  const [policy, setPolicy] = useState<CancellationPolicy>('flexible')
-  const [itemValue, setItemValue] = useState('')
-  const [hydrated, setHydrated] = useState(isCreate)
+  const [title, setTitle] = useState(seeded?.title ?? '')
+  const [description, setDescription] = useState(seeded?.description ?? '')
+  const [categoryId, setCategoryId] = useState<string | null>(seeded?.categoryId ?? null)
+  const [price1, setPrice1] = useState(seeded?.price1 ?? '')
+  const [price3, setPrice3] = useState(seeded?.price3 ?? '')
+  const [price7, setPrice7] = useState(seeded?.price7 ?? '')
+  const [locationIds, setLocationIds] = useState<string[]>(seeded?.locationIds ?? [])
+  const [policy, setPolicy] = useState<CancellationPolicy>(seeded?.policy ?? 'flexible')
+  const [itemValue, setItemValue] = useState(seeded?.itemValue ?? '')
+  const [hydrated, setHydrated] = useState(isCreate || Boolean(initialListing))
   const [dirty, setDirty] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [submitted, setSubmitted] = useState(false)
@@ -154,6 +200,7 @@ export function PublishListingForm({ listingId: initialListingId }: { listingId?
   const [locationOpen, setLocationOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [publishOpen, setPublishOpen] = useState(false)
+  const [pendingStatusAction, setPendingStatusAction] = useState<ListingStatusAction | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitKind, setSubmitKind] = useState<'draft' | 'publish' | 'save' | null>(null)
   const sectionRefs = useRef<Record<StepKey, HTMLElement | null>>({
@@ -170,23 +217,25 @@ export function PublishListingForm({ listingId: initialListingId }: { listingId?
     listingIdRef.current = initialListingId ?? null
     createDraftOnceRef.current = null
     setDraftId(initialListingId ?? null)
-    setHydrated(!initialListingId)
-  }, [initialListingId])
+    setHydrated(!initialListingId || Boolean(initialListing))
+  }, [initialListingId, initialListing])
 
   useEffect(() => {
     if (!listing || hydrated) return
-    setTitle(listing.title ?? '')
-    setDescription(listing.description ?? '')
-    setCategoryId(listing.category_id)
-    setPrice1(listing.price_1_day_minor == null ? '' : String(Math.round(minorToRsd(listing.price_1_day_minor))))
-    setPrice3(listing.price_3_days_minor == null ? '' : String(Math.round(minorToRsd(listing.price_3_days_minor))))
-    setPrice7(listing.price_7_days_minor == null ? '' : String(Math.round(minorToRsd(listing.price_7_days_minor))))
-    setLocationIds(listing.location_ids)
-    setPolicy(listing.cancellation_policy)
-    setItemValue(listing.item_value_minor == null ? '' : String(Math.round(minorToRsd(listing.item_value_minor))))
+    const fields = formFieldsFromListing(listing)
+    setTitle(fields.title)
+    setDescription(fields.description)
+    setCategoryId(fields.categoryId)
+    setPrice1(fields.price1)
+    setPrice3(fields.price3)
+    setPrice7(fields.price7)
+    setLocationIds(fields.locationIds)
+    setPolicy(fields.policy)
+    setItemValue(fields.itemValue)
     setHydrated(true)
   }, [listing, hydrated])
 
+  const isEditLoading = Boolean(initialListingId) && !hydrated
   const selectedCategory = categories.find((row) => row.id === categoryId) ?? null
   const suggestions = usePriceSuggestions(categoryId)
   const status = listing?.status
@@ -412,7 +461,7 @@ export function PublishListingForm({ listingId: initialListingId }: { listingId?
       <div>
         <div className="mb-4 flex items-start justify-between gap-3">
           <h1 className="m-0 text-2xl font-semibold text-card-foreground">
-            {isPublished ? 'Izmeni oglas' : 'Objavi predmet'}
+            {isCreate || status === 'draft' ? 'Objavi predmet' : 'Izmeni oglas'}
           </h1>
           {isDraft ? (
             <p className="m-0 text-[13px] text-muted-foreground" data-testid="autosave-indicator">
@@ -427,8 +476,18 @@ export function PublishListingForm({ listingId: initialListingId }: { listingId?
           ) : null}
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-4 sm:p-6" data-testid="publish-form">
-          {STEPS.map((step, index) => (
+        <fieldset
+          disabled={isEditLoading}
+          className={cn(
+            'rounded-xl border border-border bg-card p-4 sm:p-6',
+            isEditLoading && 'pointer-events-none'
+          )}
+          data-testid="publish-form"
+        >
+          {isEditLoading ? (
+            <EditFormSkeleton />
+          ) : (
+          STEPS.map((step, index) => (
             <section
               key={step.key}
               id={`step-${step.key}`}
@@ -576,7 +635,8 @@ export function PublishListingForm({ listingId: initialListingId }: { listingId?
                 />
               ) : null}
             </section>
-          ))}
+          ))
+          )}
 
           {submitted && stepErrors.length > 0 ? (
             <div className="hidden lg:block">
@@ -585,7 +645,7 @@ export function PublishListingForm({ listingId: initialListingId }: { listingId?
           ) : null}
 
           <div className="hidden flex-wrap gap-3 pt-2 lg:flex">
-            {isDraft ? (
+            {isEditLoading ? null : isDraft ? (
               <>
                 <Button
                   type="button"
@@ -628,54 +688,41 @@ export function PublishListingForm({ listingId: initialListingId }: { listingId?
             ) : null}
           </div>
 
-          {isPublished && !submitting ? (
+          {!isEditLoading && (isPublished || (!isCreate && isDraft)) && !submitting ? (
             <div className="mt-4 flex flex-wrap gap-3">
               {listing?.status === 'paused' ? (
                 <Button
                   type="button"
                   variant="outline"
                   data-testid="resume-button"
-                  onClick={() => {
-                    if (!draftId) return
-                    resume.mutate(draftId, {
-                      onSuccess: () => toast.success('Oglas je ponovo aktivan.'),
-                      onError: (error) =>
-                        toast.error(error instanceof Error ? error.message : 'Nismo mogli da vratimo oglas.'),
-                    })
-                  }}
+                  onClick={() => setPendingStatusAction('resume')}
                   loading={resume.isPending}
                 >
                   Vrati oglas
                 </Button>
-              ) : (
+              ) : listing?.status === 'published' ? (
                 <Button
                   type="button"
                   variant="outline"
                   data-testid="pause-button"
-                  onClick={() => {
-                    if (!draftId) return
-                    pause.mutate(draftId, {
-                      onSuccess: () => toast.success('Oglas je arhiviran.'),
-                      onError: (error) =>
-                        toast.error(error instanceof Error ? error.message : 'Nismo mogli da arhiviramo oglas.'),
-                    })
-                  }}
+                  onClick={() => setPendingStatusAction('pause')}
                   loading={pause.isPending}
                 >
                   Arhiviraj oglas
                 </Button>
-              )}
+              ) : null}
               <Button type="button" variant="danger" data-testid="delete-button" onClick={() => setDeleteOpen(true)}>
                 Obriši oglas
               </Button>
             </div>
           ) : null}
-        </div>
+        </fieldset>
       </div>
 
       <PublishSidebar />
 
       <div className={cn('lg:hidden', submitted && stepErrors.length > 0 ? 'h-40' : 'h-24')} />
+      {isEditLoading ? null : (
       <div className="fixed right-0 bottom-0 left-0 z-30 border-t border-border bg-card p-3 lg:hidden">
         {submitted && stepErrors.length > 0 ? (
           <ErrorSummary steps={STEPS} errors={stepErrors} onJump={scrollToStep} compact />
@@ -722,6 +769,7 @@ export function PublishListingForm({ listingId: initialListingId }: { listingId?
           </Button>
         ) : null}
       </div>
+      )}
 
       <AddLocationModal
         open={locationOpen}
@@ -756,6 +804,35 @@ export function PublishListingForm({ listingId: initialListingId }: { listingId?
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <StatusConfirmDialog
+        action={pendingStatusAction}
+        open={pendingStatusAction !== null}
+        loading={pause.isPending || resume.isPending}
+        onOpenChange={(open) => {
+          if (!open) setPendingStatusAction(null)
+        }}
+        onConfirm={() => {
+          if (!draftId || !pendingStatusAction) return
+          const action = pendingStatusAction
+          setPendingStatusAction(null)
+          if (action === 'pause') {
+            pause.mutate(draftId, {
+              onSuccess: () => toast.success('Oglas je arhiviran.'),
+              onError: (error) =>
+                toast.error(error instanceof Error ? error.message : 'Nismo mogli da arhiviramo oglas.'),
+            })
+            return
+          }
+          if (action === 'resume') {
+            resume.mutate(draftId, {
+              onSuccess: () => toast.success('Oglas je ponovo aktivan.'),
+              onError: (error) =>
+                toast.error(error instanceof Error ? error.message : 'Nismo mogli da vratimo oglas.'),
+            })
+          }
+        }}
+      />
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>

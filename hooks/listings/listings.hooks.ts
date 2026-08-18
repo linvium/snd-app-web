@@ -14,11 +14,16 @@ export function useListingDrafts(enabled = true) {
   })
 }
 
-export function useListing(id: string | null, enabled = true) {
+export function useListing(
+  id: string | null,
+  options: { enabled?: boolean; initialData?: Listing } = {}
+) {
+  const { enabled = true, initialData } = options
   return useQuery({
     queryKey: listingKeys.detail(id ?? ''),
-    queryFn: ({ signal }) => listingsService.getListing(id!),
+    queryFn: ({ signal }) => listingsService.getListing(id!, signal),
     enabled: Boolean(id) && enabled,
+    initialData,
   })
 }
 
