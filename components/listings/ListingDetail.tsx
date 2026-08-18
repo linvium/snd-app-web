@@ -48,7 +48,7 @@ export function ListingDetail({ listing }: { listing: ListingDetailData }) {
           </div>
           {listing.isOwner ? (
             <Button size="sm" variant="secondary" asChild>
-              <Link href={`/listings/new/${listing.id}`}>Izmeni oglas</Link>
+              <Link href={`/profile/listings/${listing.id}/edit`}>Izmeni oglas</Link>
             </Button>
           ) : null}
         </div>

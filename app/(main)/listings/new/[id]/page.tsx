@@ -1,14 +1,10 @@
-import { PublishListingPage } from '@/components/listings/publish/PublishListingPage'
+import { redirect } from 'next/navigation'
 
-export const metadata = {
-  title: 'Izmeni oglas',
-}
-
-export default async function EditListingPage({
+export default async function LegacyEditListingPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  return <PublishListingPage listingId={id} />
+  redirect(`/profile/listings/${id}/edit`)
 }

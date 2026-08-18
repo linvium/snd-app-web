@@ -84,6 +84,14 @@ export const listingsService = {
     await parseJson(response)
   },
 
+  unpublishListing: async (id: string): Promise<void> => {
+    const response = await fetch(`/api/v1/listings/${id}/unpublish`, {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+    })
+    await parseJson(response)
+  },
+
   deleteListing: async (id: string): Promise<void> => {
     const response = await fetch(`/api/v1/listings/${id}`, {
       method: 'DELETE',

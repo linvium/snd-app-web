@@ -1,6 +1,6 @@
 'use client'
 
-import { PlusIcon } from 'lucide-react'
+import { Loader2Icon, PlusIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -10,12 +10,14 @@ export function LocationsStep({
   locations,
   selectedIds,
   error,
+  loading,
   onToggle,
   onAdd,
 }: {
   locations: SndLocation[]
   selectedIds: string[]
   error?: string
+  loading?: boolean
   onToggle: (id: string, checked: boolean) => void
   onAdd: () => void
 }) {
@@ -23,12 +25,23 @@ export function LocationsStep({
     <div className="flex flex-col gap-3">
       <p className="m-0 text-[13px] leading-5 text-muted-foreground">
         Tačna adresa se ne prikazuje pre nego što rezervacija bude plaćena i potvrđena.{' '}
-        <a href="/garancija" className="font-medium text-brand-700 no-underline hover:underline">
+        <a
+          href="/pomoc/predaja"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="pickup-help-link"
+          className="font-medium text-brand-700 no-underline hover:underline"
+        >
           Više →
         </a>
       </p>
 
-      {locations.length === 0 ? (
+      {loading ? (
+        <p className="m-0 flex items-center gap-2 text-[13px] text-muted-foreground" data-testid="locations-loading">
+          <Loader2Icon className="size-4 animate-spin" />
+          Učitavam lokacije…
+        </p>
+      ) : locations.length === 0 ? (
         <div className="rounded-lg border border-dashed border-zinc-300 px-4 py-6 text-center">
           <p className="m-0 text-sm font-medium text-card-foreground">Još nemaš nijednu lokaciju</p>
           <Button type="button" className="mt-3" onClick={onAdd}>

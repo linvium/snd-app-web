@@ -1,9 +1,5 @@
-import { PublishListingPage } from '@/components/listings/publish/PublishListingPage'
+import { redirect } from 'next/navigation'
 
-export const metadata = {
-  title: 'Objavi predmet',
-}
-
-export default function NewListingPage() {
-  return <PublishListingPage />
+export default function LegacyNewListingPage() {
+  redirect('/profile/listings/new')
 }

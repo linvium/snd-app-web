@@ -181,16 +181,18 @@ export function PhotosStep({
   listingId,
   images,
   error,
+  ensureListingId,
 }: {
-  listingId: string
+  listingId: string | null
   images: ListingImage[]
   error?: string
+  ensureListingId: () => Promise<string>
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<PendingUpload[]>([])
   const [removingIds, setRemovingIds] = useState<string[]>([])
   const [isDragging, setIsDragging] = useState(false)
-  const upload = useUploadListingImage(listingId)
+  const upload = useUploadListingImage(ensureListingId)
   const remove = useDeleteListingImage(listingId)
   const reorder = useReorderListingImages(listingId)
   const imagesRef = useRef(images)

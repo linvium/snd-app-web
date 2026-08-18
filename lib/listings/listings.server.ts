@@ -50,7 +50,7 @@ export async function attachListingRelations(
   const [{ data: images }, { data: locations }, { count }] = await Promise.all([
     supabase
       .from('listing_images')
-      .select('id, listing_id, url, thumbnail_url, medium_url, large_url, width, height, sort_order, created_at')
+      .select('id, listing_id, url, thumbnail_url, medium_url, large_url, sort_order, created_at')
       .eq('listing_id', row.id)
       .order('sort_order', { ascending: true }),
     supabase.from('listing_locations').select('location_id').eq('listing_id', row.id),
@@ -84,7 +84,7 @@ export async function listOwnDrafts(supabase: SupabaseClient, userId: string) {
   return data ?? []
 }
 
-export async function listOwnPublishedListings(
+export async function listOwnListings(
   supabase: SupabaseClient,
   userId: string
 ): Promise<OwnedListingSummary[]> {
@@ -92,9 +92,8 @@ export async function listOwnPublishedListings(
     .from('listings')
     .select('id, slug, title, price_1_day_minor, status, published_at, updated_at')
     .eq('owner_id', userId)
-    .in('status', ['published', 'paused'])
+    .in('status', ['draft', 'published', 'paused'])
     .is('deleted_at', null)
-    .order('published_at', { ascending: false })
     .order('updated_at', { ascending: false })
 
   if (error) throw error
@@ -327,10 +326,7 @@ export async function publishListing(supabase: SupabaseClient, listing: Listing)
     }
   }
 
-  const slug =
-    listing.status === 'draft' || !listing.slug
-      ? await allocateSlug(supabase, listing.title ?? '')
-      : listing.slug
+  const slug = listing.slug ?? (await allocateSlug(supabase, listing.title ?? ''))
 
   const { error } = await supabase
     .from('listings')

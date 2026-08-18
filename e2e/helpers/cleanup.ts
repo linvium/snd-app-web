@@ -1,6 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
-const UUID_RE = /\/listings\/new\/([0-9a-f-]{36})/i
+const UUID_RE =
+  /\/(?:profile\/listings|listings\/new|api\/v1\/listings)\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/i
 
 export function listingIdFromUrl(url: string): string | null {
   return url.match(UUID_RE)?.[1] ?? null

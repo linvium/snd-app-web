@@ -36,9 +36,9 @@ function looksLikeHeic(buffer: Buffer): boolean {
 }
 
 const SIZES = {
-  thumbnail: { width: 400, height: 300, quality: 80 },
-  medium: { width: 800, height: 600, quality: 85 },
-  large: { width: 1600, height: 1200, quality: 85 },
+  thumbnail: { width: 400, height: 300, quality: 80, fit: 'cover' as const },
+  medium: { width: 800, height: 600, quality: 85, fit: 'cover' as const },
+  large: { width: 1200, quality: 85, fit: 'inside' as const },
 } as const
 
 export interface ProcessedListingImage {
@@ -110,10 +110,17 @@ export async function processListingImage(buffer: Buffer): Promise<ProcessedList
     keyof typeof SIZES,
     (typeof SIZES)[keyof typeof SIZES],
   ][]) {
-    const resized = pipeline.clone().resize(size.width, size.height, {
-      fit: 'cover',
-      position: 'centre',
-    })
+    const resized =
+      size.fit === 'inside'
+        ? pipeline.clone().resize({
+            width: size.width,
+            fit: 'inside',
+            withoutEnlargement: true,
+          })
+        : pipeline.clone().resize(size.width, size.height, {
+            fit: 'cover',
+            position: 'centre',
+          })
 
     const [webp, jpeg] = await Promise.all([
       resized.clone().webp({ quality: size.quality }).toBuffer(),
@@ -124,6 +131,37 @@ export async function processListingImage(buffer: Buffer): Promise<ProcessedList
   }
 
   return { width, height, isPortrait, variants }
+}
+
+export function listingImageInsertRow(input: {
+  id: string
+  listingId: string
+  thumbnailUrl: string
+  mediumUrl: string
+  largeUrl: string
+  sortOrder: number
+}) {
+  return {
+    id: input.id,
+    listing_id: input.listingId,
+    url: input.largeUrl,
+    thumbnail_url: input.thumbnailUrl,
+    medium_url: input.mediumUrl,
+    large_url: input.largeUrl,
+    sort_order: input.sortOrder,
+  }
+}
+
+export function listingImageCreatedPayload(
+  row: { id: string; thumbnail_url: string; sort_order: number },
+  isPortrait: boolean
+) {
+  return {
+    id: row.id,
+    thumbnail_url: row.thumbnail_url,
+    sort_order: row.sort_order,
+    is_portrait: isPortrait,
+  }
 }
 
 export { MAX_LISTING_IMAGES }
