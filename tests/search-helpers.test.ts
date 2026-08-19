@@ -4,6 +4,8 @@ import {
   boundsToRadiusKm,
   defaultSortFor,
   formatDateRange,
+  filterPopularSearchTerms,
+  searchBarDividerHidden,
   formatDistance,
   formatPriceMinor,
   formatPricePerDay,
@@ -233,5 +235,39 @@ describe('city lookup', () => {
   it('matches partial input in the city picker', () => {
     expect(searchCities('novi').map((city) => city.name)).toContain('Novi Sad')
     expect(searchCities('').length).toBeGreaterThan(30)
+  })
+})
+
+describe('filterPopularSearchTerms', () => {
+  it('returns all popular terms when the query is empty', () => {
+    expect(filterPopularSearchTerms('')).toEqual([
+      'bušilica',
+      'šator',
+      'prikolica',
+      'dron',
+      'kosačica',
+      'projektor',
+    ])
+  })
+
+  it('filters popular terms by partial match', () => {
+    expect(filterPopularSearchTerms('bu')).toEqual(['bušilica'])
+    expect(filterPopularSearchTerms('kosa')).toEqual(['kosačica'])
+  })
+})
+
+describe('searchBarDividerHidden', () => {
+  it('hides every divider while a field is active', () => {
+    expect(searchBarDividerHidden('q', null, 'after-q')).toBe(true)
+    expect(searchBarDividerHidden('dates', 'city', 'after-city')).toBe(true)
+  })
+
+  it('hides only the dividers next to the hovered field', () => {
+    expect(searchBarDividerHidden(null, 'q', 'after-q')).toBe(true)
+    expect(searchBarDividerHidden(null, 'q', 'after-city')).toBe(false)
+    expect(searchBarDividerHidden(null, 'city', 'after-q')).toBe(true)
+    expect(searchBarDividerHidden(null, 'city', 'after-city')).toBe(true)
+    expect(searchBarDividerHidden(null, 'dates', 'after-q')).toBe(false)
+    expect(searchBarDividerHidden(null, 'dates', 'after-city')).toBe(true)
   })
 })

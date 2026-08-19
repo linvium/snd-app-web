@@ -12,6 +12,42 @@ export interface SearchCenter extends Coordinates {
 
 const EARTH_RADIUS_M = 6371000
 
+/** Terms surfaced in the header and mobile search when the query field is empty. */
+export const POPULAR_SEARCH_TERMS = [
+  'bušilica',
+  'šator',
+  'prikolica',
+  'dron',
+  'kosačica',
+  'projektor',
+] as const
+
+export function filterPopularSearchTerms(
+  term: string,
+  terms: readonly string[] = POPULAR_SEARCH_TERMS
+): string[] {
+  const needle = term.trim().toLowerCase()
+  if (!needle) return [...terms]
+  return terms.filter((value) => value.toLowerCase().includes(needle))
+}
+
+export type SearchBarSegment = 'q' | 'city' | 'dates'
+
+/**
+ * Airbnb hides a divider as soon as either neighbouring field is hovered, and
+ * hides every divider while a field is active.
+ */
+export function searchBarDividerHidden(
+  open: SearchBarSegment | null,
+  hovered: SearchBarSegment | null,
+  divider: 'after-q' | 'after-city'
+): boolean {
+  if (open) return true
+  if (!hovered) return false
+  if (divider === 'after-q') return hovered === 'q' || hovered === 'city'
+  return hovered === 'city' || hovered === 'dates'
+}
+
 /** Same formula as the database side, so client and server agree on distances. */
 export function haversineMeters(a: Coordinates, b: Coordinates): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180

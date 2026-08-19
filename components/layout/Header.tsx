@@ -139,7 +139,7 @@ export default function Header() {
         <div className="border-t border-border px-4 py-2.5 md:border-none md:pt-0 md:pb-3">
           <div className="mx-auto max-w-[1120px]">
             {/* useSearchParams needs a boundary; the bar is not worth blocking on. */}
-            <Suspense fallback={<div className="h-11" />}>
+            <Suspense fallback={<div className="h-12 md:h-16" />}>
               <HeaderSearch />
             </Suspense>
           </div>
