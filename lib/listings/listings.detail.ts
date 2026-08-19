@@ -1,5 +1,5 @@
 import type { ListingPrices } from '@/lib/pricing'
-import type { CategoryNode, ListingPriceTier, OwnerSummary } from '@/types/listing-detail'
+import type { CategoryNode, DetailImage, ListingPriceTier, OwnerSummary } from '@/types/listing-detail'
 
 /**
  * Display rules for the item page (doc 04 §4, §5, §7, §10).
@@ -188,4 +188,29 @@ export function placeLabel(
   )
 
   return unique.join(', ')
+}
+
+/**
+ * `listing_images` no longer stores pixel size (dropped in
+ * `20260818110000_listing_images_drop_width_height`). Selecting those columns
+ * makes PostgREST reject the whole query, so the gallery renders empty.
+ */
+export function toDetailImages(
+  rows:
+    | readonly {
+        id: unknown
+        thumbnail_url: unknown
+        medium_url: unknown
+        large_url: unknown
+        sort_order: unknown
+      }[]
+    | null
+): DetailImage[] {
+  return (rows ?? []).map((image) => ({
+    id: image.id as string,
+    thumbnail_url: image.thumbnail_url as string,
+    medium_url: image.medium_url as string,
+    large_url: image.large_url as string,
+    sort_order: Number(image.sort_order),
+  }))
 }

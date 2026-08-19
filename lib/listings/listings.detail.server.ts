@@ -1,11 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { addDaysIso, todayIso } from '@/lib/availability'
-import { buildBreadcrumb, guaranteeCapMinor, inheritedGuaranteeCap } from '@/lib/listings/listings.detail'
+import { buildBreadcrumb, guaranteeCapMinor, inheritedGuaranteeCap, toDetailImages } from '@/lib/listings/listings.detail'
 import { AVAILABILITY_MONTHS_AHEAD } from '@/lib/pricing'
 import type {
   CategoryNode,
-  DetailImage,
   ListingDetail,
   OwnerSummary,
   PickupLocation,
@@ -73,7 +72,7 @@ export async function loadListingDetail(
   const today = todayIso()
 
   const [
-    { data: images },
+    { data: images, error: imagesError },
     { data: pickupRows },
     { data: categories },
     { data: ownerRow },
@@ -83,7 +82,7 @@ export async function loadListingDetail(
   ] = await Promise.all([
     supabase
       .from('listing_images')
-      .select('id, thumbnail_url, medium_url, large_url, width, height, sort_order')
+      .select('id, thumbnail_url, medium_url, large_url, sort_order')
       .eq('listing_id', listingId)
       .order('sort_order', { ascending: true }),
     supabase
@@ -125,6 +124,10 @@ export async function loadListingDetail(
           .in('status', ['paid', 'in_progress'])
       : Promise.resolve({ data: [] }),
   ])
+
+  if (imagesError) {
+    console.error('[listing-detail] images failed', imagesError)
+  }
 
   const isOwner = ownerId === viewer.id
   const canSeeExact = isOwner || (entitlingBookings ?? []).length > 0
@@ -212,17 +215,7 @@ export async function loadListingDetail(
             breadcrumb: trail.map((node) => ({ name: node.name, slug: node.slug })),
           }
         : null,
-      images: (images ?? []).map(
-        (image): DetailImage => ({
-          id: image.id as string,
-          thumbnail_url: image.thumbnail_url as string,
-          medium_url: image.medium_url as string,
-          large_url: image.large_url as string,
-          width: Number(image.width),
-          height: Number(image.height),
-          sort_order: Number(image.sort_order),
-        })
-      ),
+      images: toDetailImages(images),
       price_1_day_minor: Number(row.price_1_day_minor ?? 0),
       price_3_days_minor: (row.price_3_days_minor as number | null) ?? null,
       price_7_days_minor: (row.price_7_days_minor as number | null) ?? null,

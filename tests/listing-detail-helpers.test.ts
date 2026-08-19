@@ -9,6 +9,7 @@ import {
   pluralizeReviews,
   responseRateText,
   responseTimeText,
+  toDetailImages,
 } from '@/lib/listings/listings.detail'
 import type { CategoryNode } from '@/types/listing-detail'
 
@@ -155,5 +156,33 @@ describe('Serbian plurals', () => {
     expect(pluralizeReviews(1)).toBe('1 recenzija')
     expect(pluralizeReviews(3)).toBe('3 recenzije')
     expect(pluralizeReviews(12)).toBe('12 recenzija')
+  })
+})
+
+describe('toDetailImages', () => {
+  it('maps storage urls without pixel size columns', () => {
+    expect(
+      toDetailImages([
+        {
+          id: 'img-1',
+          thumbnail_url: 'https://cdn.example/t.webp',
+          medium_url: 'https://cdn.example/m.webp',
+          large_url: 'https://cdn.example/l.webp',
+          sort_order: 0,
+        },
+      ])
+    ).toEqual([
+      {
+        id: 'img-1',
+        thumbnail_url: 'https://cdn.example/t.webp',
+        medium_url: 'https://cdn.example/m.webp',
+        large_url: 'https://cdn.example/l.webp',
+        sort_order: 0,
+      },
+    ])
+  })
+
+  it('treats a failed query as no images, not a crash', () => {
+    expect(toDetailImages(null)).toEqual([])
   })
 })
