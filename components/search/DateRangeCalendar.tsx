@@ -15,6 +15,12 @@ interface DateRangeCalendarProps {
   to: string | null
   onChange: (from: string | null, to: string | null) => void
   monthsAhead?: number
+  /**
+   * Days already taken (doc 04 §13). Search passes nothing — it filters by
+   * availability rather than displaying it — so the default is an empty list
+   * and every day stays selectable there.
+   */
+  unavailable?: readonly string[]
 }
 
 function toIso(date: Date): string {
@@ -24,6 +30,19 @@ function toIso(date: Date): string {
 function startOfToday(): Date {
   const now = new Date()
   return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
+}
+
+function rangeCrossesTakenDay(from: string, to: string, taken: ReadonlySet<string>): boolean {
+  if (taken.size === 0) return false
+
+  const start = Date.parse(`${from}T00:00:00Z`)
+  const end = Date.parse(`${to}T00:00:00Z`)
+  if (Number.isNaN(start) || Number.isNaN(end)) return false
+
+  for (let time = start; time <= end; time += 86_400_000) {
+    if (taken.has(new Date(time).toISOString().slice(0, 10))) return true
+  }
+  return false
 }
 
 /**
@@ -37,8 +56,10 @@ export default function DateRangeCalendar({
   to,
   onChange,
   monthsAhead = 12,
+  unavailable,
 }: DateRangeCalendarProps) {
   const today = useMemo(startOfToday, [])
+  const taken = useMemo(() => new Set(unavailable ?? []), [unavailable])
 
   const months = useMemo(() => {
     return Array.from({ length: monthsAhead }, (_, offset) => {
@@ -70,6 +91,12 @@ export default function DateRangeCalendar({
       onChange(iso, null)
       return
     }
+    // Closing a range across a taken day would produce a booking that cannot
+    // exist, so the second tap restarts the range instead.
+    if (rangeCrossesTakenDay(from, iso, taken)) {
+      onChange(iso, null)
+      return
+    }
     onChange(from, iso)
   }
 
@@ -91,6 +118,8 @@ export default function DateRangeCalendar({
             {month.days.map((day) => {
               const iso = toIso(day)
               const isPast = day < today
+              const isTaken = taken.has(iso)
+              const isDisabled = isPast || isTaken
               const isStart = iso === from
               const isEnd = iso === to
               const isBetween = Boolean(from && to && iso > from && iso < to)
@@ -99,13 +128,17 @@ export default function DateRangeCalendar({
                 <button
                   key={iso}
                   type="button"
-                  disabled={isPast}
+                  disabled={isDisabled}
                   aria-pressed={isStart || isEnd}
+                  aria-label={isTaken ? `${iso} — zauzeto` : undefined}
                   onClick={() => handleSelect(iso)}
                   className={cn(
                     'grid h-11 cursor-pointer place-items-center rounded-md border-none bg-transparent text-sm transition-colors',
                     isPast && 'cursor-not-allowed text-zinc-300',
-                    !isPast && 'text-card-foreground hover:bg-muted',
+                    // A taken day is struck through rather than merely greyed:
+                    // grey alone reads as "past" and invites a second tap.
+                    isTaken && !isPast && 'cursor-not-allowed text-zinc-300 line-through',
+                    !isDisabled && 'text-card-foreground hover:bg-muted',
                     isBetween && 'bg-brand-50 text-brand-700',
                     (isStart || isEnd) && 'bg-brand-500 font-semibold text-white hover:bg-brand-600'
                   )}
