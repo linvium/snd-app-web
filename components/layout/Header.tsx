@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { UserIcon } from 'lucide-react'
-import { HEADER_SEARCH_MAX_WIDTH_PX, HEADER_UTILITY_LINKS, headerIsFullWidth, headerShowsSearch } from '@/lib/layout/header.helpers'
+import { HEADER_SEARCH_MAX_WIDTH_PX, HEADER_UTILITY_LINKS, headerIsFullWidth, headerOverlaysHero, headerShowsSearch } from '@/lib/layout/header.helpers'
 import { cn } from '@/lib/utils'
 import { useAuthSession } from '@/context/AuthContext'
 import { useSignOut } from '@/hooks/auth'
@@ -41,6 +41,8 @@ export default function Header() {
 
   const showsSearch = headerShowsSearch(pathname)
   const isFullWidth = headerIsFullWidth(pathname)
+  const overlaysHero = headerOverlaysHero(pathname)
+  const onHero = overlaysHero && !hasShadow
 
   useEffect(() => {
     const onScroll = () => setHasShadow(window.scrollY > 20)
@@ -56,7 +58,9 @@ export default function Header() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 bg-card transition-shadow duration-200 ease-in-out',
+        'z-30 transition-[background-color,box-shadow,color] duration-200 ease-in-out',
+        overlaysHero ? 'fixed inset-x-0 top-0' : 'sticky top-0 bg-card',
+        overlaysHero && (hasShadow ? 'bg-card' : 'bg-transparent'),
         hasShadow && 'shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
       )}
     >
@@ -69,10 +73,17 @@ export default function Header() {
         <nav
           aria-label="Korisni linkovi"
           data-testid="header-utility-nav"
-          className="hidden h-8 items-center justify-end gap-4 text-[12px] font-medium text-zinc-500 lg:flex"
+          className={cn(
+            'hidden h-8 items-center justify-end gap-4 text-[12px] font-medium lg:flex',
+            onHero ? 'text-white/80' : 'text-zinc-500'
+          )}
         >
           {HEADER_UTILITY_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className="hover:text-foreground">
+            <Link
+              key={link.href}
+              href={link.href}
+              className={onHero ? 'hover:text-white' : 'hover:text-foreground'}
+            >
               {link.label}
             </Link>
           ))}
@@ -160,7 +171,10 @@ export default function Header() {
                 <Link
                   href="/auth/login"
                   aria-label="Prijavi se"
-                  className="grid size-9 place-items-center rounded-full border border-zinc-300 text-zinc-500 md:hidden"
+                  className={cn(
+                    'grid size-9 place-items-center rounded-full border md:hidden',
+                    onHero ? 'border-white/40 text-white' : 'border-zinc-300 text-zinc-500'
+                  )}
                 >
                   <UserIcon className="size-[18px]" strokeWidth={1.8} aria-hidden />
                 </Link>

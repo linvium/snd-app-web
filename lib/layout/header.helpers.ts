@@ -17,3 +17,8 @@ export function headerShowsSearch(pathname: string): boolean {
 export function headerIsFullWidth(pathname: string): boolean {
   return pathname === '/' || pathname === '/search'
 }
+
+/** Homepage header sits on the hero instead of pushing it down. */
+export function headerOverlaysHero(pathname: string): boolean {
+  return pathname === '/'
+}

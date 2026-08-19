@@ -4,6 +4,7 @@ import {
   HEADER_SEARCH_MAX_WIDTH_PX,
   HEADER_UTILITY_LINKS,
   headerIsFullWidth,
+  headerOverlaysHero,
   headerShowsSearch,
 } from '@/lib/layout/header.helpers'
 
@@ -28,6 +29,13 @@ describe('headerIsFullWidth', () => {
   it('keeps a centered shell on other pages', () => {
     expect(headerIsFullWidth('/faq')).toBe(false)
     expect(headerIsFullWidth('/garancija')).toBe(false)
+  })
+})
+
+describe('headerOverlaysHero', () => {
+  it('overlays the homepage hero from the top of the viewport', () => {
+    expect(headerOverlaysHero('/')).toBe(true)
+    expect(headerOverlaysHero('/search')).toBe(false)
   })
 })
 

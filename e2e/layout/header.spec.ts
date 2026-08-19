@@ -59,6 +59,16 @@ test.describe('header layout', () => {
     expect(mainBox!.width).toBeGreaterThan(1200)
     expect(utilityBox!.width).toBeGreaterThan(1200)
     await expect(page.getByTestId('header-utility-nav')).toHaveCSS('border-bottom-width', '0px')
+
+    const hero = page.getByTestId('home-hero')
+    await expect(hero).toBeVisible()
+    await expect(hero.locator('img')).toHaveAttribute('src', /homepage_hero/)
+    const heroBox = await hero.boundingBox()
+    expect(heroBox).toBeTruthy()
+    expect(heroBox!.y).toBeLessThanOrEqual(1)
+    expect(heroBox!.height).toBeLessThan(720)
+    expect(mainBox!.y).toBeGreaterThanOrEqual(heroBox!.y)
+    expect(mainBox!.y).toBeLessThan(heroBox!.y + heroBox!.height)
   })
 
   test('desktop search bar is centered and capped instead of filling the row', async ({ page }) => {
