@@ -1,5 +1,5 @@
 ---
-description: SND project coding rules — identifiers, architecture, UI language, Server Components
+description: SND project coding rules - identifiers, architecture, UI language, Server Components, tests
 alwaysApply: true
 ---
 
@@ -33,6 +33,24 @@ Allowed Serbian:
 CSS custom properties must be English (e.g. `--color-brand-500`, `--radius-md`).
 
 Prefer clear English (`passwordStrength`, `formError`, `isLoading`) over transliteration.
+
+---
+
+## Hyphen only, never a long dash
+
+Never use an em dash (`—`) or en dash (`–`). Always use a regular hyphen (`-`).
+
+Applies everywhere: UI copy, comments, commit messages, docs, and replies.
+
+```typescript
+// ❌ BAD
+const hint = 'Iznajmi — koristi — vrati'
+// Sort: newest — then distance
+
+// ✅ GOOD
+const hint = 'Iznajmi - koristi - vrati'
+// Sort: newest - then distance
+```
 
 ---
 
@@ -157,3 +175,25 @@ export function LoginForm() {
 ```
 
 Do not add `'use client'` just to use `Link`, `Image`, `className`, or lucide icons — those work in Server Components.
+
+---
+
+## Tests required for every feature
+
+A feature is not done until tests exist. Do not ship a new feature, flow, or non-trivial behaviour change without tests in the same change.
+
+- Unit / helper / validation logic → Vitest in `tests/<name>.test.ts`
+- User-facing flows (auth gates, publish, edit, photos) → Playwright in `e2e/<domain>/<name>.spec.ts`
+- Cover the happy path and the important failure / edge cases
+- Prefer testing behaviour over implementation details
+
+```typescript
+// ❌ BAD — feature lands, tests later
+export function coverageCopy(...) { /* ... */ }
+
+// ✅ GOOD — tests land with the feature
+// tests/listings-publish.test.ts
+it('shows the category guarantee cap', () => { /* ... */ })
+```
+
+Do not skip tests because the change is “small” if it adds or changes behaviour. Bugfix-only tweaks to existing covered code may extend the existing test instead of adding a new file.

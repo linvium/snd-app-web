@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CircleCheckBigIcon, ShieldCheckIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { PageLoading } from '@/components/ui/page-loading'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useKycVerification, useStartKyc } from '@/hooks/kyc'
 import { kycStatusLabel } from '@/lib/kyc/kyc.helpers'
@@ -44,7 +45,7 @@ export default function ProfileVerificationPage() {
   }
 
   if (isLoading) {
-    return <div className="py-6 text-sm text-muted-foreground">Učitavanje verifikacije…</div>
+    return <PageLoading>Učitavanje verifikacije…</PageLoading>
   }
 
   return (

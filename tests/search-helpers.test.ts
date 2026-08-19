@@ -4,6 +4,10 @@ import {
   boundsToRadiusKm,
   defaultSortFor,
   formatDateRange,
+  filterPopularSearchTerms,
+  searchBarDividerHidden,
+  searchSubmitButtonLayoutClass,
+  nextSearchBarSegment,
   formatDistance,
   formatPriceMinor,
   formatPricePerDay,
@@ -189,6 +193,10 @@ describe('formatDateRange', () => {
     expect(formatDateRange('2026-08-20', null)).toBe('20. avg')
   })
 
+  it('shows a single day when start and end are the same', () => {
+    expect(formatDateRange('2026-08-19', '2026-08-19')).toBe('19. avg')
+  })
+
   it('returns null when there are no dates', () => {
     expect(formatDateRange(null, null)).toBeNull()
   })
@@ -233,5 +241,63 @@ describe('city lookup', () => {
   it('matches partial input in the city picker', () => {
     expect(searchCities('novi').map((city) => city.name)).toContain('Novi Sad')
     expect(searchCities('').length).toBeGreaterThan(30)
+  })
+})
+
+describe('filterPopularSearchTerms', () => {
+  it('returns all popular terms when the query is empty', () => {
+    expect(filterPopularSearchTerms('')).toEqual([
+      'bušilica',
+      'šator',
+      'prikolica',
+      'dron',
+      'kosačica',
+      'projektor',
+    ])
+  })
+
+  it('filters popular terms by partial match', () => {
+    expect(filterPopularSearchTerms('bu')).toEqual(['bušilica'])
+    expect(filterPopularSearchTerms('kosa')).toEqual(['kosačica'])
+  })
+})
+
+describe('searchBarDividerHidden', () => {
+  it('hides every divider while a field is active', () => {
+    expect(searchBarDividerHidden('q', null, 'after-q')).toBe(true)
+    expect(searchBarDividerHidden('dates', 'city', 'after-city')).toBe(true)
+  })
+
+  it('hides only the dividers next to the hovered field', () => {
+    expect(searchBarDividerHidden(null, 'q', 'after-q')).toBe(true)
+    expect(searchBarDividerHidden(null, 'q', 'after-city')).toBe(false)
+    expect(searchBarDividerHidden(null, 'city', 'after-q')).toBe(true)
+    expect(searchBarDividerHidden(null, 'city', 'after-city')).toBe(true)
+    expect(searchBarDividerHidden(null, 'dates', 'after-q')).toBe(false)
+    expect(searchBarDividerHidden(null, 'dates', 'after-city')).toBe(true)
+  })
+})
+
+describe('nextSearchBarSegment', () => {
+  it('advances query → city → dates, then to search', () => {
+    expect(nextSearchBarSegment('q')).toBe('city')
+    expect(nextSearchBarSegment('city')).toBe('dates')
+    expect(nextSearchBarSegment('dates')).toBe('search')
+  })
+})
+
+describe('searchSubmitButtonLayoutClass', () => {
+  it('keeps the collapsed button a square with no flex gap', () => {
+    const classes = searchSubmitButtonLayoutClass(false)
+    expect(classes).toContain('size-12')
+    expect(classes).not.toContain('gap-2')
+    expect(classes).not.toContain('px-4')
+  })
+
+  it('adds padding and gap when the Pretraži label is shown', () => {
+    const classes = searchSubmitButtonLayoutClass(true)
+    expect(classes).toContain('h-12')
+    expect(classes).toContain('gap-2')
+    expect(classes).toContain('px-4')
   })
 })

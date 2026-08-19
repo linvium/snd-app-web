@@ -93,6 +93,7 @@ Identifikatori u kodu su na **engleskom**. UI tekst je na **srpskom** (latinica,
 | -------------------- | ------------------------------------ |
 | `/`                  | Početna                              |
 | `/search`            | Pretraga, lista rezultata i mapa     |
+| `/listings/<slug>`   | Stranica predmeta (dokument 04)      |
 | `/categories`        | Sve popunjene kategorije             |
 | `/category/<slug>`   | Prečica na `/search?category=<slug>` |
 | `/profile`           | Pregled profila                      |
@@ -110,6 +111,11 @@ Zaštićene rute (middleware): `/profile`, `/auth/welcome`, `/messages`, `/booki
 | `GET /api/v1/listings/search/pins` | Pinovi za mapu (lakši upit, maks. 500)         |
 | `GET /api/v1/listings/recent`      | Nedavno objavljeni (sekcija „Možda te zanima") |
 | `GET /api/v1/categories`           | Stablo popunjenih kategorija                   |
+| `POST /api/v1/listings/<id>/quote` | Obračun cene za period (dokument 04 §13.2)     |
+| `GET /api/v1/listings/<id>/reviews`| Recenzije, `scope=listing\|owner_other`        |
+| `GET /api/v1/listings/<id>/similar`| Slični predmeti                                |
+| `POST /api/v1/listings/<id>/view`  | Beleženje pregleda, prigušeno kolačićem        |
+| `POST /api/v1/reviews/<id>/report` | Prijava recenzije                              |
 
 ## Pretraga
 
@@ -153,6 +159,57 @@ Značenje parametara je nepromenjeno, samo naziv:
 
 Demo podaci za rad na stranici: `supabase/seed/demo_listings.sql` (pokreće se
 ručno, nije migracija).
+
+## Stranica predmeta
+
+Specifikacija: `04_Detalji_Predmeta.md`.
+
+Za razliku od pretrage, ovde **nema RPC funkcija** — stranica se čita običnim
+Supabase upitima. Problem je bio što su `users`, `user_profiles`,
+`kyc_verifications` i `locations` pod RLS-om vidljivi samo vlasniku, a stranica
+je javna. Rešenje su tanki pogledi koji izlažu **samo bezbedne kolone**:
+
+| Pogled                         | Šta izlaže                                              |
+| ------------------------------ | ------------------------------------------------------- |
+| `public_owner_profiles`        | Ime, avatar, ocena, brzina odgovora, „član od", KYC      |
+| `public_listing_locations`     | Opština, grad, **samo** `approx_latitude/longitude`      |
+| `public_deleted_listing_slugs` | Slugovi obrisanih oglasa, za `noindex`                   |
+
+**Zašto pogled, a ne funkcija ili servisni ključ:** RLS radi nad redovima i ne
+može da ograniči kolone, ali pogled *jeste* lista kolona. `street`,
+`postal_code` i tačne koordinate nisu izostavljene zato što se neki upit setio
+da ih ne traži — one u pogledu ne postoje. Pravilo iz dokumenta 04 §9 je time
+svojstvo šeme, a ne koda koji je čita.
+
+Tačna adresa se otključava **RLS politikom**, ne granom u interfejsu:
+
+```sql
+-- locations: select for paid renter
+exists (select 1 from bookings b
+        where b.pickup_location_id = locations.id
+          and b.renter_id = auth.uid()
+          and b.status in ('paid', 'in_progress'))
+```
+
+„Tačnu adresu dobijaš kada rezervacija bude plaćena" je tvrdnja o redu, pa
+pripada RLS-u. Iznajmljivač običnim `select`-om dobija ulicu i tačne
+koordinate, svi ostali ne dobijaju ništa.
+
+**Dostupnost** se čita iz jedne tabele — `blocked_dates`. Okidač na
+`bookings` upisuje dane za statuse `accepted`, `paid` i `in_progress`
+(dokument 00 §6.4), pa javni kalendar ne mora da čita `bookings`, koji je
+vidljiv samo dvema stranama rezervacije.
+
+**Obračun cene je na serveru** (`lib/pricing`), jer cena koja se prikazuje mora
+biti ona koja se naplaćuje. Provizije se čitaju iz okruženja
+(`NEXT_PUBLIC_RENTER_FEE_PERCENT`, `NEXT_PUBLIC_OWNER_FEE_PERCENT`), pošto
+dokument 00 §6.2 traži da budu podesive.
+
+Noćni posao za metrike vlasnika (dokument 04 §5) treba zakazati kroz pg_cron:
+
+```sql
+select public.snd_refresh_owner_response_metrics();
+```
 
 ## Dizajn tokeni
 

@@ -21,4 +21,5 @@ export const searchKeys = {
     [...searchKeys.all, 'count', buildSearchQuery({ ...params, page: 1 }).toString()] as const,
   suggested: (lat: number | null, lng: number | null) =>
     [...searchKeys.all, 'suggested', lat, lng] as const,
+  homeLatest: () => [...searchKeys.all, 'home-latest'] as const,
 }

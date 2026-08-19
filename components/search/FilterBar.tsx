@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef, useState } from 'react'
-import { CheckIcon, ChevronDownIcon, XIcon } from 'lucide-react'
+import { ArrowDownUpIcon, CheckIcon, SlidersHorizontalIcon, XIcon } from 'lucide-react'
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useDebouncedValue } from '@/hooks/search'
@@ -26,6 +26,9 @@ interface FilterBarProps {
   onClearAll: () => void
 }
 
+const ICON_BUTTON =
+  'relative inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-zinc-700 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400'
+
 export default function FilterBar({
   params,
   categories,
@@ -36,39 +39,23 @@ export default function FilterBar({
   const activeCount = countActiveFilters(params)
 
   return (
-    <div className="sticky top-14 z-20 border-b border-border bg-card md:top-[72px]">
-      <div
-        // Horizontally scrollable on mobile so the chips never wrap into a
-        // second sticky row (doc 03 §3.3).
-        className="mx-auto flex max-w-[1440px] items-center gap-2 overflow-x-auto px-4 py-2.5 [scrollbar-width:none] md:px-6 [&::-webkit-scrollbar]:hidden"
-      >
-        <CategoryFilter
+    <div className="sticky top-[128px] z-20 bg-background/80 backdrop-blur-md md:top-[160px] lg:top-20">
+      <div className="flex w-fit items-center gap-0.5 px-4 py-1.5 md:px-6">
+        <FiltersPopover
+          params={params}
           categories={categories}
-          value={params.category}
-          onChange={(category) => onChange({ category })}
+          hasLocation={hasLocation}
+          activeCount={activeCount}
+          onChange={onChange}
         />
 
-        <PriceFilter
-          min={params.priceMin}
-          max={params.priceMax}
-          onChange={(priceMin, priceMax) => onChange({ priceMin, priceMax })}
-        />
+        <SortControl value={params.sort} onChange={(sort) => onChange({ sort })} />
 
-        {hasLocation ? (
-          <DistanceFilter
-            value={params.radiusKm}
-            onChange={(radiusKm) => onChange({ radiusKm })}
-          />
-        ) : null}
-
-        <SortFilter value={params.sort} onChange={(sort) => onChange({ sort })} />
-
-        {/* Only shown once there is something to clear (doc 03 §6.2). */}
         {activeCount > 0 ? (
           <button
             type="button"
             onClick={onClearAll}
-            className="ml-1 inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border-none bg-transparent px-2 py-1.5 text-[13px] font-semibold text-brand-600 whitespace-nowrap hover:underline"
+            className="ml-1 inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border-none bg-transparent px-2 py-1.5 text-[13px] font-semibold whitespace-nowrap text-brand-600 hover:underline"
           >
             <XIcon className="size-3.5" aria-hidden />
             Obriši sve
@@ -80,23 +67,21 @@ export default function FilterBar({
   )
 }
 
-/**
- * Every filter is a button that reports its own open state, so a screen reader
- * announces the panel the same way the chevron shows it (doc 03 §13).
- */
-function FilterChip({
-  label,
-  isActive,
-  children,
-  panelClassName,
+function FiltersPopover({
+  params,
+  categories,
+  hasLocation,
+  activeCount,
+  onChange,
 }: {
-  label: string
-  isActive: boolean
-  children: (close: () => void) => React.ReactNode
-  panelClassName?: string
+  params: SearchParams
+  categories: SndCategoryNode[]
+  hasLocation: boolean
+  activeCount: number
+  onChange: (changes: Partial<SearchParams>) => void
 }) {
   const [open, setOpen] = useState(false)
-  const id = useId()
+  const panelId = useId()
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -104,27 +89,168 @@ function FilterChip({
         <button
           type="button"
           aria-expanded={open}
-          aria-controls={id}
+          aria-controls={panelId}
+          aria-label={activeCount > 0 ? `Filteri (${activeCount} aktivna)` : 'Filteri'}
           className={cn(
-            'inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium whitespace-nowrap transition-colors',
-            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400',
-            isActive
-              ? 'border-brand-500 bg-brand-500 text-white'
-              : 'border-border bg-card text-zinc-700 hover:bg-muted'
+            ICON_BUTTON,
+            activeCount > 0 && 'bg-brand-50 text-brand-700'
           )}
         >
-          {label}
-          <ChevronDownIcon className="size-3.5" aria-hidden />
+          <SlidersHorizontalIcon className="size-4" aria-hidden />
+          {activeCount > 0 ? (
+            <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-brand-500 text-[10px] font-semibold text-white">
+              {activeCount}
+            </span>
+          ) : null}
         </button>
       </PopoverTrigger>
-      <PopoverContent id={id} className={cn('w-72 p-2', panelClassName)}>
-        {children(() => setOpen(false))}
+      <PopoverContent
+        id={panelId}
+        align="start"
+        className="max-h-[70vh] w-80 overflow-y-auto rounded-2xl p-0 shadow-xl"
+      >
+        <FilterSection
+          title={findNode(categories, params.category)?.name ?? 'Kategorija'}
+          isActive={Boolean(params.category)}
+        >
+          <CategoryPanel
+            categories={categories}
+            value={params.category}
+            onChange={(category) => {
+              onChange({ category })
+              setOpen(false)
+            }}
+          />
+        </FilterSection>
+
+        <FilterSection
+          title={priceFilterLabel({ priceMin: params.priceMin, priceMax: params.priceMax })}
+          isActive={params.priceMin !== null || params.priceMax !== null}
+        >
+          <PricePanel
+            min={params.priceMin}
+            max={params.priceMax}
+            onChange={(priceMin, priceMax) => onChange({ priceMin, priceMax })}
+          />
+        </FilterSection>
+
+        {hasLocation ? (
+          <FilterSection
+            title={
+              params.radiusKm === DEFAULT_RADIUS_KM
+                ? 'Udaljenost'
+                : radiusFilterLabel(params.radiusKm)
+            }
+            isActive={params.radiusKm !== DEFAULT_RADIUS_KM}
+          >
+            <DistancePanel
+              value={params.radiusKm}
+              onChange={(radiusKm) => {
+                onChange({ radiusKm })
+                setOpen(false)
+              }}
+            />
+          </FilterSection>
+        ) : null}
       </PopoverContent>
     </Popover>
   )
 }
 
-function CategoryFilter({
+function SortControl({
+  value,
+  onChange,
+}: {
+  value: SearchSort
+  onChange: (sort: SearchSort) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const panelId = useId()
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={panelId}
+            aria-label={`Sortiranje: ${SEARCH_SORT_LABELS[value]}`}
+            className={ICON_BUTTON}
+          >
+            <ArrowDownUpIcon className="size-4" aria-hidden />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent id={panelId} align="start" className="w-56 rounded-2xl p-2 shadow-xl">
+          <div className="flex flex-col">
+            {SEARCH_SORTS.map((sort) => (
+              <button
+                key={sort}
+                type="button"
+                onClick={() => {
+                  onChange(sort)
+                  setOpen(false)
+                }}
+                className={cn(
+                  'flex cursor-pointer items-center gap-2 rounded-md border-none bg-transparent px-3 py-2 text-left text-sm transition-colors hover:bg-muted',
+                  value === sort && 'bg-brand-50 font-semibold text-brand-700'
+                )}
+              >
+                {value === sort ? (
+                  <CheckIcon className="size-3.5" aria-hidden />
+                ) : (
+                  <span className="size-3.5" aria-hidden />
+                )}
+                {SEARCH_SORT_LABELS[sort]}
+              </button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+      <span className="max-w-[72px] truncate text-[10px] leading-none font-medium text-muted-foreground">
+        {SEARCH_SORT_LABELS[value]}
+      </span>
+    </div>
+  )
+}
+
+function FilterSection({
+  title,
+  isActive,
+  children,
+}: {
+  title: string
+  isActive: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <section className="border-b border-border last:border-b-0">
+      <div className="flex items-center justify-between px-4 pt-3 pb-1">
+        <h3
+          className={cn(
+            'm-0 text-[13px] font-semibold',
+            isActive ? 'text-brand-700' : 'text-card-foreground'
+          )}
+        >
+          {title}
+        </h3>
+      </div>
+      <div className="px-2 pb-3">{children}</div>
+    </section>
+  )
+}
+
+function findNode(nodes: SndCategoryNode[], slug: string | null): SndCategoryNode | null {
+  if (!slug) return null
+  for (const node of nodes) {
+    if (node.slug === slug) return node
+    const found = findNode(node.children, slug)
+    if (found) return found
+  }
+  return null
+}
+
+function CategoryPanel({
   categories,
   value,
   onChange,
@@ -133,60 +259,40 @@ function CategoryFilter({
   value: string | null
   onChange: (slug: string | null) => void
 }) {
-  const selected = findNode(categories, value)
-
   return (
-    <FilterChip
-      label={selected ? selected.name : 'Kategorija'}
-      isActive={Boolean(value)}
-      panelClassName="max-h-[60vh] w-80 overflow-y-auto"
-    >
-      {(close) => (
-        <div className="flex flex-col">
+    <div className="flex max-h-52 flex-col overflow-y-auto">
+      <CategoryOption
+        label="Sve kategorije"
+        isSelected={!value}
+        onSelect={() => onChange(null)}
+      />
+      {categories.map((root) => (
+        <div key={root.id} className="mt-1">
           <CategoryOption
-            label="Sve kategorije"
-            isSelected={!value}
-            onSelect={() => {
-              onChange(null)
-              close()
-            }}
+            label={root.name}
+            count={root.listing_count}
+            isSelected={value === root.slug}
+            isParent
+            onSelect={() => onChange(root.slug)}
           />
-          {categories.map((root) => (
-            <div key={root.id} className="mt-1">
-              {/* Picking a parent includes everything under it (§6.1). */}
-              <CategoryOption
-                label={root.name}
-                count={root.listing_count}
-                isSelected={value === root.slug}
-                isParent
-                onSelect={() => {
-                  onChange(root.slug)
-                  close()
-                }}
-              />
-              {root.children.map((child) => (
-                <CategoryOption
-                  key={child.id}
-                  label={child.name}
-                  count={child.listing_count}
-                  isSelected={value === child.slug}
-                  indented
-                  onSelect={() => {
-                    onChange(child.slug)
-                    close()
-                  }}
-                />
-              ))}
-            </div>
+          {root.children.map((child) => (
+            <CategoryOption
+              key={child.id}
+              label={child.name}
+              count={child.listing_count}
+              isSelected={value === child.slug}
+              indented
+              onSelect={() => onChange(child.slug)}
+            />
           ))}
-          {categories.length === 0 ? (
-            <p className="px-3 py-4 text-center text-[13px] text-zinc-500">
-              Još nema popunjenih kategorija.
-            </p>
-          ) : null}
         </div>
-      )}
-    </FilterChip>
+      ))}
+      {categories.length === 0 ? (
+        <p className="px-3 py-4 text-center text-[13px] text-zinc-500">
+          Još nema popunjenih kategorija.
+        </p>
+      ) : null}
+    </div>
   )
 }
 
@@ -225,21 +331,7 @@ function CategoryOption({
   )
 }
 
-function findNode(nodes: SndCategoryNode[], slug: string | null): SndCategoryNode | null {
-  if (!slug) return null
-  for (const node of nodes) {
-    if (node.slug === slug) return node
-    const found = findNode(node.children, slug)
-    if (found) return found
-  }
-  return null
-}
-
-/**
- * Typed values settle for 400 ms before they hit the URL, so dragging a price
- * from 500 to 2000 fires one search and not fifteen (doc 03 §6.1, §12).
- */
-function PriceFilter({
+function PricePanel({
   min,
   max,
   onChange,
@@ -252,7 +344,6 @@ function PriceFilter({
   const debounced = useDebouncedValue(draft, 400)
   const committed = useRef({ min, max })
 
-  // Re-sync when the URL changes from elsewhere (back button, "clear all").
   useEffect(() => {
     committed.current = { min, max }
     setDraft({ min: min?.toString() ?? '', max: max?.toString() ?? '' })
@@ -272,53 +363,49 @@ function PriceFilter({
   const isActive = min !== null || max !== null
 
   return (
-    <FilterChip label={priceFilterLabel({ priceMin: min, priceMax: max })} isActive={isActive}>
-      {() => (
-        <div className="flex flex-col gap-3 p-2">
-          <p className="text-[13px] text-zinc-500">Dnevna cena u dinarima</p>
-          <div className="flex items-center gap-2">
-            <label className="flex-1">
-              <span className="mb-1 block text-[13px] font-medium text-zinc-700">Od</span>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                value={draft.min}
-                onChange={(event) => setDraft((prev) => ({ ...prev, min: event.target.value }))}
-                placeholder="0"
-                className="h-11 w-full rounded-md border border-input bg-card px-3 text-base outline-none focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-100"
-              />
-            </label>
-            <span className="mt-6 text-zinc-400">–</span>
-            <label className="flex-1">
-              <span className="mb-1 block text-[13px] font-medium text-zinc-700">Do</span>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                value={draft.max}
-                onChange={(event) => setDraft((prev) => ({ ...prev, max: event.target.value }))}
-                placeholder="∞"
-                className="h-11 w-full rounded-md border border-input bg-card px-3 text-base outline-none focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-100"
-              />
-            </label>
-          </div>
-          {isActive ? (
-            <button
-              type="button"
-              onClick={() => setDraft({ min: '', max: '' })}
-              className="cursor-pointer self-start border-none bg-transparent p-0 text-[13px] font-semibold text-brand-600 hover:underline"
-            >
-              Poništi cenu
-            </button>
-          ) : null}
-        </div>
-      )}
-    </FilterChip>
+    <div className="flex flex-col gap-3 px-2">
+      <p className="text-[13px] text-zinc-500">Dnevna cena u dinarima</p>
+      <div className="flex items-center gap-2">
+        <label className="flex-1">
+          <span className="mb-1 block text-[13px] font-medium text-zinc-700">Od</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={draft.min}
+            onChange={(event) => setDraft((prev) => ({ ...prev, min: event.target.value }))}
+            placeholder="0"
+            className="h-11 w-full rounded-md border border-input bg-card px-3 text-base outline-none focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-100"
+          />
+        </label>
+        <span className="mt-6 text-zinc-400">-</span>
+        <label className="flex-1">
+          <span className="mb-1 block text-[13px] font-medium text-zinc-700">Do</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={draft.max}
+            onChange={(event) => setDraft((prev) => ({ ...prev, max: event.target.value }))}
+            placeholder="∞"
+            className="h-11 w-full rounded-md border border-input bg-card px-3 text-base outline-none focus-visible:border-brand-500 focus-visible:ring-3 focus-visible:ring-brand-100"
+          />
+        </label>
+      </div>
+      {isActive ? (
+        <button
+          type="button"
+          onClick={() => setDraft({ min: '', max: '' })}
+          className="cursor-pointer self-start border-none bg-transparent p-0 text-[13px] font-semibold text-brand-600 hover:underline"
+        >
+          Poništi cenu
+        </button>
+      ) : null}
+    </div>
   )
 }
 
-function DistanceFilter({
+function DistancePanel({
   value,
   onChange,
 }: {
@@ -326,79 +413,25 @@ function DistanceFilter({
   onChange: (radiusKm: number) => void
 }) {
   return (
-    <FilterChip
-      label={value === DEFAULT_RADIUS_KM ? 'Udaljenost' : radiusFilterLabel(value)}
-      isActive={value !== DEFAULT_RADIUS_KM}
-      panelClassName="w-56"
-    >
-      {(close) => (
-        <div className="flex flex-col">
-          {RADIUS_OPTIONS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => {
-                onChange(option)
-                close()
-              }}
-              className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-md border-none bg-transparent px-3 py-2 text-left text-sm transition-colors hover:bg-muted',
-                value === option && 'bg-brand-50 font-semibold text-brand-700'
-              )}
-            >
-              {value === option ? (
-                <CheckIcon className="size-3.5" aria-hidden />
-              ) : (
-                <span className="size-3.5" />
-              )}
-              {radiusFilterLabel(option)}
-            </button>
-          ))}
-        </div>
-      )}
-    </FilterChip>
-  )
-}
-
-function SortFilter({
-  value,
-  onChange,
-}: {
-  value: SearchSort
-  onChange: (sort: SearchSort) => void
-}) {
-  return (
-    <FilterChip
-      label={SEARCH_SORT_LABELS[value]}
-      // Sorting is never "active" in the filter sense — there is always one.
-      isActive={false}
-      panelClassName="w-56"
-    >
-      {(close) => (
-        <div className="flex flex-col">
-          {SEARCH_SORTS.map((sort) => (
-            <button
-              key={sort}
-              type="button"
-              onClick={() => {
-                onChange(sort)
-                close()
-              }}
-              className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-md border-none bg-transparent px-3 py-2 text-left text-sm transition-colors hover:bg-muted',
-                value === sort && 'bg-brand-50 font-semibold text-brand-700'
-              )}
-            >
-              {value === sort ? (
-                <CheckIcon className="size-3.5" aria-hidden />
-              ) : (
-                <span className="size-3.5" />
-              )}
-              {SEARCH_SORT_LABELS[sort]}
-            </button>
-          ))}
-        </div>
-      )}
-    </FilterChip>
+    <div className="flex flex-col">
+      {RADIUS_OPTIONS.map((option) => (
+        <button
+          key={option}
+          type="button"
+          onClick={() => onChange(option)}
+          className={cn(
+            'flex cursor-pointer items-center gap-2 rounded-md border-none bg-transparent px-3 py-2 text-left text-sm transition-colors hover:bg-muted',
+            value === option && 'bg-brand-50 font-semibold text-brand-700'
+          )}
+        >
+          {value === option ? (
+            <CheckIcon className="size-3.5" aria-hidden />
+          ) : (
+            <span className="size-3.5" aria-hidden />
+          )}
+          {radiusFilterLabel(option)}
+        </button>
+      ))}
+    </div>
   )
 }

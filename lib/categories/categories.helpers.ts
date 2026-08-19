@@ -58,3 +58,20 @@ export function totalListings(rows: SndCategory[]): number {
     .filter((row) => row.level === 0)
     .reduce((sum, row) => sum + row.listing_count, 0)
 }
+
+export function isLeafCategory(
+  rows: { id: string; parent_id: string | null }[],
+  categoryId: string | null
+): boolean {
+  if (!categoryId) return false
+  return !rows.some((row) => row.parent_id === categoryId)
+}
+
+export function categoryPathLabel(category: { full_path: string; name: string }): {
+  parentPath: string | null
+  leafName: string
+} {
+  const parts = category.full_path.split(' › ').filter(Boolean)
+  if (parts.length <= 1) return { parentPath: null, leafName: category.name }
+  return { parentPath: parts.slice(0, -1).join(' › '), leafName: parts[parts.length - 1] }
+}

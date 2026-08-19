@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/context/AuthContext'
 import { QueryProvider } from '@/providers/QueryProvider'
+import { Toaster } from '@/components/ui/sonner'
 import { cn } from '@/lib/utils'
 import './globals.css'
 
@@ -13,7 +14,7 @@ const inter = Inter({
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-const siteTitle = 'SND – Iznajmi umesto da kupuješ'
+const siteTitle = 'SND - Iznajmi umesto da kupuješ'
 const siteDescription =
   'Iznajmi alat, opremu i stvari od ljudi iz svog kraja. Sve pokriveno garancijom.'
 const logoUrl = '/images/snd_logo_symbol.png'
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
         url: logoUrl,
         width: 1128,
         height: 1128,
-        alt: 'SND – Stvar na Dan',
+        alt: 'SND - Stvar na Dan',
       },
     ],
   },
@@ -51,7 +52,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="sr-Latn-RS" className={cn(inter.variable, 'font-sans')}>
       <body className={cn(inter.className, 'font-sans antialiased')}>
         <QueryProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>

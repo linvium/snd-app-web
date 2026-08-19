@@ -113,7 +113,7 @@ export default function SearchEmptyState({
             <Button onClick={onClearFilters}>Obriši sve filtere</Button>
           ) : (
             <Button asChild>
-              <Link href="/listings/new">Objavi predmet</Link>
+              <Link href="/profile/listings/new">Objavi pre dmet</Link>
             </Button>
           )}
         </div>
@@ -172,7 +172,7 @@ function SuggestedListings({ lat, lng }: { lat: number | null; lng: number | nul
   return (
     <section className="border-t border-border px-4 pt-8">
       <h3 className="mb-4 text-base font-semibold text-card-foreground">Možda te zanima</h3>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
         {isLoading
           ? Array.from({ length: 4 }, (_, index) => <ListingCardSkeleton key={index} />)
           : data?.slice(0, 4).map((listing, index) => (

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 
 import { ChevronLeftIcon } from 'lucide-react'
+import { isListingPublishPath } from '@/lib/listings/listings.paths'
 import { cn } from '@/lib/utils'
 
 const MENU_ITEMS = [
@@ -13,6 +14,7 @@ const MENU_ITEMS = [
   { name: 'Moje lokacije', href: '/profile/locations' },
   { name: 'Verifikacija', href: '/profile/verification' },
   { name: 'Moji oglasi', href: '/profile/listings' },
+  { name: 'Zahtevi', href: '/profile/requests' },
   { name: 'Omiljeni', href: '/profile/favorites' },
   { name: 'Podešavanja', href: '/profile/settings' },
 ]
@@ -47,6 +49,7 @@ function DesktopSidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  aria-current={isActive ? 'page' : undefined}
                   className={cn(
                     'block border-l-[3px] py-3 pr-4 pl-[13px] text-sm',
                     isActive
@@ -66,9 +69,12 @@ function DesktopSidebar() {
 }
 
 function subpageTitle(pathname: string): string | null {
+  if (isListingPublishPath(pathname)) return null
   if (pathname.startsWith('/profile/edit')) return 'Izmeni profil'
   if (pathname.startsWith('/profile/locations')) return 'Moje lokacije'
   if (pathname.startsWith('/profile/listings')) return 'Moji oglasi'
+  if (/^\/profile\/requests\/[^/]+$/.test(pathname)) return null
+  if (pathname.startsWith('/profile/requests')) return 'Zahtevi'
   if (pathname.startsWith('/profile/favorites')) return 'Omiljeni'
   if (pathname.startsWith('/profile/settings')) return 'Podešavanja'
   if (pathname.startsWith('/profile/verification')) return 'Verifikacija'
@@ -78,6 +84,10 @@ function subpageTitle(pathname: string): string | null {
 export default function ProfileLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const title = subpageTitle(pathname)
+
+  if (isListingPublishPath(pathname)) {
+    return <>{children}</>
+  }
 
   return (
     <div className="mx-auto max-w-[960px] px-4 pt-4 pb-10">

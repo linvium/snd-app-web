@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { PageLoading } from '@/components/ui/page-loading'
 import AddLocationForm from '@/components/profile/AddLocationForm'
 import {
   useDeleteLocation,
@@ -50,7 +51,7 @@ export default function LocationsPage() {
   }
 
   if (isLoading) {
-    return <div className="py-6 text-sm text-muted-foreground">Učitavanje…</div>
+    return <PageLoading>Učitavanje…</PageLoading>
   }
 
   return (

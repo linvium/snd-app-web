@@ -11,6 +11,8 @@ export const ERROR_CODES = {
   FORBIDDEN: 'FORBIDDEN',
   NOT_FOUND: 'NOT_FOUND',
   RATE_LIMITED: 'RATE_LIMITED',
+  UPLOAD_TOO_LARGE: 'UPLOAD_TOO_LARGE',
+  CONFLICT: 'CONFLICT',
   INTERNAL: 'INTERNAL',
 } as const
 
@@ -23,6 +25,10 @@ export function apiError(
   fields?: Record<string, string>
 ) {
   return NextResponse.json({ error: { code, message, ...(fields ? { fields } : {}) } }, { status })
+}
+
+export function apiOk<T>(data: T, status = 200) {
+  return NextResponse.json({ data }, { status })
 }
 
 export function apiList<T>(data: T[], meta: Record<string, unknown>, cacheSeconds = 0) {

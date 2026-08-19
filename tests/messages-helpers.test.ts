@@ -1,0 +1,170 @@
+import { describe, expect, it } from 'vitest'
+
+import {
+  conversationPartyLabel,
+  conversationsForListing,
+  formatConversationTime,
+  formatMessageClock,
+  formatMessageDayLabel,
+  isBookingRequestType,
+  messageDayKey,
+  messagePresentation,
+  requestCardDatesLabel,
+  sortConversationsForInbox,
+  unreadMessageTotal,
+} from '@/lib/messages/messages.helpers'
+import { MESSAGE_TYPES } from '@/types/message'
+
+describe('messagePresentation', () => {
+  it('renders a request card for the spec system type with a null sender', () => {
+    expect(
+      messagePresentation({ type: 'system_booking_requested', sender_id: null })
+    ).toBe('request_card')
+  })
+
+  it('still treats the legacy booking_request alias as a card', () => {
+    expect(messagePresentation({ type: 'booking_request', sender_id: null })).toBe('request_card')
+  })
+
+  it('renders a bubble for a text message', () => {
+    expect(
+      messagePresentation({ type: 'text', sender_id: '11111111-1111-4111-8111-111111111111' })
+    ).toBe('text_bubble')
+  })
+
+  it('knows the spec type is a booking request', () => {
+    expect(isBookingRequestType('system_booking_requested')).toBe(true)
+    expect(isBookingRequestType('text')).toBe(false)
+  })
+})
+
+describe('conversationPartyLabel', () => {
+  it('prefers a display name', () => {
+    expect(
+      conversationPartyLabel(
+        { display_name: 'Ana P.', first_name: 'Ana', last_name: 'Petrović' },
+        'ana@snd.rs'
+      )
+    ).toBe('Ana P.')
+  })
+
+  it('builds first name plus last initial when display name is missing', () => {
+    expect(
+      conversationPartyLabel(
+        { display_name: null, first_name: 'Ana', last_name: 'Petrović' },
+        'ana@snd.rs'
+      )
+    ).toBe('Ana P.')
+  })
+
+  it('falls back to email when the profile has no name', () => {
+    expect(
+      conversationPartyLabel({ display_name: null, first_name: null, last_name: null }, 'ana@snd.rs')
+    ).toBe('ana@snd.rs')
+    expect(conversationPartyLabel(null, 'ana@snd.rs')).toBe('ana@snd.rs')
+    expect(
+      conversationPartyLabel({ display_name: '  ', first_name: null, last_name: null }, 'ana@snd.rs')
+    ).toBe('ana@snd.rs')
+  })
+
+  it('uses Korisnik only when name and email are both missing', () => {
+    expect(conversationPartyLabel(null, null)).toBe('Korisnik')
+  })
+})
+
+describe('requestCardDatesLabel', () => {
+  it('says dates were not chosen when they are missing', () => {
+    expect(requestCardDatesLabel(null, null)).toBe('Datumi nisu izabrani.')
+  })
+
+  it('formats a range without a price', () => {
+    const label = requestCardDatesLabel('2026-08-20', '2026-08-22')
+    expect(label).toContain('20')
+    expect(label).toContain('22')
+    expect(label).not.toMatch(/ukupno|RSD|od /i)
+  })
+})
+
+describe('unreadMessageTotal', () => {
+  it('sums unread counts', () => {
+    expect(unreadMessageTotal([])).toBe(0)
+    expect(unreadMessageTotal([0, 2, 1])).toBe(3)
+  })
+})
+
+describe('conversationsForListing', () => {
+  it('keeps only rows for that listing', () => {
+    const rows = [
+      { id: 'a', listing: { id: '11111111-1111-4111-8111-111111111111' } },
+      { id: 'b', listing: { id: '22222222-2222-4222-8222-222222222222' } },
+    ]
+    expect(conversationsForListing(rows, '11111111-1111-4111-8111-111111111111').map((row) => row.id)).toEqual([
+      'a',
+    ])
+  })
+})
+
+describe('sortConversationsForInbox', () => {
+  it('puts unread threads first, then newest activity', () => {
+    const sorted = sortConversationsForInbox([
+      { id: 'old-read', unread_count: 0, last_message_at: '2026-08-10T09:00:00.000Z' },
+      { id: 'old-unread', unread_count: 1, last_message_at: '2026-08-01T09:00:00.000Z' },
+      { id: 'new-read', unread_count: 0, last_message_at: '2026-08-19T09:00:00.000Z' },
+      { id: 'new-unread', unread_count: 3, last_message_at: '2026-08-18T09:00:00.000Z' },
+    ])
+
+    expect(sorted.map((row) => row.id)).toEqual(['new-unread', 'old-unread', 'new-read', 'old-read'])
+  })
+
+  it('keeps conversations without a timestamp after dated ones in the same unread group', () => {
+    const sorted = sortConversationsForInbox([
+      { id: 'no-time', unread_count: 0, last_message_at: null },
+      { id: 'dated', unread_count: 0, last_message_at: '2026-08-19T09:00:00.000Z' },
+    ])
+
+    expect(sorted.map((row) => row.id)).toEqual(['dated', 'no-time'])
+  })
+})
+
+describe('formatConversationTime', () => {
+  const now = new Date('2026-08-19T15:30:00')
+
+  it('shows the clock time for messages from today', () => {
+    expect(formatConversationTime('2026-08-19T08:05:00', now)).toBe('08:05')
+  })
+
+  it('shows day and month for earlier dates in the same year', () => {
+    expect(formatConversationTime('2026-03-04T12:00:00', now)).toBe('04.03.')
+  })
+
+  it('includes the year for older messages', () => {
+    expect(formatConversationTime('2025-12-31T12:00:00', now)).toBe('31.12.2025.')
+  })
+})
+
+describe('formatMessageClock', () => {
+  it('always shows hours and minutes', () => {
+    expect(formatMessageClock('2026-08-19T08:05:00')).toBe('08:05')
+  })
+})
+
+describe('formatMessageDayLabel', () => {
+  const now = new Date('2026-08-19T15:30:00')
+
+  it('labels today and yesterday', () => {
+    expect(formatMessageDayLabel('2026-08-19T08:05:00', now)).toBe('Danas')
+    expect(formatMessageDayLabel('2026-08-18T22:00:00', now)).toBe('Juče')
+    expect(formatMessageDayLabel('2026-08-01T12:00:00', now)).toBe('01.08.2026.')
+  })
+
+  it('groups messages from the same local day', () => {
+    expect(messageDayKey('2026-08-19T08:05:00')).toBe(messageDayKey('2026-08-19T23:50:00'))
+    expect(messageDayKey('2026-08-19T08:05:00')).not.toBe(messageDayKey('2026-08-18T23:50:00'))
+  })
+})
+
+describe('MESSAGE_TYPES', () => {
+  it('keeps the spec name in the union', () => {
+    expect(MESSAGE_TYPES).toContain('system_booking_requested')
+  })
+})

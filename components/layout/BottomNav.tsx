@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation'
 import { HouseIcon, MessageSquareIcon, PlusIcon, SearchIcon, UserIcon, type LucideIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { useAuthSession } from '@/context/AuthContext'
+import { useUnreadMessageCount } from '@/hooks/messages'
 
 const NAV_ITEMS: {
   href: string
@@ -14,13 +16,15 @@ const NAV_ITEMS: {
 }[] = [
   { href: '/', label: 'Početna', icon: HouseIcon },
   { href: '/search', label: 'Pretraga', icon: SearchIcon },
-  { href: '/listings/new', label: 'Objavi', icon: PlusIcon, emphasized: true },
-  { href: '/messages', label: 'Poruke', icon: MessageSquareIcon },
+  { href: '/profile/listings/new', label: 'Objavi', icon: PlusIcon, emphasized: true },
+  { href: '/profile/requests', label: 'Zahtevi', icon: MessageSquareIcon },
   { href: '/profile', label: 'Profil', icon: UserIcon },
 ]
 
 export default function BottomNav() {
   const pathname = usePathname()
+  const { user } = useAuthSession()
+  const unread = useUnreadMessageCount(Boolean(user))
 
   return (
     <nav
@@ -29,7 +33,12 @@ export default function BottomNav() {
     >
       {NAV_ITEMS.map((item) => {
         const isActive =
-          item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
+          item.href === '/'
+            ? pathname === '/'
+            : item.href === '/profile'
+              ? pathname === '/profile' ||
+                (pathname.startsWith('/profile') && !pathname.startsWith('/profile/requests'))
+              : pathname.startsWith(item.href)
         const Icon = item.icon
 
         if (item.emphasized) {
@@ -59,11 +68,19 @@ export default function BottomNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              'flex flex-col items-center justify-center gap-0.5 text-[11px] no-underline',
+              'relative flex flex-col items-center justify-center gap-0.5 text-[11px] no-underline',
               isActive ? 'font-semibold text-brand-600' : 'font-medium text-zinc-500'
             )}
           >
             <Icon className="size-[22px]" strokeWidth={1.8} aria-hidden />
+            {item.href === '/profile/requests' && unread > 0 ? (
+              <span
+                data-testid="messages-unread-badge"
+                className="absolute top-0 right-[18%] grid min-w-4 translate-x-1/2 place-items-center rounded-full bg-brand-500 px-1 text-[10px] font-semibold leading-4 text-white"
+              >
+                {unread > 9 ? '9+' : unread}
+              </span>
+            ) : null}
             <span>{item.label}</span>
           </Link>
         )

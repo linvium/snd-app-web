@@ -4,16 +4,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CalendarIcon, ChevronLeftIcon, MapPinIcon, SearchIcon, XIcon } from 'lucide-react'
 
-import DateRangeCalendar from '@/components/search/DateRangeCalendar'
+import DateRangePicker from '@/components/search/DateRangePicker'
 import { useFocusTrap } from '@/components/search/useFocusTrap'
 import { Button } from '@/components/ui/button'
 import { useGeolocation, useSearchCount } from '@/hooks/search'
 import { findCity, searchCities } from '@/lib/geo'
-import { formatDateRange, resolveSearchCenter, type Coordinates } from '@/lib/search'
+import { formatDateRange, POPULAR_SEARCH_TERMS, resolveSearchCenter, type Coordinates } from '@/lib/search'
 import { cn } from '@/lib/utils'
 import type { SearchParams } from '@/types/search'
-
-const POPULAR_TERMS = ['bušilica', 'šator', 'prikolica', 'dron', 'kosačica', 'projektor']
 
 interface MobileSearchModalProps {
   open: boolean
@@ -248,7 +246,7 @@ export default function MobileSearchModal({
             <section className="mt-6">
               <h2 className="mb-2 text-sm font-semibold text-card-foreground">Popularno sada</h2>
               <div className="flex flex-wrap gap-2">
-                {POPULAR_TERMS.map((term) => (
+                {POPULAR_SEARCH_TERMS.map((term) => (
                   <button
                     key={term}
                     type="button"
@@ -355,7 +353,8 @@ export default function MobileSearchModal({
             </div>
           }
         >
-          <DateRangeCalendar
+          <DateRangePicker
+            layout="stack"
             from={draft.from}
             to={draft.to}
             onChange={(from, to) => setDraft((prev) => ({ ...prev, from, to }))}
