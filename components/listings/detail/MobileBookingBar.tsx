@@ -21,11 +21,15 @@ export default function MobileBookingBar({
   from,
   to,
   onDatesChange,
+  onStartRequest,
+  existingConversationId,
 }: {
   listing: ListingDetail
   from: string | null
   to: string | null
   onDatesChange: (from: string | null, to: string | null) => void
+  onStartRequest: () => void
+  existingConversationId?: string | null
 }) {
   const [open, setOpen] = useState(false)
   const quote = useListingQuote(listing.id, from, to)
@@ -68,6 +72,11 @@ export default function MobileBookingBar({
             from={from}
             to={to}
             onDatesChange={onDatesChange}
+            onStartRequest={() => {
+              setOpen(false)
+              onStartRequest()
+            }}
+            existingConversationId={existingConversationId}
             variant="plain"
           />
         </DialogContent>

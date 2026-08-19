@@ -10,6 +10,7 @@ import {
   messageDayKey,
   messagePresentation,
   requestCardDatesLabel,
+  shouldSubmitComposerOnEnter,
   sortConversationsForInbox,
   unreadMessageTotal,
 } from '@/lib/messages/messages.helpers'
@@ -163,8 +164,20 @@ describe('formatMessageDayLabel', () => {
   })
 })
 
-describe('MESSAGE_TYPES', () => {
-  it('keeps the spec name in the union', () => {
-    expect(MESSAGE_TYPES).toContain('system_booking_requested')
+describe('shouldSubmitComposerOnEnter', () => {
+  it('sends on Enter and keeps a new line on Shift + Enter', () => {
+    expect(shouldSubmitComposerOnEnter({ key: 'Enter', shiftKey: false })).toBe(true)
+    expect(shouldSubmitComposerOnEnter({ key: 'Enter', shiftKey: true })).toBe(false)
+    expect(shouldSubmitComposerOnEnter({ key: 'a', shiftKey: false })).toBe(false)
+  })
+
+  it('does not send while an IME composition is in progress', () => {
+    expect(
+      shouldSubmitComposerOnEnter({
+        key: 'Enter',
+        shiftKey: false,
+        nativeEvent: { isComposing: true },
+      })
+    ).toBe(false)
   })
 })

@@ -15,7 +15,7 @@ function initials(name: string) {
 
 function InboxSkeleton() {
   return (
-    <ul className="m-0 flex list-none flex-col gap-3 p-0" aria-hidden>
+    <ul className="m-0 flex list-none flex-col gap-3 p-0" aria-hidden data-testid="messages-inbox-skeleton">
       {Array.from({ length: 3 }, (_, index) => (
         <li key={index} className="flex gap-3 rounded-xl border border-border bg-card p-3">
           <Skeleton className="size-16 shrink-0 rounded-lg" />
@@ -33,7 +33,7 @@ function InboxSkeleton() {
 export function MessagesInbox() {
   const conversations = useConversations()
 
-  if (conversations.isLoading) {
+  if (conversations.isPending || (conversations.isFetching && conversations.data === undefined)) {
     return <InboxSkeleton />
   }
 

@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useState } from 'react'
 
-import { ContactOwnerCard } from '@/components/listings/ContactOwnerCard'
+import { ContactOwnerDialog } from '@/components/listings/ContactOwnerCard'
 import { ListingOwnerRequests } from '@/components/listings/ListingOwnerRequests'
 import BookingCard from '@/components/listings/detail/BookingCard'
 import CancellationTerms from '@/components/listings/detail/CancellationTerms'
@@ -17,7 +17,9 @@ import PickupLocation from '@/components/listings/detail/PickupLocation'
 import PriceTable from '@/components/listings/detail/PriceTable'
 import ReviewsSection from '@/components/listings/detail/ReviewsSection'
 import SimilarListings from '@/components/listings/detail/SimilarListings'
+import { useAuthSession } from '@/context/AuthContext'
 import { useRecordListingView } from '@/hooks/listings'
+import { useListingConversations } from '@/hooks/messages'
 import type { ListingDetail, ListingReview, ReviewSummary } from '@/types/listing-detail'
 
 interface ListingDetailViewProps {
@@ -32,7 +34,7 @@ interface ListingDetailViewProps {
  *
  * Two columns on desktop with the booking card sticky beside them, one column
  * on mobile in the order doc 04 §2.2 sets out. The sections answer the page's
- * three questions in order — what is it, who is lending it, what does it cost —
+ * three questions in order - what is it, who is lending it, what does it cost -
  * because a reader who cannot find one of those answers leaves (doc 04 §1).
  *
  * Selected dates live in the URL. That is what lets a guest be sent to sign in
@@ -47,7 +49,12 @@ export default function ListingDetailView({
 }: ListingDetailViewProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { user } = useAuthSession()
+  const existing = useListingConversations(listing.id, Boolean(user) && !listing.is_own_listing)
+  const existingConversationId =
+    Boolean(user) && !existing.isLoading ? existing.data[0]?.id ?? null : null
 
+  const [requestOpen, setRequestOpen] = useState(false)
   const [dates, setDates] = useState<{ from: string | null; to: string | null }>({
     from: searchParams.get('from'),
     to: searchParams.get('to'),
@@ -78,7 +85,7 @@ export default function ListingDetailView({
       <article className="mx-auto max-w-[1180px] px-4 pt-4 pb-28 md:pb-10">
         {/* Doc 04 §2.2 puts the gallery above the title on a phone and §2.1
             puts it below on desktop. Reordered with flex rather than rendered
-            twice — two copies would mean two <h1>s in the document, one of
+            twice - two copies would mean two <h1>s in the document, one of
             them hidden, which is a real problem for anything reading the page
             rather than looking at it. */}
         <div className="flex flex-col gap-4">
@@ -92,19 +99,8 @@ export default function ListingDetailView({
 
         <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_380px] lg:gap-10">
           <div className="flex flex-col gap-8">
-            <OwnerCard owner={listing.owner} isOwnListing={listing.is_own_listing} />
-            {listing.is_own_listing ? (
-              <ListingOwnerRequests listingId={listing.id} />
-            ) : (
-              <ContactOwnerCard
-                listingId={listing.id}
-                listingSlug={listing.slug}
-                ownerName={listing.owner.display_name}
-                ownerVerified={listing.owner.is_verified}
-                initialFrom={dates.from}
-                initialTo={dates.to}
-              />
-            )}
+            <OwnerCard owner={listing.owner} />
+            {listing.is_own_listing ? <ListingOwnerRequests listingId={listing.id} /> : null}
             <ListingDescription description={listing.description} />
             <PriceTable listing={listing} />
 
@@ -117,6 +113,8 @@ export default function ListingDetailView({
                 from={dates.from}
                 to={dates.to}
                 onDatesChange={handleDatesChange}
+                onStartRequest={() => setRequestOpen(true)}
+                existingConversationId={existingConversationId}
                 variant="plain"
               />
             </div>
@@ -143,6 +141,8 @@ export default function ListingDetailView({
               from={dates.from}
               to={dates.to}
               onDatesChange={handleDatesChange}
+              onStartRequest={() => setRequestOpen(true)}
+              existingConversationId={existingConversationId}
             />
           </div>
         </div>
@@ -155,7 +155,21 @@ export default function ListingDetailView({
         from={dates.from}
         to={dates.to}
         onDatesChange={handleDatesChange}
+        onStartRequest={() => setRequestOpen(true)}
+        existingConversationId={existingConversationId}
       />
+
+      {listing.is_own_listing || listing.status !== 'published' ? null : (
+        <ContactOwnerDialog
+          open={requestOpen}
+          onOpenChange={setRequestOpen}
+          listingId={listing.id}
+          from={dates.from}
+          to={dates.to}
+          onDatesChange={handleDatesChange}
+          unavailable={listing.unavailable_dates}
+        />
+      )}
     </>
   )
 }

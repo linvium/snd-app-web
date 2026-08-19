@@ -1,7 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { apiError, ERROR_CODES } from '@/lib/api/response'
-import { previewMessage } from '@/lib/bookings/bookings.helpers'
 import { validateMessageBody } from '@/lib/bookings/bookings.validation'
 import { conversationPartyLabel, sortConversationsForInbox } from '@/lib/messages/messages.helpers'
 import type {
@@ -215,46 +214,44 @@ export async function sendConversationMessage(
   }
 
   const trimmed = body.trim()
-  const { data: message, error: insertError } = await supabase
-    .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_id: userId,
-      type: 'text',
-      body: trimmed,
-    })
-    .select('id, conversation_id, sender_id, type, body, metadata, created_at')
-    .single()
+  const { data, error: sendError } = await supabase.rpc('snd_send_text_message', {
+    p_conversation_id: conversationId,
+    p_body: trimmed,
+  })
 
-  if (insertError || !message) {
-    console.error('[messages] insert failed', insertError)
+  if (sendError) {
+    const message = sendError.message ?? ''
+    if (message.includes('UNAUTHENTICATED')) {
+      return { response: apiError(401, ERROR_CODES.UNAUTHENTICATED, 'Prijavi se da nastaviš.') }
+    }
+    if (message.includes('VALIDATION_FAILED')) {
+      return { response: apiError(422, ERROR_CODES.VALIDATION_FAILED, 'Napiši poruku.') }
+    }
+    if (message.includes('NOT_FOUND')) {
+      return { response: apiError(404, ERROR_CODES.NOT_FOUND, 'Razgovor nije pronađen.') }
+    }
+    console.error('[messages] send rpc failed', sendError)
     return { response: apiError(500, ERROR_CODES.INTERNAL, 'Poruka nije poslata. Pokušaj ponovo.') }
   }
 
-  const conversation = row as ConversationRow
-  const isRenter = conversation.renter_id === userId
-  const { error: updateError } = await supabase
-    .from('conversations')
-    .update({
-      last_message_at: new Date().toISOString(),
-      last_message_preview: previewMessage(trimmed),
-      renter_unread_count: isRenter ? 0 : conversation.renter_unread_count + 1,
-      owner_unread_count: isRenter ? conversation.owner_unread_count + 1 : 0,
-    })
-    .eq('id', conversationId)
-
-  if (updateError) {
-    console.error('[messages] conversation preview update failed', updateError)
+  const message = data as {
+    id: string
+    conversation_id: string
+    sender_id: string | null
+    type: MessageType
+    body: string | null
+    metadata: Record<string, unknown> | null
+    created_at: string
   }
 
   return {
-    id: message.id as string,
-    conversation_id: message.conversation_id as string,
-    sender_id: (message.sender_id as string | null) ?? null,
-    type: message.type as MessageType,
-    body: (message.body as string | null) ?? null,
-    metadata: (message.metadata as Record<string, unknown> | null) ?? null,
-    created_at: message.created_at as string,
+    id: message.id,
+    conversation_id: message.conversation_id,
+    sender_id: message.sender_id,
+    type: message.type,
+    body: message.body,
+    metadata: message.metadata,
+    created_at: message.created_at,
   }
 }
 

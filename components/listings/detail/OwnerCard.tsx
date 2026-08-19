@@ -26,10 +26,8 @@ import type { OwnerSummary } from '@/types/listing-detail'
  */
 export default function OwnerCard({
   owner,
-  isOwnListing,
 }: {
   owner: OwnerSummary
-  isOwnListing: boolean
 }) {
   const rating = formatRating(owner.rating_avg)
   const memberSince = formatMonthYear(owner.member_since)
@@ -117,12 +115,6 @@ export default function OwnerCard({
         <Button size="sm" variant="secondary" asChild>
           <Link href={`/users/${owner.id}`}>Pogledaj profil</Link>
         </Button>
-        {/* Messaging yourself is not a feature (doc 04 §16). */}
-        {isOwnListing ? null : (
-          <Button size="sm" variant="secondary" asChild>
-            <Link href={`/messages/new?owner=${owner.id}`}>Pošalji poruku</Link>
-          </Button>
-        )}
       </div>
     </section>
   )

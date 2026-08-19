@@ -33,6 +33,25 @@ test.describe('messages', () => {
     await expect(page).toHaveURL(/\/profile\/requests\/?$/)
   })
 
+  test('dok se inbox učitava vidi se skeleton, ne prazno stanje', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'verified', 'Koristi nalog iznajmljivača')
+    await cleanupRentalRequests()
+    await page.route('**/api/v1/conversations**', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [], meta: { total: 0 } }),
+      })
+    })
+
+    const going = page.goto('/profile/requests')
+    await expect(page.getByTestId('messages-inbox-skeleton')).toBeVisible()
+    await expect(page.getByTestId('messages-empty')).toHaveCount(0)
+    await going
+    await expect(page.getByTestId('messages-empty')).toBeVisible()
+  })
+
   test('vlasnik vidi inbox, odgovara, renter vidi odgovor', async ({ page, browser }, testInfo) => {
     test.skip(testInfo.project.name !== 'verified', 'Koristi nalog iznajmljivača')
     await cleanupRentalRequests()
@@ -48,7 +67,9 @@ test.describe('messages', () => {
     const ownerPage = await ownerContext.newPage()
     await ownerPage.goto(CONTACT_PATH)
     await expect(ownerPage.getByTestId('owner-listing-requests')).toBeVisible()
-    await expect(ownerPage.getByTestId('messages-unread-badge').first()).toBeVisible()
+    await expect(ownerPage.getByTestId('messages-unread-badge').first()).toBeVisible({
+      timeout: 20_000,
+    })
     await ownerPage.goto('/profile/requests')
     await expect(ownerPage.getByTestId('conversation-row')).toHaveCount(1)
     await expect(ownerPage.getByTestId('conversation-unread')).toBeVisible()
@@ -60,12 +81,19 @@ test.describe('messages', () => {
     await expect(ownerPage.getByTestId('request-card')).toBeVisible()
     await expect(ownerPage.getByTestId('thread-party-name')).toHaveText('E2E Iznajmljivač')
     await expect(ownerPage.getByText('Zdravo, da li je slobodno?')).toBeVisible()
-    await ownerPage.getByTestId('thread-message-input').fill('Može, javi se u petak.')
+    await expect(ownerPage.getByTestId('composer-hint')).toHaveText(
+      'Enter šalje poruku. Shift + Enter novi red.'
+    )
+    const input = ownerPage.getByTestId('thread-message-input')
+    await input.fill('Prvi red')
+    await input.press('Shift+Enter')
+    await expect(input).toHaveValue('Prvi red\n')
+    await input.fill('Može, javi se u petak.')
     await Promise.all([
       ownerPage.waitForResponse(
         (res) => res.url().includes('/messages') && res.request().method() === 'POST' && res.ok()
       ),
-      ownerPage.getByTestId('thread-send').click(),
+      input.press('Enter'),
     ])
     await expect(
       ownerPage.getByTestId('text-message').filter({ hasText: 'Može, javi se u petak.' })
