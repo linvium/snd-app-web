@@ -48,6 +48,13 @@ export function searchBarDividerHidden(
   return hovered === 'city' || hovered === 'dates'
 }
 
+/** First field → location → dates; dates is the last field before Search. */
+export function nextSearchBarSegment(segment: SearchBarSegment): SearchBarSegment | 'search' {
+  if (segment === 'q') return 'city'
+  if (segment === 'city') return 'dates'
+  return 'search'
+}
+
 /** Same formula as the database side, so client and server agree on distances. */
 export function haversineMeters(a: Coordinates, b: Coordinates): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180
@@ -286,7 +293,7 @@ export function formatDateRange(from: string | null, to: string | null): string 
   const startDay = start.getUTCDate()
   const startMonth = MONTHS_SHORT[start.getUTCMonth()]
 
-  if (!to) return `${startDay}. ${startMonth}`
+  if (!to || to === from) return `${startDay}. ${startMonth}`
 
   const end = new Date(`${to}T00:00:00Z`)
   if (Number.isNaN(end.getTime())) return `${startDay}. ${startMonth}`

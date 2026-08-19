@@ -461,7 +461,7 @@ export function PublishListingForm({
       <div>
         <div className="mb-4 flex items-start justify-between gap-3">
           <h1 className="m-0 text-2xl font-semibold text-card-foreground">
-            {isCreate || status === 'draft' ? 'Objavi predmet' : 'Izmeni oglas'}
+            {isCreate || status === 'draft' ? 'Objavi stvar' : 'Izmeni stvar'}
           </h1>
           {isDraft ? (
             <p className="m-0 text-[13px] text-muted-foreground" data-testid="autosave-indicator">

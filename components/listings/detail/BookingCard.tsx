@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { AlertCircleIcon, CalendarIcon, InfoIcon, StarIcon } from 'lucide-react'
 
-import DateRangeCalendar from '@/components/search/DateRangeCalendar'
+import DateRangePicker from '@/components/search/DateRangePicker'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAuthSession } from '@/context/AuthContext'
 import { useListingQuote } from '@/hooks/listings'
+import { useMediaQuery } from '@/hooks/search'
+import { isRangeAvailable } from '@/lib/availability'
 import { formatRating, pluralizeRatings } from '@/lib/listings'
 import { formatDate, formatPriceMinor, formatPricePerDay } from '@/lib/search'
 import { cn } from '@/lib/utils'
@@ -48,6 +50,7 @@ export default function BookingCard({
   const router = useRouter()
   const { user } = useAuthSession()
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const isDesktop = useMediaQuery('(min-width: 768px)')
 
   const quote = useListingQuote(listing.id, from, to)
   const rating = formatRating(listing.rating_avg)
@@ -237,7 +240,7 @@ export default function BookingCard({
       </aside>
 
       <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md md:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarIcon className="size-5" aria-hidden />
@@ -245,14 +248,18 @@ export default function BookingCard({
             </DialogTitle>
           </DialogHeader>
 
-          <DateRangeCalendar
+          <DateRangePicker
+            layout={isDesktop ? 'split' : 'stack'}
             from={from}
             to={to}
             unavailable={listing.unavailable_dates}
             onChange={onDatesChange}
           />
 
-          <Button onClick={() => setCalendarOpen(false)} disabled={!from || !to}>
+          <Button
+            onClick={() => setCalendarOpen(false)}
+            disabled={!from || !to || !isRangeAvailable(from, to, listing.unavailable_dates)}
+          >
             {from && to ? 'Potvrdi' : 'Izaberi oba datuma'}
           </Button>
         </DialogContent>

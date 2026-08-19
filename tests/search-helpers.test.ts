@@ -6,6 +6,7 @@ import {
   formatDateRange,
   filterPopularSearchTerms,
   searchBarDividerHidden,
+  nextSearchBarSegment,
   formatDistance,
   formatPriceMinor,
   formatPricePerDay,
@@ -191,6 +192,10 @@ describe('formatDateRange', () => {
     expect(formatDateRange('2026-08-20', null)).toBe('20. avg')
   })
 
+  it('shows a single day when start and end are the same', () => {
+    expect(formatDateRange('2026-08-19', '2026-08-19')).toBe('19. avg')
+  })
+
   it('returns null when there are no dates', () => {
     expect(formatDateRange(null, null)).toBeNull()
   })
@@ -269,5 +274,13 @@ describe('searchBarDividerHidden', () => {
     expect(searchBarDividerHidden(null, 'city', 'after-city')).toBe(true)
     expect(searchBarDividerHidden(null, 'dates', 'after-q')).toBe(false)
     expect(searchBarDividerHidden(null, 'dates', 'after-city')).toBe(true)
+  })
+})
+
+describe('nextSearchBarSegment', () => {
+  it('advances query → city → dates, then to search', () => {
+    expect(nextSearchBarSegment('q')).toBe('city')
+    expect(nextSearchBarSegment('city')).toBe('dates')
+    expect(nextSearchBarSegment('dates')).toBe('search')
   })
 })

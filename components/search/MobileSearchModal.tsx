@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CalendarIcon, ChevronLeftIcon, MapPinIcon, SearchIcon, XIcon } from 'lucide-react'
 
-import DateRangeCalendar from '@/components/search/DateRangeCalendar'
+import DateRangePicker from '@/components/search/DateRangePicker'
 import { useFocusTrap } from '@/components/search/useFocusTrap'
 import { Button } from '@/components/ui/button'
 import { useGeolocation, useSearchCount } from '@/hooks/search'
@@ -353,7 +353,8 @@ export default function MobileSearchModal({
             </div>
           }
         >
-          <DateRangeCalendar
+          <DateRangePicker
+            layout="stack"
             from={draft.from}
             to={draft.to}
             onChange={(from, to) => setDraft((prev) => ({ ...prev, from, to }))}

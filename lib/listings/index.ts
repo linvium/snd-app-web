@@ -8,6 +8,7 @@ export * from './listings.seo'
 export * from './listings.paths'
 export * from './listings.status'
 export * from './listings.helpers'
+export * from './listings.card'
 export { listingsService, geoService } from './listings.service'
 // `listings.server.ts` and `listings.detail.server.ts` are imported by path —
 // they run only on the server.

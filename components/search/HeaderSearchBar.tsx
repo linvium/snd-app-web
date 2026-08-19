@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { PackageIcon, SearchIcon, XIcon } from 'lucide-react'
 
-import DateRangeCalendar from '@/components/search/DateRangeCalendar'
+import DateRangePicker from '@/components/search/DateRangePicker'
 import { useCategorySuggest } from '@/hooks/categories'
 import { findCity, searchCities } from '@/lib/geo'
 import {
   filterPopularSearchTerms,
   formatDateRange,
+  nextSearchBarSegment,
   searchBarDividerHidden,
 } from '@/lib/search'
 import { cn } from '@/lib/utils'
@@ -28,12 +29,15 @@ const SEGMENT_VALUE =
   'w-full min-w-0 truncate border-none bg-transparent p-0 text-sm leading-snug outline-none placeholder:text-muted-foreground'
 const SEGMENT_BASE =
   'relative z-10 flex min-w-0 flex-1 basis-0 cursor-pointer flex-col justify-center gap-1.5 px-8 py-3.5 text-left'
+const CLEAR_BUTTON =
+  'absolute top-1/2 right-3 grid size-6 -translate-y-1/2 cursor-pointer place-items-center rounded-full border-none bg-zinc-200 text-zinc-600 hover:bg-zinc-300'
 
 /**
  * The compact search bar that rides in the header on every page but the home
  * page (doc 03 §4) — a new search has to be startable from wherever the user
- * is. On desktop each segment opens its own panel; on mobile the whole thing
- * is one field that opens the modal.
+ * is. On desktop (lg+) it sits in the same row as the logo; on smaller screens
+ * it stays on the row below. On desktop each segment opens its own panel; on
+ * mobile the whole thing is one field that opens the modal.
  */
 export default function HeaderSearchBar({
   params,
@@ -43,14 +47,31 @@ export default function HeaderSearchBar({
   const [open, setOpen] = useState<Segment | null>(null)
   const [hovered, setHovered] = useState<Segment | null>(null)
   const [query, setQuery] = useState(params.q ?? '')
+  const [draftCategory, setDraftCategory] = useState(params.category)
   const [cityTerm, setCityTerm] = useState(params.city ?? '')
+  const [draftCity, setDraftCity] = useState(params.city)
+  const [draftLat, setDraftLat] = useState(params.lat)
+  const [draftLng, setDraftLng] = useState(params.lng)
+  const [draftFrom, setDraftFrom] = useState(params.from)
+  const [draftTo, setDraftTo] = useState(params.to)
+  const [pill, setPill] = useState({ left: 0, width: 0, visible: false })
   const rootRef = useRef<HTMLDivElement>(null)
+  const barRef = useRef<HTMLDivElement>(null)
   const queryRef = useRef<HTMLInputElement>(null)
   const cityRef = useRef<HTMLInputElement>(null)
+  const qSegRef = useRef<HTMLDivElement>(null)
+  const citySegRef = useRef<HTMLDivElement>(null)
+  const datesSegRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     setQuery(params.q ?? '')
-  }, [params.q])
+    setDraftCategory(params.category)
+    setDraftCity(params.city)
+    setDraftLat(params.lat)
+    setDraftLng(params.lng)
+    setDraftFrom(params.from)
+    setDraftTo(params.to)
+  }, [params.q, params.category, params.city, params.lat, params.lng, params.from, params.to])
 
   useEffect(() => {
     if (open !== 'city') setCityTerm(params.city ?? '')
@@ -60,6 +81,23 @@ export default function HeaderSearchBar({
     if (open === 'q') queryRef.current?.focus()
     if (open === 'city') cityRef.current?.focus()
   }, [open])
+
+  useLayoutEffect(() => {
+    const bar = barRef.current
+    const segmentEl =
+      open === 'q' ? qSegRef.current : open === 'city' ? citySegRef.current : open === 'dates' ? datesSegRef.current : null
+    if (!bar || !segmentEl) {
+      setPill((current) => ({ ...current, visible: false }))
+      return
+    }
+    const barRect = bar.getBoundingClientRect()
+    const rect = segmentEl.getBoundingClientRect()
+    setPill({
+      left: rect.left - barRect.left,
+      width: rect.width,
+      visible: true,
+    })
+  }, [open, query, cityTerm, draftCity, draftFrom, draftTo])
 
   useEffect(() => {
     if (!open) return
@@ -79,34 +117,62 @@ export default function HeaderSearchBar({
     }
   }, [open])
 
-  const dateLabel = formatDateRange(params.from, params.to)
+  const dateLabel = formatDateRange(draftFrom, draftTo)
   const popularMatches = useMemo(() => filterPopularSearchTerms(query), [query])
   const { data: categorySuggestions = [] } = useCategorySuggest(query)
   const cityMatches = useMemo(() => searchCities(cityTerm), [cityTerm])
 
-  const submitQuery = (nextQuery = query) => {
-    onSubmit({ q: nextQuery.trim() || null })
+  const goToSegment = (segment: Segment) => {
+    setOpen(segment)
+  }
+
+  const commitSearch = () => {
+    onSubmit({
+      q: query.trim() || null,
+      category: draftCategory,
+      city: draftCity,
+      lat: draftLat,
+      lng: draftLng,
+      from: draftFrom,
+      to: draftTo,
+    })
     setOpen(null)
+  }
+
+  const advanceFromQuery = () => {
+    const next = nextSearchBarSegment('q')
+    if (next === 'city') goToSegment('city')
   }
 
   const pickPopularTerm = (term: string) => {
     setQuery(term)
-    onSubmit({ q: term })
-    setOpen(null)
+    setDraftCategory(null)
+    goToSegment('city')
   }
 
   const pickCategory = (name: string, slug: string) => {
     setQuery(name)
-    onSubmit({ q: name, category: slug })
-    setOpen(null)
+    setDraftCategory(slug)
+    goToSegment('city')
+  }
+
+  const pickCity = (name: string, lat: number, lng: number) => {
+    setCityTerm(name)
+    setDraftCity(name)
+    setDraftLat(lat)
+    setDraftLng(lng)
+    goToSegment('dates')
   }
 
   const segmentClass = (segment: Segment) =>
     cn(
       SEGMENT_BASE,
-      'rounded-full transition-[background-color,box-shadow,opacity] duration-200 ease-out',
-      open === segment && 'bg-card shadow-[0_6px_20px_rgba(0,0,0,0.12)]',
-      open !== null && open !== segment && hovered === segment && 'bg-zinc-300/70',
+      'rounded-full transition-[background-color,box-shadow] duration-300 ease-in-out',
+      open === segment && 'z-30',
+      open !== null &&
+        open !== segment &&
+        hovered === segment &&
+        'before:pointer-events-none before:absolute before:inset-y-0 before:-z-10 before:-right-3 before:-left-3 before:rounded-full before:bg-zinc-300/70',
       open === null && hovered === segment && 'bg-zinc-100'
     )
 
@@ -137,116 +203,134 @@ export default function HeaderSearchBar({
       <div
         ref={rootRef}
         onMouseLeave={() => setHovered(null)}
-        className="relative mx-auto hidden w-full max-w-[900px] md:block"
+        className="relative hidden w-full md:block"
       >
         <div
+          ref={barRef}
           className={cn(
-            'flex h-16 items-stretch rounded-full border border-border transition-colors duration-200 ease-out',
+            'relative flex h-16 items-stretch rounded-full border border-border transition-colors duration-300 ease-in-out',
             open
               ? 'border-transparent bg-zinc-200 shadow-none'
               : 'bg-card shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.04)]'
           )}
         >
           <div
-            className={segmentClass('q')}
+            aria-hidden
+            className="pointer-events-none absolute top-0 bottom-0 z-20 rounded-full bg-card shadow-[0_6px_20px_rgba(0,0,0,0.12)] transition-all duration-300 ease-in-out"
+            style={{
+              left: pill.left,
+              width: pill.width,
+              opacity: pill.visible ? 1 : 0,
+            }}
+          />
+
+          <div
+            ref={qSegRef}
+            className={cn(segmentClass('q'), open === 'q' && query && 'pr-12')}
             onMouseEnter={() => setHovered('q')}
             onClick={() => {
-              setOpen('q')
+              goToSegment('q')
               queryRef.current?.focus()
             }}
           >
             <span className={SEGMENT_LABEL}>Šta tražiš?</span>
-            <div className="flex min-w-0 items-center gap-1">
-              <input
-                ref={queryRef}
-                type="text"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                onFocus={() => setOpen('q')}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') submitQuery()
+            <input
+              ref={queryRef}
+              type="text"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onFocus={() => goToSegment('q')}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  advanceFromQuery()
+                }
+              }}
+              placeholder="Pretraži predmete"
+              className={cn(
+                SEGMENT_VALUE,
+                query ? 'font-medium text-card-foreground' : 'text-muted-foreground'
+              )}
+            />
+            {open === 'q' && query ? (
+              <button
+                type="button"
+                aria-label="Obriši pretragu"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setQuery('')
+                  queryRef.current?.focus()
                 }}
-                placeholder="Pretraži predmete"
-                className={cn(
-                  SEGMENT_VALUE,
-                  query ? 'font-medium text-card-foreground' : 'text-muted-foreground'
-                )}
-              />
-              {open === 'q' && query ? (
-                <button
-                  type="button"
-                  aria-label="Obriši pretragu"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setQuery('')
-                    queryRef.current?.focus()
-                  }}
-                  className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-none bg-zinc-200 text-zinc-600 hover:bg-zinc-300"
-                >
-                  <XIcon className="size-3.5" aria-hidden />
-                </button>
-              ) : null}
-            </div>
+                className={CLEAR_BUTTON}
+              >
+                <XIcon className="size-3.5" aria-hidden />
+              </button>
+            ) : null}
           </div>
 
           <Divider hidden={searchBarDividerHidden(open, hovered, 'after-q')} />
 
           <div
-            className={segmentClass('city')}
+            ref={citySegRef}
+            className={cn(segmentClass('city'), open === 'city' && (cityTerm || draftCity) && 'pr-12')}
             onMouseEnter={() => setHovered('city')}
             onClick={() => {
-              setOpen('city')
+              goToSegment('city')
               cityRef.current?.focus()
             }}
           >
             <span className={SEGMENT_LABEL}>Gde?</span>
-            <div className="flex min-w-0 items-center gap-1">
-              <input
-                ref={cityRef}
-                type="text"
-                value={open === 'city' ? cityTerm : (params.city ?? '')}
-                onChange={(event) => setCityTerm(event.target.value)}
-                onFocus={() => setOpen('city')}
-                placeholder="Dodaj lokaciju"
-                className={cn(
-                  SEGMENT_VALUE,
-                  (open === 'city' ? cityTerm : params.city)
-                    ? 'font-medium text-card-foreground'
-                    : 'text-muted-foreground'
-                )}
-              />
-              {open === 'city' && (cityTerm || params.city) ? (
-                <button
-                  type="button"
-                  aria-label="Obriši lokaciju"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setCityTerm('')
-                    const city = findCity(params.city)
-                    onSubmit({
-                      city: null,
-                      lat: city ? null : params.lat,
-                      lng: city ? null : params.lng,
-                    })
-                    cityRef.current?.focus()
-                  }}
-                  className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-none bg-zinc-200 text-zinc-600 hover:bg-zinc-300"
-                >
-                  <XIcon className="size-3.5" aria-hidden />
-                </button>
-              ) : null}
-            </div>
+            <input
+              ref={cityRef}
+              type="text"
+              value={open === 'city' ? cityTerm : (draftCity ?? '')}
+              onChange={(event) => setCityTerm(event.target.value)}
+              onFocus={() => goToSegment('city')}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter') return
+                event.preventDefault()
+                const match = cityMatches[0]
+                if (match) pickCity(match.name, match.lat, match.lng)
+                else goToSegment('dates')
+              }}
+              placeholder="Dodaj lokaciju"
+              className={cn(
+                SEGMENT_VALUE,
+                (open === 'city' ? cityTerm : draftCity)
+                  ? 'font-medium text-card-foreground'
+                  : 'text-muted-foreground'
+              )}
+            />
+            {open === 'city' && (cityTerm || draftCity) ? (
+              <button
+                type="button"
+                aria-label="Obriši lokaciju"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setCityTerm('')
+                  setDraftCity(null)
+                  const city = findCity(draftCity)
+                  setDraftLat(city ? null : draftLat)
+                  setDraftLng(city ? null : draftLng)
+                  cityRef.current?.focus()
+                }}
+                className={CLEAR_BUTTON}
+              >
+                <XIcon className="size-3.5" aria-hidden />
+              </button>
+            ) : null}
           </div>
 
           <Divider hidden={searchBarDividerHidden(open, hovered, 'after-city')} />
 
           <button
+            ref={datesSegRef}
             type="button"
             aria-expanded={open === 'dates'}
             onMouseEnter={() => setHovered('dates')}
-            onClick={() => setOpen('dates')}
+            onClick={() => goToSegment('dates')}
             className={cn(segmentClass('dates'), 'border-none')}
           >
             <span className={SEGMENT_LABEL}>Datumi</span>
@@ -262,10 +346,10 @@ export default function HeaderSearchBar({
 
           <button
             type="button"
-            onClick={() => submitQuery()}
+            onClick={commitSearch}
             aria-label="Pretraži"
             className={cn(
-              'my-2 mr-2 ml-1 flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border-none bg-brand-500 text-white transition-all duration-200 ease-out hover:bg-brand-600',
+              'relative z-30 my-2 mr-2 ml-1 flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border-none bg-brand-500 text-white transition-all duration-300 ease-in-out hover:bg-brand-600',
               open ? 'h-12 px-4' : 'size-12'
             )}
           >
@@ -317,7 +401,7 @@ export default function HeaderSearchBar({
               ))}
               {query.trim() && popularMatches.length === 0 && categorySuggestions.length === 0 ? (
                 <li className="px-5 py-3 text-sm text-muted-foreground">
-                  Nema predloga — pritisni Enter za pretragu „{query.trim()}“
+                  Nema predloga — pritisni Enter za lokaciju, ili Pretraži
                 </li>
               ) : null}
             </ul>
@@ -333,12 +417,8 @@ export default function HeaderSearchBar({
                   <SuggestionRow
                     title={city.name}
                     subtitle="Srbija"
-                    selected={params.city === city.name}
-                    onSelect={() => {
-                      setCityTerm(city.name)
-                      onSubmit({ city: city.name, lat: city.lat, lng: city.lng })
-                      setOpen('dates')
-                    }}
+                    selected={draftCity === city.name}
+                    onSelect={() => pickCity(city.name, city.lat, city.lng)}
                   />
                 </li>
               ))}
@@ -350,21 +430,23 @@ export default function HeaderSearchBar({
         ) : null}
 
         {open === 'dates' ? (
-          <SuggestionsPanel className="right-0 left-auto w-[340px] px-4">
-            <DateRangeCalendar
-              from={params.from}
-              to={params.to}
+          <SuggestionsPanel className="right-0 left-auto w-[min(560px,calc(100vw-2rem))] px-5">
+            <DateRangePicker
+              layout="split"
+              from={draftFrom}
+              to={draftTo}
               monthsAhead={6}
               onChange={(from, to) => {
-                onSubmit({ from, to })
-                if (from && to) setOpen(null)
+                setDraftFrom(from)
+                setDraftTo(to)
               }}
             />
-            {params.from ? (
+            {draftFrom ? (
               <button
                 type="button"
                 onClick={() => {
-                  onSubmit({ from: null, to: null })
+                  setDraftFrom(null)
+                  setDraftTo(null)
                 }}
                 className="mt-1 w-full cursor-pointer border-none bg-transparent p-2 text-[13px] font-semibold text-brand-600 hover:underline"
               >

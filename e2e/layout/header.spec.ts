@@ -1,0 +1,105 @@
+import { expect, test, type Page } from '@playwright/test'
+
+import { HEADER_SEARCH_MAX_WIDTH_PX } from '../../lib/layout/header.helpers'
+
+async function boxesOverlapVertically(
+  page: Page,
+  firstTestId: string,
+  secondSelector: { testId?: string; role?: Parameters<Page['getByRole']>[0]; name?: string }
+) {
+  const first = page.getByTestId(firstTestId)
+  const second = secondSelector.testId
+    ? page.getByTestId(secondSelector.testId)
+    : page.getByRole(secondSelector.role!, { name: secondSelector.name })
+
+  const firstBox = await first.boundingBox()
+  const secondBox = await second.boundingBox()
+  expect(firstBox).toBeTruthy()
+  expect(secondBox).toBeTruthy()
+  if (!firstBox || !secondBox) return false
+
+  return firstBox.y < secondBox.y + secondBox.height && firstBox.y + firstBox.height > secondBox.y
+}
+
+test.describe('header layout', () => {
+  test('desktop search page keeps utility links and search on the main row', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/search')
+
+    const utility = page.getByTestId('header-utility-nav')
+    await expect(utility).toBeVisible()
+    await expect(utility.getByRole('link', { name: 'Kako funkcioniše' })).toBeVisible()
+    await expect(utility.getByRole('link', { name: 'Garancija' })).toBeVisible()
+    await expect(utility.getByRole('link', { name: 'Česta pitanja' })).toBeVisible()
+    await expect(utility.getByRole('link', { name: 'Kontakt' })).toBeVisible()
+
+    await expect(page.getByTestId('header-search')).toBeVisible()
+    await expect(utility).toHaveCSS('border-bottom-width', '0px')
+    expect(
+      await boxesOverlapVertically(page, 'header-search', {
+        role: 'link',
+        name: 'SND početna',
+      })
+    ).toBe(true)
+  })
+
+  test('homepage header spans the viewport when the app shell is shown', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/')
+
+    const main = page.getByTestId('header-main')
+    if ((await main.count()) === 0) {
+      test.skip(true, 'Landing homepage does not render the app header')
+    }
+
+    const mainBox = await main.boundingBox()
+    const utilityBox = await page.getByTestId('header-utility-nav').boundingBox()
+    expect(mainBox).toBeTruthy()
+    expect(utilityBox).toBeTruthy()
+    expect(mainBox!.width).toBeGreaterThan(1200)
+    expect(utilityBox!.width).toBeGreaterThan(1200)
+    await expect(page.getByTestId('header-utility-nav')).toHaveCSS('border-bottom-width', '0px')
+  })
+
+  test('desktop search bar is centered and capped instead of filling the row', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+
+    for (const path of ['/search', '/faq']) {
+      await page.goto(path)
+      const main = await page.getByTestId('header-main').boundingBox()
+      const search = await page.getByTestId('header-search').boundingBox()
+      expect(main).toBeTruthy()
+      expect(search).toBeTruthy()
+      expect(search!.width).toBeLessThanOrEqual(HEADER_SEARCH_MAX_WIDTH_PX + 1)
+      expect(search!.width).toBeLessThan(main!.width * 0.7)
+      const mainCenter = main!.x + main!.width / 2
+      const searchCenter = search!.x + search!.width / 2
+      expect(Math.abs(mainCenter - searchCenter)).toBeLessThan(12)
+    }
+  })
+
+  test('mobile search page hides the utility bar and stacks search under the logo', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/search')
+
+    await expect(page.getByTestId('header-utility-nav')).toBeHidden()
+    await expect(page.getByTestId('header-search')).toBeVisible()
+    expect(
+      await boxesOverlapVertically(page, 'header-search', {
+        role: 'link',
+        name: 'SND početna',
+      })
+    ).toBe(false)
+  })
+
+  test('utility pages render', async ({ page }) => {
+    await page.goto('/kako-funkcionise')
+    await expect(page.getByRole('heading', { name: 'Kako funkcioniše' })).toBeVisible()
+
+    await page.goto('/faq')
+    await expect(page.getByRole('heading', { name: 'Česta pitanja' })).toBeVisible()
+
+    await page.goto('/contact')
+    await expect(page.getByRole('heading', { name: 'Kontakt' })).toBeVisible()
+  })
+})

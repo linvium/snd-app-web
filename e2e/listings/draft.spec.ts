@@ -56,7 +56,8 @@ test.describe('draft listing', () => {
     trackListingFromPage(page, created)
 
     await expect(page.locator('[data-listing-status="draft"]').first()).toBeVisible()
-    await page.getByTestId('listing-edit-link').first().click()
+    await page.getByTestId('listing-actions').first().click()
+    await page.getByTestId('listing-edit-link').click()
     await expect(page).toHaveURL(/\/profile\/listings\/[0-9a-f-]{36}\/edit/i)
     await expect(visible(page, 'publish-form')).toBeVisible()
     await expect(page.locator('#listing-title')).toHaveValue(/Bušilica Bosch/)

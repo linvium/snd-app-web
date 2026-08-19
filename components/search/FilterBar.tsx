@@ -27,7 +27,7 @@ interface FilterBarProps {
 }
 
 const ICON_BUTTON =
-  'relative inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-zinc-700 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400'
+  'relative inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-zinc-700 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400'
 
 export default function FilterBar({
   params,
@@ -39,8 +39,8 @@ export default function FilterBar({
   const activeCount = countActiveFilters(params)
 
   return (
-    <div className="sticky top-14 z-20 border-b border-border bg-card md:top-[72px]">
-      <div className="mx-auto flex max-w-[1440px] items-center gap-2 px-4 py-2.5 md:px-6">
+    <div className="sticky top-[128px] z-20 bg-background md:top-[160px]">
+      <div className="flex w-fit items-center gap-0.5 px-4 py-1.5 md:px-6">
         <FiltersPopover
           params={params}
           categories={categories}
@@ -93,7 +93,7 @@ function FiltersPopover({
           aria-label={activeCount > 0 ? `Filteri (${activeCount} aktivna)` : 'Filteri'}
           className={cn(
             ICON_BUTTON,
-            activeCount > 0 && 'border-brand-500 bg-brand-50 text-brand-700'
+            activeCount > 0 && 'bg-brand-50 text-brand-700'
           )}
         >
           <SlidersHorizontalIcon className="size-4" aria-hidden />

@@ -26,7 +26,27 @@ async function loginAndSave(baseURL: string, email: string, password: string, fi
   await browser.close()
 }
 
+function selectedProjectNames(): string[] {
+  const names: string[] = []
+  for (let i = 0; i < process.argv.length; i += 1) {
+    const arg = process.argv[i]
+    if (arg === '--project' || arg === '-p') names.push(process.argv[i + 1] ?? '')
+    if (arg?.startsWith('--project=')) names.push(arg.slice('--project='.length))
+  }
+  return names.filter(Boolean)
+}
+
+function needsAuthSetup(config: FullConfig): boolean {
+  const selected = selectedProjectNames()
+  const projects = selected.length
+    ? config.projects.filter((project) => selected.includes(project.name))
+    : config.projects
+  return projects.some((project) => Boolean(project.use.storageState))
+}
+
 export default async function globalSetup(config: FullConfig) {
+  if (!needsAuthSetup(config)) return
+
   await ensureTestImages()
   await mkdir(AUTH_DIR, { recursive: true })
 

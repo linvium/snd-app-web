@@ -197,7 +197,8 @@ test.describe('locked fields with active booking', () => {
   test('zaključana polja uz aktivnu rezervaciju', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'owner-booking', 'Potreban je oglas sa paid rezervacijom')
     await page.goto('/profile/listings')
-    await page.getByTestId('listing-edit-link').first().click()
+    await page.getByTestId('listing-actions').first().click()
+    await page.getByTestId('listing-edit-link').click()
     await expect(visible(page, 'publish-form')).toBeVisible()
 
     await expect(visible(page, 'category-picker')).toBeDisabled()
@@ -210,7 +211,8 @@ test.describe('locked fields with active booking', () => {
   test('brisanje sa aktivnom rezervacijom', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'owner-booking', 'Potreban je oglas sa paid rezervacijom')
     await page.goto('/profile/listings')
-    await page.getByTestId('listing-edit-link').first().click()
+    await page.getByTestId('listing-actions').first().click()
+    await page.getByTestId('listing-edit-link').click()
     await expect(visible(page, 'publish-form')).toBeVisible()
     const listingId = listingIdFromUrl(page.url())
     await visible(page, 'delete-button').click()
