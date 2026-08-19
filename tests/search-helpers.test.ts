@@ -6,6 +6,7 @@ import {
   formatDateRange,
   filterPopularSearchTerms,
   searchBarDividerHidden,
+  searchSubmitButtonLayoutClass,
   nextSearchBarSegment,
   formatDistance,
   formatPriceMinor,
@@ -282,5 +283,21 @@ describe('nextSearchBarSegment', () => {
     expect(nextSearchBarSegment('q')).toBe('city')
     expect(nextSearchBarSegment('city')).toBe('dates')
     expect(nextSearchBarSegment('dates')).toBe('search')
+  })
+})
+
+describe('searchSubmitButtonLayoutClass', () => {
+  it('keeps the collapsed button a square with no flex gap', () => {
+    const classes = searchSubmitButtonLayoutClass(false)
+    expect(classes).toContain('size-12')
+    expect(classes).not.toContain('gap-2')
+    expect(classes).not.toContain('px-4')
+  })
+
+  it('adds padding and gap when the Pretraži label is shown', () => {
+    const classes = searchSubmitButtonLayoutClass(true)
+    expect(classes).toContain('h-12')
+    expect(classes).toContain('gap-2')
+    expect(classes).toContain('px-4')
   })
 })

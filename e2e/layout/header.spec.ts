@@ -71,6 +71,29 @@ test.describe('header layout', () => {
     expect(mainBox!.y).toBeLessThan(heroBox!.y + heroBox!.height)
   })
 
+  test('collapsed search submit centres the icon in the circle', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/search')
+
+    const button = page.getByTestId('header-search').getByRole('button', { name: 'Pretraži' })
+    await expect(button).toBeVisible()
+
+    const icon = button.locator('svg')
+    const buttonBox = await button.boundingBox()
+    const iconBox = await icon.boundingBox()
+    expect(buttonBox).toBeTruthy()
+    expect(iconBox).toBeTruthy()
+
+    const buttonCenterX = buttonBox!.x + buttonBox!.width / 2
+    const buttonCenterY = buttonBox!.y + buttonBox!.height / 2
+    const iconCenterX = iconBox!.x + iconBox!.width / 2
+    const iconCenterY = iconBox!.y + iconBox!.height / 2
+
+    expect(buttonBox!.width).toBeCloseTo(buttonBox!.height, 0)
+    expect(Math.abs(buttonCenterX - iconCenterX)).toBeLessThan(2)
+    expect(Math.abs(buttonCenterY - iconCenterY)).toBeLessThan(2)
+  })
+
   test('desktop search bar is centered and capped instead of filling the row', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
 

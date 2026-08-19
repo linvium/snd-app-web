@@ -55,6 +55,14 @@ export function nextSearchBarSegment(segment: SearchBarSegment): SearchBarSegmen
   return 'search'
 }
 
+/**
+ * Collapsed submit is a circle. A leftover flex gap around the hidden
+ * "Pretraži" label would shift the icon off-centre.
+ */
+export function searchSubmitButtonLayoutClass(expanded: boolean): string {
+  return expanded ? 'h-12 gap-2 px-4' : 'size-12'
+}
+
 /** Same formula as the database side, so client and server agree on distances. */
 export function haversineMeters(a: Coordinates, b: Coordinates): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180

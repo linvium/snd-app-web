@@ -11,6 +11,7 @@ import {
   formatDateRange,
   nextSearchBarSegment,
   searchBarDividerHidden,
+  searchSubmitButtonLayoutClass,
 } from '@/lib/search'
 import { cn } from '@/lib/utils'
 import type { SearchParams } from '@/types/search'
@@ -349,15 +350,15 @@ export default function HeaderSearchBar({
             onClick={commitSearch}
             aria-label="Pretraži"
             className={cn(
-              'relative z-30 my-2 mr-2 ml-1 flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border-none bg-brand-500 text-white transition-all duration-300 ease-in-out hover:bg-brand-600',
-              open ? 'h-12 px-4' : 'size-12'
+              'relative z-30 my-2 mr-2 ml-1 flex shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-brand-500 text-white transition-all duration-300 ease-in-out hover:bg-brand-600',
+              searchSubmitButtonLayoutClass(Boolean(open))
             )}
           >
             <SearchIcon className="size-5 shrink-0" aria-hidden />
             <span
               className={cn(
                 'overflow-hidden text-sm font-semibold whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out',
-                open ? 'max-w-[88px] opacity-100' : 'max-w-0 opacity-0'
+                open ? 'max-w-[88px] opacity-100' : 'w-0 max-w-0 opacity-0'
               )}
             >
               Pretraži
