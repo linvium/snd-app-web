@@ -1,5 +1,5 @@
 ---
-description: SND project coding rules — identifiers, architecture, UI language, Server Components, tests
+description: SND project coding rules - identifiers, architecture, UI language, Server Components, tests
 alwaysApply: true
 ---
 
@@ -33,6 +33,24 @@ Allowed Serbian:
 CSS custom properties must be English (e.g. `--color-brand-500`, `--radius-md`).
 
 Prefer clear English (`passwordStrength`, `formError`, `isLoading`) over transliteration.
+
+---
+
+## Hyphen only, never a long dash
+
+Never use an em dash (`—`) or en dash (`–`). Always use a regular hyphen (`-`).
+
+Applies everywhere: UI copy, comments, commit messages, docs, and replies.
+
+```typescript
+// ❌ BAD
+const hint = 'Iznajmi — koristi — vrati'
+// Sort: newest — then distance
+
+// ✅ GOOD
+const hint = 'Iznajmi - koristi - vrati'
+// Sort: newest - then distance
+```
 
 ---
 

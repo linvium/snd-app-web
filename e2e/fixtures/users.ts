@@ -12,3 +12,8 @@ export const OWNER_WITH_BOOKING = {
   email: 'test-owner-booking@snd.rs',
   password: 'Test1234',
 }
+
+export const CONTACT_LISTING = {
+  title: 'E2E oglas sa rezervacijom',
+  slug: 'e2e-oglas-sa-rezervacijom',
+}

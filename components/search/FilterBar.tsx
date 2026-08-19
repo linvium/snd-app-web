@@ -36,7 +36,7 @@ export default function FilterBar({
   const activeCount = countActiveFilters(params)
 
   return (
-    <div className="sticky top-14 z-20 border-b border-border bg-card md:top-[72px]">
+    <div className="sticky top-14 z-20 border-b border-border bg-card md:top-[72px]" data-testid="search-filters">
       <div
         // Horizontally scrollable on mobile so the chips never wrap into a
         // second sticky row (doc 03 §3.3).
@@ -89,11 +89,13 @@ function FilterChip({
   isActive,
   children,
   panelClassName,
+  testId,
 }: {
   label: string
   isActive: boolean
   children: (close: () => void) => React.ReactNode
   panelClassName?: string
+  testId?: string
 }) {
   const [open, setOpen] = useState(false)
   const id = useId()
@@ -105,6 +107,7 @@ function FilterChip({
           type="button"
           aria-expanded={open}
           aria-controls={id}
+          data-testid={testId}
           className={cn(
             'inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium whitespace-nowrap transition-colors',
             'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400',
@@ -140,11 +143,13 @@ function CategoryFilter({
       label={selected ? selected.name : 'Kategorija'}
       isActive={Boolean(value)}
       panelClassName="max-h-[60vh] w-80 overflow-y-auto"
+      testId="filter-category"
     >
       {(close) => (
         <div className="flex flex-col">
           <CategoryOption
             label="Sve kategorije"
+            slug="all"
             isSelected={!value}
             onSelect={() => {
               onChange(null)
@@ -156,6 +161,7 @@ function CategoryFilter({
               {/* Picking a parent includes everything under it (§6.1). */}
               <CategoryOption
                 label={root.name}
+                slug={root.slug}
                 count={root.listing_count}
                 isSelected={value === root.slug}
                 isParent
@@ -168,6 +174,7 @@ function CategoryFilter({
                 <CategoryOption
                   key={child.id}
                   label={child.name}
+                  slug={child.slug}
                   count={child.listing_count}
                   isSelected={value === child.slug}
                   indented
@@ -192,6 +199,7 @@ function CategoryFilter({
 
 function CategoryOption({
   label,
+  slug,
   count,
   isSelected,
   isParent = false,
@@ -199,6 +207,7 @@ function CategoryOption({
   onSelect,
 }: {
   label: string
+  slug: string
   count?: number
   isSelected: boolean
   isParent?: boolean
@@ -209,6 +218,7 @@ function CategoryOption({
     <button
       type="button"
       onClick={onSelect}
+      data-testid={`category-option-${slug}`}
       className={cn(
         'flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border-none bg-transparent px-3 py-2 text-left text-sm transition-colors hover:bg-muted',
         isParent && 'font-semibold',

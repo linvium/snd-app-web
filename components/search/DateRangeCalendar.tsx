@@ -99,6 +99,7 @@ export default function DateRangeCalendar({
                 <button
                   key={iso}
                   type="button"
+                  data-testid={`date-${iso}`}
                   disabled={isPast}
                   aria-pressed={isStart || isEnd}
                   onClick={() => handleSelect(iso)}

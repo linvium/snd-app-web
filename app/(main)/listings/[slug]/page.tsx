@@ -8,10 +8,13 @@ import type { CancellationPolicy } from '@/types/listing'
 
 export default async function ListingDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ from?: string; to?: string }>
 }) {
   const { slug } = await params
+  const { from, to } = await searchParams
   const supabase = await createClient()
 
   const { data: listing } = await supabase
@@ -31,17 +34,24 @@ export default async function ListingDetailPage({
   } = await supabase.auth.getUser()
   const isOwner = user?.id === listing.owner_id
 
-  const [{ data: images }, { data: category }, { data: listingLocations }] = await Promise.all([
-    supabase
-      .from('listing_images')
-      .select('id, thumbnail_url, large_url, sort_order')
-      .eq('listing_id', listing.id)
-      .order('sort_order', { ascending: true }),
-    listing.category_id
-      ? supabase.from('categories').select('full_path, name').eq('id', listing.category_id).maybeSingle()
-      : Promise.resolve({ data: null }),
-    supabase.from('listing_locations').select('location_id').eq('listing_id', listing.id),
-  ])
+  const [{ data: images }, { data: category }, { data: listingLocations }, { data: ownerProfile }, { data: kyc }] =
+    await Promise.all([
+      supabase
+        .from('listing_images')
+        .select('id, thumbnail_url, large_url, sort_order')
+        .eq('listing_id', listing.id)
+        .order('sort_order', { ascending: true }),
+      listing.category_id
+        ? supabase.from('categories').select('full_path, name').eq('id', listing.category_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabase.from('listing_locations').select('location_id').eq('listing_id', listing.id),
+      supabase
+        .from('user_profiles')
+        .select('display_name, first_name, last_name, avatar_url')
+        .eq('user_id', listing.owner_id)
+        .maybeSingle(),
+      supabase.from('kyc_verifications').select('status').eq('user_id', listing.owner_id).maybeSingle(),
+    ])
 
   const locationIds = (listingLocations ?? []).map((row) => row.location_id as string)
   const { data: locations } =
@@ -57,6 +67,7 @@ export default async function ListingDetailPage({
       <ListingDetail
         listing={{
           id: listing.id,
+          slug: listing.slug as string,
           title: listing.title,
           description: listing.description ?? '',
           categoryPath: category?.full_path ?? category?.name ?? null,
@@ -76,6 +87,10 @@ export default async function ListingDetailPage({
             large_url: image.large_url as string,
           })),
           isOwner,
+          ownerName: ownerProfile?.display_name ?? ownerProfile?.first_name ?? 'Vlasnik',
+          ownerVerified: kyc?.status === 'verified',
+          initialFrom: from ?? null,
+          initialTo: to ?? null,
         }}
       />
     </>

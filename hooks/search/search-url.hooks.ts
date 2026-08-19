@@ -10,10 +10,11 @@ import type { SearchParams } from '@/types/search'
  * The URL is the state (doc 03 §2). This hook is the only place that writes to
  * it, so the history rule lives in exactly one function:
  *
- *   filters → replaceState, paging → pushState
+ *   filters → replaceState, paging → replaceState
  *
- * Otherwise "back" would step through every position a price slider passed
- * through on its way to a value.
+ * Infinite scroll must not push a history entry per page, or "back" would
+ * walk through every chunk of ten. Filter typing still uses replaceState so
+ * it does not step through every slider tick.
  */
 export function useSearchUrlState() {
   const pathname = usePathname()
@@ -53,10 +54,10 @@ export function useSearchUrlState() {
     [params, write]
   )
 
-  /** Page changes: a real navigation the user expects "back" to undo. */
+  /** Page changes: replace the current entry so Back leaves the search, not each chunk. */
   const goToPage = useCallback(
     (page: number) => {
-      write({ ...params, page }, 'push')
+      write({ ...params, page }, 'replace')
     },
     [params, write]
   )

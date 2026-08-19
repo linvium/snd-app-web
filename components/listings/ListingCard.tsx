@@ -56,6 +56,7 @@ export default function ListingCard({
   return (
     <Link
       href={`/listings/${listing.slug}`}
+      data-testid="listing-card"
       data-listing-id={listing.id}
       onMouseEnter={() => onHoverChange?.(listing.id)}
       onMouseLeave={() => onHoverChange?.(null)}

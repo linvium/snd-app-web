@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
+import { ContactOwnerCard } from '@/components/listings/ContactOwnerCard'
 import { ListingGallery } from '@/components/listings/ListingGallery'
+import { ListingOwnerRequests } from '@/components/listings/ListingOwnerRequests'
 import { Button } from '@/components/ui/button'
 import { CANCELLATION_COPY } from '@/lib/listings'
 import { formatPriceMinor, formatPricePerDay } from '@/lib/search'
@@ -9,6 +11,7 @@ import type { CancellationPolicy } from '@/types/listing'
 
 export interface ListingDetailData {
   id: string
+  slug: string
   title: string
   description: string
   categoryPath: string | null
@@ -20,6 +23,10 @@ export interface ListingDetailData {
   locations: { label: string; city: string; street: string }[]
   images: { id: string; thumbnail_url: string; large_url: string }[]
   isOwner: boolean
+  ownerName: string | null
+  ownerVerified: boolean
+  initialFrom: string | null
+  initialTo: string | null
 }
 
 function DetailSection({ title, children }: { title: string; children: ReactNode }) {
@@ -57,6 +64,19 @@ export function ListingDetail({ listing }: { listing: ListingDetailData }) {
           {formatPricePerDay(listing.price1DayMinor)}
         </p>
       </div>
+
+      {listing.isOwner ? (
+        <ListingOwnerRequests listingId={listing.id} />
+      ) : (
+        <ContactOwnerCard
+          listingId={listing.id}
+          listingSlug={listing.slug}
+          ownerName={listing.ownerName}
+          ownerVerified={listing.ownerVerified}
+          initialFrom={listing.initialFrom}
+          initialTo={listing.initialTo}
+        />
+      )}
 
       <div className="rounded-xl border border-border bg-card p-5">
         <DetailSection title="Opis">

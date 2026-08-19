@@ -14,16 +14,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { UserIcon } from 'lucide-react'
+import { MessageSquareIcon, UserIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthSession } from '@/context/AuthContext'
 import { useSignOut } from '@/hooks/auth'
+import { useUnreadMessageCount } from '@/hooks/messages'
 
 const ACCOUNT_MENU_ITEMS = [
   { href: '/profile', label: 'Moj profil' },
   { href: '/profile/listings', label: 'Moji oglasi' },
   { href: '/bookings', label: 'Moje rezervacije' },
-  { href: '/messages', label: 'Poruke' },
+  { href: '/profile/requests', label: 'Zahtevi' },
   { href: '/omiljeni', label: 'Omiljeni' },
 ] as const
 
@@ -37,6 +38,7 @@ export default function Header() {
   const signOut = useSignOut()
   const pathname = usePathname()
   const [hasShadow, setHasShadow] = useState(false)
+  const unread = useUnreadMessageCount(Boolean(user))
 
   // Every page but the home page carries the search bar, so a new search can
   // be started from wherever the user happens to be (doc 03 §4).
@@ -78,6 +80,25 @@ export default function Header() {
           {user ? (
             <Link href="/profile/listings/new" className="hidden lg:inline-flex">
               <Button size="sm">Objavi predmet</Button>
+            </Link>
+          ) : null}
+
+          {user ? (
+            <Link
+              href="/profile/requests"
+              aria-label={unread > 0 ? `Zahtevi, ${unread} nepročitanih` : 'Zahtevi'}
+              data-testid="header-messages"
+              className="relative hidden size-9 place-items-center rounded-full text-zinc-600 no-underline hover:bg-muted hover:text-foreground md:grid"
+            >
+              <MessageSquareIcon className="size-[18px]" strokeWidth={1.8} aria-hidden />
+              {unread > 0 ? (
+                <span
+                  data-testid="messages-unread-badge"
+                  className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-brand-500 px-1 text-[10px] font-semibold text-white"
+                >
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              ) : null}
             </Link>
           ) : null}
 

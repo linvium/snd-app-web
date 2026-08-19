@@ -13,7 +13,7 @@ export const SEARCH_SORT_LABELS: Record<SearchSort, string> = {
 export type SearchCenterSource = 'user_gps' | 'user_profile' | 'city_center' | 'none'
 
 export const DEFAULT_RADIUS_KM = 25
-export const SEARCH_PAGE_SIZE = 20
+export const SEARCH_PAGE_SIZE = 10
 export const MAX_MAP_PINS = 500
 
 /** Radius options from doc 03 §6.1. `0` is "Cela Srbija" — no radius restriction. */

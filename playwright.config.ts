@@ -33,6 +33,8 @@ export default defineConfig({
         '**/listings/draft.spec.ts',
         '**/listings/photos.spec.ts',
         '**/listings/edit.spec.ts',
+        '**/bookings/request.spec.ts',
+        '**/messages/thread.spec.ts',
       ],
     },
     {
@@ -43,7 +45,7 @@ export default defineConfig({
     {
       name: 'owner-booking',
       use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/owner-booking.json' },
-      testMatch: ['**/listings/edit.spec.ts'],
+      testMatch: ['**/listings/edit.spec.ts', '**/bookings/request.spec.ts'],
     },
   ],
 })

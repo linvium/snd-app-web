@@ -7,7 +7,6 @@ import FilterBar from '@/components/search/FilterBar'
 import SearchEmptyState from '@/components/search/SearchEmptyState'
 import SearchMapPanel from '@/components/search/SearchMapPanel'
 import ListingCard, { ListingCardSkeleton } from '@/components/listings/ListingCard'
-import { Button } from '@/components/ui/button'
 import { useCategoryTree } from '@/hooks/categories'
 import {
   MEDIA_DESKTOP_WIDE,
@@ -28,7 +27,7 @@ import { SEARCH_PAGE_SIZE, type SearchCenterSource, type SearchResultListing } f
  *
  * Layout follows the breakpoints exactly: a sticky map beside the list on wide
  * screens, a list/map toggle on tablets, and a floating button opening a
- * full-screen map on phones. The map is never required — everything it shows is
+ * full-screen map on phones. The map is never required - everything it shows is
  * also in the list (§13).
  */
 export default function SearchResults() {
@@ -61,8 +60,8 @@ export default function SearchResults() {
     radiusKm: hasCenter ? params.radiusKm : null,
   })
 
-  // "Prikaži još" appends rather than replaces, so earlier pages stay on
-  // screen (doc 03 §12).
+  // Later pages append rather than replace, so earlier results stay on
+  // screen while infinite scroll loads the next ten.
   const [accumulated, setAccumulated] = useState<SearchResultListing[]>([])
   const pageSignature = useMemo(
     () => JSON.stringify({ ...params, page: undefined }),
@@ -106,6 +105,33 @@ export default function SearchResults() {
 
   const isInitialLoad = results.isLoading && listings.length === 0
   const isEmpty = !results.isLoading && !results.isError && total === 0
+  const isLoadingMore = results.isFetching && listings.length > 0 && params.page > 1
+
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+  const requestedPageRef = useRef(params.page)
+
+  useEffect(() => {
+    requestedPageRef.current = params.page
+  }, [params.page])
+
+  useEffect(() => {
+    if (!hasMore || results.isFetching) return
+    const node = loadMoreRef.current
+    if (!node) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return
+        if (requestedPageRef.current !== params.page) return
+        requestedPageRef.current = params.page + 1
+        goToPage(params.page + 1)
+      },
+      { rootMargin: '240px' }
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [hasMore, results.isFetching, goToPage, params.page])
 
   const mapPanel = (
     <SearchMapPanel
@@ -203,6 +229,7 @@ export default function SearchResults() {
             ) : (
               <>
                 <div
+                  data-testid="search-results"
                   className={cn(
                     'grid grid-cols-1 gap-4 sm:grid-cols-2',
                     // Beside the map there is only room for two across.
@@ -227,15 +254,13 @@ export default function SearchResults() {
                 </div>
 
                 {hasMore ? (
-                  <div className="mt-6 flex justify-center">
-                    <Button
-                      variant="secondary"
-                      size="lg"
-                      loading={results.isFetching}
-                      onClick={() => goToPage(params.page + 1)}
-                    >
-                      Prikaži još
-                    </Button>
+                  <div
+                    ref={loadMoreRef}
+                    data-testid="search-load-more"
+                    className="mt-6 flex justify-center py-4 text-sm text-zinc-500"
+                    aria-hidden={!isLoadingMore}
+                  >
+                    {isLoadingMore ? 'Učitavam još…' : null}
                   </div>
                 ) : null}
               </>

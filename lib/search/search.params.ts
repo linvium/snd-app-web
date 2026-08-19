@@ -1,3 +1,4 @@
+import { defaultSortFor } from '@/lib/search/search.helpers'
 import {
   DEFAULT_RADIUS_KM,
   SEARCH_SORTS,
@@ -41,7 +42,7 @@ export const EMPTY_SEARCH_PARAMS: SearchParams = {
   priceMin: null,
   priceMax: null,
   radiusKm: DEFAULT_RADIUS_KM,
-  sort: 'distance',
+  sort: 'newest',
   page: 1,
   mapOpen: false,
 }
@@ -134,7 +135,7 @@ export function parseSearchParams(source: ParamSource): SearchParams {
     priceMin,
     priceMax,
     radiusKm: radius ?? DEFAULT_RADIUS_KM,
-    sort: toSort(read(source, SEARCH_PARAM_KEYS.sort)) ?? 'distance',
+    sort: toSort(read(source, SEARCH_PARAM_KEYS.sort)) ?? defaultSortFor(hasCoords),
     page: page && page > 0 ? page : 1,
     mapOpen: mapOpen === 'true' || mapOpen === '1',
   }
@@ -164,7 +165,8 @@ export function buildSearchQuery(params: SearchParams): URLSearchParams {
   set(SEARCH_PARAM_KEYS.priceMin, params.priceMin)
   set(SEARCH_PARAM_KEYS.priceMax, params.priceMax)
   if (params.radiusKm !== DEFAULT_RADIUS_KM) set(SEARCH_PARAM_KEYS.radiusKm, params.radiusKm)
-  if (params.sort !== 'distance') set(SEARCH_PARAM_KEYS.sort, params.sort)
+  const hasCoords = params.lat !== null && params.lng !== null
+  if (params.sort !== defaultSortFor(hasCoords)) set(SEARCH_PARAM_KEYS.sort, params.sort)
   if (params.page > 1) set(SEARCH_PARAM_KEYS.page, params.page)
   if (params.mapOpen) set(SEARCH_PARAM_KEYS.mapOpen, 'true')
 
