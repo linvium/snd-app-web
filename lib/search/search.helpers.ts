@@ -12,6 +12,58 @@ export interface SearchCenter extends Coordinates {
 
 const EARTH_RADIUS_M = 6371000
 
+/** Terms surfaced in the header and mobile search when the query field is empty. */
+export const POPULAR_SEARCH_TERMS = [
+  'bušilica',
+  'šator',
+  'prikolica',
+  'dron',
+  'kosačica',
+  'projektor',
+] as const
+
+export function filterPopularSearchTerms(
+  term: string,
+  terms: readonly string[] = POPULAR_SEARCH_TERMS
+): string[] {
+  const needle = term.trim().toLowerCase()
+  if (!needle) return [...terms]
+  return terms.filter((value) => value.toLowerCase().includes(needle))
+}
+
+export type SearchBarSegment = 'q' | 'city' | 'dates'
+
+/**
+ * Airbnb hides a divider as soon as either neighbouring field is hovered, and
+ * hides every divider while a field is active.
+ */
+export function searchBarDividerHidden(
+  open: SearchBarSegment | null,
+  hovered: SearchBarSegment | null,
+  divider: 'after-q' | 'after-city'
+): boolean {
+  if (open) return true
+  if (!hovered) return false
+  if (divider === 'after-q') return hovered === 'q' || hovered === 'city'
+  return hovered === 'city' || hovered === 'dates'
+}
+
+/** First field → location → dates; dates is the last field before Search. */
+export function nextSearchBarSegment(segment: SearchBarSegment): SearchBarSegment | 'search' {
+  if (segment === 'q') return 'city'
+  if (segment === 'city') return 'dates'
+  return 'search'
+}
+
+/**
+ * Collapsed submit is a circle. A leftover flex gap around the hidden
+ * "Pretraži" label would shift the icon off-centre. The button lives inside
+ * the dates column so expanding the label cannot shrink q or city.
+ */
+export function searchSubmitButtonLayoutClass(expanded: boolean): string {
+  return expanded ? 'h-12 gap-2 px-4' : 'size-12'
+}
+
 /** Same formula as the database side, so client and server agree on distances. */
 export function haversineMeters(a: Coordinates, b: Coordinates): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180
@@ -250,7 +302,7 @@ export function formatDateRange(from: string | null, to: string | null): string 
   const startDay = start.getUTCDate()
   const startMonth = MONTHS_SHORT[start.getUTCMonth()]
 
-  if (!to) return `${startDay}. ${startMonth}`
+  if (!to || to === from) return `${startDay}. ${startMonth}`
 
   const end = new Date(`${to}T00:00:00Z`)
   if (Number.isNaN(end.getTime())) return `${startDay}. ${startMonth}`

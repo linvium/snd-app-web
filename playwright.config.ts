@@ -47,5 +47,10 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/owner-booking.json' },
       testMatch: ['**/listings/edit.spec.ts', '**/bookings/request.spec.ts'],
     },
+    {
+      name: 'guest',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: ['**/layout/header.spec.ts', '**/search/dates.spec.ts', '**/home/listings.spec.ts'],
+    },
   ],
 })

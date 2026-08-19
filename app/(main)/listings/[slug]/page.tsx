@@ -1,98 +1,155 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 
-import { ListingDetail } from '@/components/listings/ListingDetail'
+import ListingDetailView from '@/components/listings/detail/ListingDetailView'
 import { ListingPublishedToast } from '@/components/listings/ListingPublishedToast'
+import { loadListingDetail } from '@/lib/listings/listings.detail.server'
+import {
+  listingCanonicalUrl,
+  listingJsonLd,
+  listingMetaDescription,
+  listingPageTitle,
+} from '@/lib/listings'
+import { loadReviews, loadReviewSummary } from '@/lib/reviews/reviews.server'
 import { createClient } from '@/lib/supabase/server'
-import type { CancellationPolicy } from '@/types/listing'
+import { REVIEW_PAGE_SIZE } from '@/types/listing-detail'
 
-export default async function ListingDetailPage({
-  params,
-  searchParams,
-}: {
+interface PageProps {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ from?: string; to?: string }>
-}) {
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const { from, to } = await searchParams
   const supabase = await createClient()
-
-  const { data: listing } = await supabase
-    .from('listings')
-    .select(
-      'id, owner_id, category_id, title, description, slug, price_1_day_minor, price_3_days_minor, price_7_days_minor, item_value_minor, cancellation_policy, status'
-    )
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .is('deleted_at', null)
-    .maybeSingle()
-
-  if (!listing || !listing.title || listing.price_1_day_minor == null) notFound()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const isOwner = user?.id === listing.owner_id
 
-  const [{ data: images }, { data: category }, { data: listingLocations }, { data: ownerProfile }, { data: kyc }] =
-    await Promise.all([
-      supabase
-        .from('listing_images')
-        .select('id, thumbnail_url, large_url, sort_order')
-        .eq('listing_id', listing.id)
-        .order('sort_order', { ascending: true }),
-      listing.category_id
-        ? supabase.from('categories').select('full_path, name').eq('id', listing.category_id).maybeSingle()
-        : Promise.resolve({ data: null }),
-      supabase.from('listing_locations').select('location_id').eq('listing_id', listing.id),
-      supabase
-        .from('user_profiles')
-        .select('display_name, first_name, last_name, avatar_url')
-        .eq('user_id', listing.owner_id)
-        .maybeSingle(),
-      supabase.from('kyc_verifications').select('status').eq('user_id', listing.owner_id).maybeSingle(),
-    ])
+  const result = await loadListingDetail(supabase, slug, { id: user?.id ?? null })
+  if (result.kind !== 'found') {
+    return { title: 'Oglas nije pronađen | SND', robots: { index: false, follow: false } }
+  }
 
-  const locationIds = (listingLocations ?? []).map((row) => row.location_id as string)
-  const { data: locations } =
-    locationIds.length > 0
-      ? await supabase.from('locations').select('id, label, city, street').in('id', locationIds)
-      : { data: [] }
+  const { listing } = result
+  const city = listing.pickup_locations[0]?.city ?? null
+  const description = listingMetaDescription(listing.description)
+  const canonical = listingCanonicalUrl(listing.slug)
+  const cover = listing.images[0]
+
+  return {
+    title: listingPageTitle(listing.title, city),
+    description,
+    alternates: { canonical },
+    // A paused listing is still a real page for the people holding its link,
+    // but it should not be pulled into search while it cannot be booked.
+    robots: listing.status === 'published' ? undefined : { index: false, follow: true },
+    openGraph: {
+      type: 'website',
+      title: listing.title,
+      description,
+      url: canonical,
+      siteName: 'SND',
+      locale: 'sr_RS',
+      ...(cover ? { images: [{ url: cover.large_url, width: 1200, height: 630 }] } : {}),
+    },
+  }
+}
+
+/**
+ * The item page (doc 04).
+ *
+ * A server component: the listing, its reviews and the first render of the
+ * booking card all come back with the HTML, which is what a page that has to be
+ * indexed and has to load on a phone needs. Everything interactive below is a
+ * client island. Dates in the URL (`from`/`to`) are read by the client view.
+ */
+export default async function ListingDetailPage({ params }: PageProps) {
+  const { slug } = await params
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const result = await loadListingDetail(supabase, slug, { id: user?.id ?? null })
+
+  if (result.kind === 'gone') {
+    // Doc 04 §15 asks for HTTP 410 on a listing that was indexed and is now
+    // deleted. A server component cannot set a response status in Next 15, so
+    // the crawler signal is carried by `robots: noindex` from generateMetadata
+    // above, and the reader gets a page that explains itself and offers a way
+    // onward. The status code remains 200 - the one part of §15 not met, and
+    // it needs a middleware or a rewrite to fix properly.
+    return (
+      <GonePage
+        title="Ovaj oglas više ne postoji"
+        body="Vlasnik ga je uklonio. Probaj pretragu - možda nađeš nešto slično."
+      />
+    )
+  }
+
+  if (result.kind === 'not_found') notFound()
+
+  const { listing } = result
+
+  const [summary, listingReviews, otherReviews] = await Promise.all([
+    loadReviewSummary(supabase, listing.id),
+    loadReviews(supabase, {
+      listingId: listing.id,
+      ownerId: listing.owner.id,
+      scope: 'listing',
+      limit: REVIEW_PAGE_SIZE,
+      offset: 0,
+    }),
+    // Only the count is needed up front; the rows load when the reader asks.
+    loadReviews(supabase, {
+      listingId: listing.id,
+      ownerId: listing.owner.id,
+      scope: 'owner_other',
+      limit: 1,
+      offset: 0,
+    }),
+  ])
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        // Structured data for the Product/Offer block (doc 04 §15). The content
+        // is built from our own columns, not from anything a user can inject
+        // as markup.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(listingJsonLd(listing)) }}
+      />
+
       <Suspense>
         <ListingPublishedToast />
       </Suspense>
-      <ListingDetail
-        listing={{
-          id: listing.id,
-          slug: listing.slug as string,
-          title: listing.title,
-          description: listing.description ?? '',
-          categoryPath: category?.full_path ?? category?.name ?? null,
-          price1DayMinor: listing.price_1_day_minor,
-          price3DaysMinor: listing.price_3_days_minor,
-          price7DaysMinor: listing.price_7_days_minor,
-          itemValueMinor: listing.item_value_minor,
-          cancellationPolicy: listing.cancellation_policy as CancellationPolicy,
-          locations: (locations ?? []).map((row) => ({
-            label: row.label as string,
-            city: row.city as string,
-            street: row.street as string,
-          })),
-          images: (images ?? []).map((image) => ({
-            id: image.id as string,
-            thumbnail_url: image.thumbnail_url as string,
-            large_url: image.large_url as string,
-          })),
-          isOwner,
-          ownerName: ownerProfile?.display_name ?? ownerProfile?.first_name ?? 'Vlasnik',
-          ownerVerified: kyc?.status === 'verified',
-          initialFrom: from ?? null,
-          initialTo: to ?? null,
-        }}
-      />
+
+      <Suspense>
+        <ListingDetailView
+          listing={listing}
+          summary={summary}
+          reviews={listingReviews.reviews}
+          ownerOtherCount={otherReviews.total}
+        />
+      </Suspense>
     </>
+  )
+}
+
+function GonePage({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="mx-auto max-w-lg px-4 py-20 text-center">
+      <h1 className="mt-0 mb-2 text-2xl font-semibold text-card-foreground">{title}</h1>
+      <p className="mt-0 mb-6 text-muted-foreground">{body}</p>
+      <a
+        href="/search"
+        className="inline-block rounded-lg bg-brand-500 px-4 py-2.5 font-semibold text-white no-underline"
+      >
+        Otvori pretragu
+      </a>
+    </div>
   )
 }

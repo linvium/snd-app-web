@@ -1,3 +1,4 @@
+import { HOME_LATEST_COUNT, homeLatestSearchParams } from '@/lib/home/home-listings.helpers'
 import { buildSearchQuery } from '@/lib/search/search.params'
 import type {
   ApiErrorBody,
@@ -88,4 +89,12 @@ export const searchService = {
     }
     return getJson<SearchResponse>(`/api/v1/listings/recent?${query.toString()}`, signal)
   },
+
+  homeLatestListings: (signal?: AbortSignal): Promise<SearchResponse> =>
+    getJson<SearchResponse>(
+      `/api/v1/listings/search?${searchQueryString(homeLatestSearchParams(), 'none', {
+        limit: String(HOME_LATEST_COUNT),
+      })}`,
+      signal
+    ),
 }
