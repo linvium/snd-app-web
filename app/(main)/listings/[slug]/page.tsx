@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * A server component: the listing, its reviews and the first render of the
  * booking card all come back with the HTML, which is what a page that has to be
  * indexed and has to load on a phone needs. Everything interactive below is a
- * client island.
+ * client island. Dates in the URL (`from`/`to`) are read by the client view.
  */
 export default async function ListingDetailPage({ params }: PageProps) {
   const { slug } = await params
@@ -80,12 +80,12 @@ export default async function ListingDetailPage({ params }: PageProps) {
     // deleted. A server component cannot set a response status in Next 15, so
     // the crawler signal is carried by `robots: noindex` from generateMetadata
     // above, and the reader gets a page that explains itself and offers a way
-    // onward. The status code remains 200 — the one part of §15 not met, and
+    // onward. The status code remains 200 - the one part of §15 not met, and
     // it needs a middleware or a rewrite to fix properly.
     return (
       <GonePage
         title="Ovaj oglas više ne postoji"
-        body="Vlasnik ga je uklonio. Probaj pretragu — možda nađeš nešto slično."
+        body="Vlasnik ga je uklonio. Probaj pretragu - možda nađeš nešto slično."
       />
     )
   }

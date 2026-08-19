@@ -209,9 +209,10 @@ function DayButton({
   return (
     <button
       type="button"
+      data-testid={`date-${iso}`}
       disabled={isDisabled}
       aria-pressed={isStart || isEnd}
-      aria-label={isTaken ? `${iso} — zauzeto` : undefined}
+      aria-label={isTaken ? `${iso} - zauzeto` : undefined}
       onClick={() => onSelect(iso)}
       className={cn(
         'relative grid h-11 cursor-pointer place-items-center border-none bg-transparent text-sm',

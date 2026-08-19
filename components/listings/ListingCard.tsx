@@ -81,6 +81,7 @@ export default function ListingCard({
 
   return (
     <article
+      data-testid="listing-card"
       data-listing-id={item.id}
       data-listing-status={item.status ?? undefined}
       className={cn(highlighted && 'rounded-2xl ring-2 ring-brand-500 ring-offset-2')}

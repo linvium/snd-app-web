@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { OWNER_WITH_BOOKING, UNVERIFIED_USER, VERIFIED_USER } from '../fixtures/users'
+import { CONTACT_LISTING, OWNER_WITH_BOOKING, UNVERIFIED_USER, VERIFIED_USER } from '../fixtures/users'
 
 function loadEnv() {
   for (const file of ['.env.local', '.env']) {
@@ -83,11 +83,27 @@ async function ensureUser(
   return user.id
 }
 
-async function ensureProfile(admin: ReturnType<typeof createClient>, userId: string) {
+async function ensureProfile(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  displayName?: string
+) {
   const { data } = await admin.from('user_profiles').select('id').eq('user_id', userId).maybeSingle()
-  if (data) return
-  const { error } = await admin.from('user_profiles').insert({ user_id: userId })
-  if (error) throw error
+  if (!data) {
+    const { error } = await admin.from('user_profiles').insert({
+      user_id: userId,
+      display_name: displayName ?? null,
+    })
+    if (error) throw error
+    return
+  }
+  if (displayName) {
+    const { error } = await admin
+      .from('user_profiles')
+      .update({ display_name: displayName })
+      .eq('user_id', userId)
+    if (error) throw error
+  }
 }
 
 async function ensureLocation(admin: ReturnType<typeof createClient>, userId: string) {
@@ -143,8 +159,8 @@ async function ensureOwnerListing(
       .insert({
         owner_id: ownerId,
         category_id: '9168d11b-06c8-4c29-a56b-ce93a3575177',
-        title: 'E2E oglas sa rezervacijom',
-        slug: `e2e-oglas-sa-rezervacijom-${ownerId.slice(0, 8)}`,
+        title: CONTACT_LISTING.title,
+        slug: CONTACT_LISTING.slug,
         description: 'Oglas za Playwright test zaključanih polja uz aktivnu rezervaciju.',
         price_1_day_minor: 80000,
         item_value_minor: 1500000,
@@ -157,6 +173,8 @@ async function ensureOwnerListing(
     if (inserted.error || !inserted.data) throw inserted.error ?? new Error('Could not create owner listing')
     listingId = inserted.data.id as string
   }
+
+  await admin.from('listings').update({ slug: CONTACT_LISTING.slug, title: CONTACT_LISTING.title }).eq('id', listingId)
 
   const { data: link } = await admin
     .from('listing_locations')
@@ -220,6 +238,8 @@ async function main() {
   const verifiedId = await ensureUser(admin, VERIFIED_USER.email, VERIFIED_USER.password, true)
   const unverifiedId = await ensureUser(admin, UNVERIFIED_USER.email, UNVERIFIED_USER.password, false)
   const ownerId = await ensureUser(admin, OWNER_WITH_BOOKING.email, OWNER_WITH_BOOKING.password, true)
+  await ensureProfile(admin, verifiedId, 'E2E Iznajmljivač')
+  await ensureProfile(admin, ownerId, 'E2E Vlasnik')
   await ensureLocation(admin, verifiedId)
   const ownerLocationId = await ensureLocation(admin, ownerId)
   await ensureOwnerListing(admin, ownerId, unverifiedId, ownerLocationId)

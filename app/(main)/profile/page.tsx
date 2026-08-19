@@ -24,6 +24,7 @@ const NAV_LINKS = [
   { name: 'Moje lokacije', href: '/profile/locations' },
   { name: 'Verifikacija', href: '/profile/verification' },
   { name: 'Moji oglasi', href: '/profile/listings' },
+  { name: 'Zahtevi', href: '/profile/requests' },
   { name: 'Omiljeni', href: '/profile/favorites' },
   { name: 'Podešavanja', href: '/profile/settings' },
 ]

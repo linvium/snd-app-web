@@ -199,3 +199,26 @@
   background: transparent;
   border: none;
 }
+
+/* Thin, rounded scrollbar for chat panes. */
+.snd-thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-200) transparent;
+}
+
+.snd-thin-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.snd-thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.snd-thin-scroll::-webkit-scrollbar-thumb {
+  background: var(--brand-200);
+  border-radius: 999px;
+}
+
+.snd-thin-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-400);
+}

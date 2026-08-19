@@ -3,6 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useState } from 'react'
 
+import { ContactOwnerCard } from '@/components/listings/ContactOwnerCard'
+import { ListingOwnerRequests } from '@/components/listings/ListingOwnerRequests'
 import BookingCard from '@/components/listings/detail/BookingCard'
 import CancellationTerms from '@/components/listings/detail/CancellationTerms'
 import GuaranteeCard from '@/components/listings/detail/GuaranteeCard'
@@ -91,6 +93,18 @@ export default function ListingDetailView({
         <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_380px] lg:gap-10">
           <div className="flex flex-col gap-8">
             <OwnerCard owner={listing.owner} isOwnListing={listing.is_own_listing} />
+            {listing.is_own_listing ? (
+              <ListingOwnerRequests listingId={listing.id} />
+            ) : (
+              <ContactOwnerCard
+                listingId={listing.id}
+                listingSlug={listing.slug}
+                ownerName={listing.owner.display_name}
+                ownerVerified={listing.owner.is_verified}
+                initialFrom={dates.from}
+                initialTo={dates.to}
+              />
+            )}
             <ListingDescription description={listing.description} />
             <PriceTable listing={listing} />
 

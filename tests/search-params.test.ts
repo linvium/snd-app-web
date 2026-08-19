@@ -9,7 +9,7 @@ import {
   searchUrl,
   withFilters,
 } from '@/lib/search/search.params'
-import { DEFAULT_RADIUS_KM } from '@/types/search'
+import { DEFAULT_RADIUS_KM, SEARCH_PAGE_SIZE } from '@/types/search'
 
 const parse = (query: string) => parseSearchParams(new URLSearchParams(query))
 
@@ -40,8 +40,13 @@ describe('parseSearchParams', () => {
   it('falls back to the documented defaults when nothing is given', () => {
     expect(parse('')).toEqual(EMPTY_SEARCH_PARAMS)
     expect(parse('').radiusKm).toBe(DEFAULT_RADIUS_KM)
-    expect(parse('').sort).toBe('distance')
+    expect(parse('').sort).toBe('newest')
     expect(parse('').page).toBe(1)
+  })
+
+  it('defaults to distance only when a centre is present', () => {
+    expect(parse('lat=44.81&lng=20.46').sort).toBe('distance')
+    expect(parse('q=busilica').sort).toBe('newest')
   })
 
   it('ignores a coordinate without its pair — one alone cannot centre a search', () => {
@@ -75,9 +80,10 @@ describe('parseSearchParams', () => {
 
   it('falls back to defaults on malformed values so a shared link still works', () => {
     const params = parse('sort=nonsense&page=abc&radius=-5')
-    expect(params.sort).toBe('distance')
+    expect(params.sort).toBe('newest')
     expect(params.page).toBe(1)
     expect(params.radiusKm).toBe(DEFAULT_RADIUS_KM)
+    expect(parse('lat=44.81&lng=20.46&sort=nonsense').sort).toBe('distance')
   })
 
   it('treats radius 0 as "Cela Srbija" rather than a missing value', () => {
@@ -109,6 +115,12 @@ describe('buildSearchQuery', () => {
     expect(query).not.toContain('page')
   })
 
+  it('omits distance when a centre is present and newest when it is not', () => {
+    expect(buildSearchQuery(parse('lat=44.81&lng=20.46')).has('sort')).toBe(false)
+    expect(buildSearchQuery(parse('lat=44.81&lng=20.46&sort=newest')).get('sort')).toBe('newest')
+    expect(buildSearchQuery(parse('sort=distance')).get('sort')).toBe('distance')
+  })
+
   it('never emits half a coordinate pair', () => {
     const params = { ...EMPTY_SEARCH_PARAMS, lat: 44.81, lng: null }
     expect(buildSearchQuery(params).has('lat')).toBe(false)
@@ -117,6 +129,12 @@ describe('buildSearchQuery', () => {
   it('builds a bare path when there is nothing to say', () => {
     expect(searchUrl(EMPTY_SEARCH_PARAMS)).toBe('/search')
     expect(searchUrl({ ...EMPTY_SEARCH_PARAMS, q: 'dron' })).toBe('/search?q=dron')
+  })
+})
+
+describe('SEARCH_PAGE_SIZE', () => {
+  it('loads ten listings per request', () => {
+    expect(SEARCH_PAGE_SIZE).toBe(10)
   })
 })
 
