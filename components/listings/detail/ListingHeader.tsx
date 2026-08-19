@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { CheckIcon, HeartIcon, ShareIcon, StarIcon } from 'lucide-react'
+import { CheckIcon, ChevronLeftIcon, HeartIcon, ShareIcon, StarIcon } from 'lucide-react'
 
 import { useAuthSession } from '@/context/AuthContext'
 import { useToggleFavorite } from '@/hooks/favorites'
@@ -67,6 +67,21 @@ export default function ListingHeader({ listing }: { listing: ListingDetail }) {
 
   return (
     <header className="flex flex-col gap-2">
+      <button
+        type="button"
+        data-testid="mobile-back"
+        aria-label="Nazad"
+        onClick={() => {
+          if (typeof window !== 'undefined' && window.history.length > 1) {
+            router.back()
+            return
+          }
+          router.push('/')
+        }}
+        className="-ml-2 mb-1 grid size-10 place-items-center rounded-md text-foreground hover:bg-muted md:hidden"
+      >
+        <ChevronLeftIcon className="size-[22px]" strokeWidth={2} aria-hidden />
+      </button>
       {listing.category ? (
         <nav aria-label="Putanja kategorije" className="text-[13px] text-muted-foreground">
           {/* Only the leaf survives on a phone — the full trail wraps to three
@@ -123,6 +138,7 @@ export default function ListingHeader({ listing }: { listing: ListingDetail }) {
           {listing.is_own_listing ? null : (
             <button
               type="button"
+              data-testid="listing-favorite"
               onClick={handleFavorite}
               aria-label={isFavorite ? 'Ukloni iz omiljenih' : 'Dodaj u omiljene'}
               aria-pressed={isFavorite}

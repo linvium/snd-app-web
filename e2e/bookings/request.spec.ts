@@ -48,8 +48,8 @@ test.describe('owner cannot request own listing', () => {
 
   test('API odbija zahtev vlasnika za sopstveni oglas', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'owner-booking', 'Potreban je nalog vlasnika')
-    await page.goto('/profile/listings')
-    const editHref = await page.getByTestId('listing-edit-link').first().getAttribute('href')
+    await openContactListing(page)
+    const editHref = await page.getByRole('link', { name: 'Izmeni oglas' }).getAttribute('href')
     const listingId = editHref?.match(/[0-9a-f-]{36}/i)?.[0]
     expect(listingId).toBeTruthy()
 
@@ -62,6 +62,26 @@ test.describe('owner cannot request own listing', () => {
 })
 
 test.describe('renter request', () => {
+  test('levo nema dupli kontakt CTA', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'verified', 'Koristi nalog iznajmljivača')
+    await openContactListing(page)
+    await expect(page.getByRole('button', { name: 'Kontaktiraj vlasnika' })).toHaveCount(0)
+    await expect(page.getByTestId('contact-owner-button')).toBeVisible()
+    await expect(page.getByTestId('send-message-button')).toBeVisible()
+  })
+
+  test('na telefonu back vraća sa detalja oglasa', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'verified', 'Koristi nalog iznajmljivača')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/profile/requests')
+    await page.goto(CONTACT_PATH)
+    await expect(page.getByRole('heading', { name: CONTACT_LISTING.title })).toBeVisible()
+    const back = page.getByTestId('mobile-back')
+    await expect(back).toBeVisible()
+    await back.click()
+    await expect(page).toHaveURL(/\/profile\/requests\/?$/)
+  })
+
   test('prazna poruka ostaje na oglasu', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'verified', 'Koristi nalog iznajmljivača')
     await cleanupRentalRequests()
@@ -105,6 +125,33 @@ test.describe('renter request', () => {
     await expect(page.getByText('Datumi nisu izabrani.')).toHaveCount(0)
     await expect(page.getByTestId('request-card')).not.toContainText('RSD')
     await expect(page.getByTestId('request-card')).not.toContainText('ukupno')
+  })
+
+  test('datumi sa oglasa idu u zahtev', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'verified', 'Koristi nalog iznajmljivača')
+    await cleanupRentalRequests()
+    await page.goto(`${CONTACT_PATH}?from=2026-08-22&to=2026-08-24`)
+    await expect(page.getByRole('heading', { name: CONTACT_LISTING.title })).toBeVisible()
+    await page.getByTestId('contact-owner-button').click()
+    await expect(page.getByTestId('contact-dialog')).toBeVisible()
+    await expect(page.getByTestId('contact-dialog').getByTestId('date-preset-today')).toBeVisible()
+    await page.getByTestId('request-message').fill('Već sam izabrao datume.')
+    await page.getByTestId('request-submit').click()
+    await page.waitForURL(/\/profile\/requests\/[0-9a-f-]{36}/)
+    await expect(page.getByTestId('request-card')).toBeVisible()
+    await expect(page.getByText('Datumi nisu izabrani.')).toHaveCount(0)
+  })
+
+  test('pošalji poruku otvara isti dijalog', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'verified', 'Koristi nalog iznajmljivača')
+    await cleanupRentalRequests()
+    await openContactListing(page)
+    await page.getByTestId('send-message-button').click()
+    await expect(page.getByTestId('contact-dialog')).toBeVisible()
+    await page.getByTestId('request-message').fill('Samo poruka, isti tok.')
+    await page.getByTestId('request-submit').click()
+    await page.waitForURL(/\/profile\/requests\/[0-9a-f-]{36}/)
+    await expect(page.getByTestId('request-card')).toBeVisible()
   })
 
   test('povratak na oglas i inbox drži isti razgovor', async ({ page }, testInfo) => {

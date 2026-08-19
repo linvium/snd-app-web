@@ -134,6 +134,15 @@ test.describe('publish listing', () => {
     await expect(visible(page, 'publish-form')).toBeVisible()
   })
 
+  test('na telefonu back vraća sa objave', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await start(page)
+    const back = page.getByTestId('mobile-back')
+    await expect(back).toBeVisible()
+    await back.click()
+    await expect(page).toHaveURL(/\/profile\/listings/)
+  })
+
   test('autocomplete adrese je popover', async ({ page }) => {
     await start(page)
     await mockGeocode(page)

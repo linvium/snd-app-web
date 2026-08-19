@@ -11,6 +11,7 @@ export {
   messageDayKey,
   messagePresentation,
   requestCardDatesLabel,
+  shouldSubmitComposerOnEnter,
   sortConversationsForInbox,
   unreadMessageTotal,
 } from './messages.helpers'

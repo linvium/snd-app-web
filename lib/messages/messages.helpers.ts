@@ -122,3 +122,12 @@ export function formatMessageDayLabel(iso: string, now = new Date()): string {
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}.`
 }
+
+export function shouldSubmitComposerOnEnter(event: {
+  key: string
+  shiftKey: boolean
+  nativeEvent?: { isComposing?: boolean }
+}): boolean {
+  if (event.nativeEvent?.isComposing) return false
+  return event.key === 'Enter' && !event.shiftKey
+}

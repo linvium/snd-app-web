@@ -32,7 +32,7 @@ const ACCOUNT_MENU_ITEMS = [
   { href: '/profile/listings', label: 'Moji oglasi' },
   { href: '/bookings', label: 'Moje rezervacije' },
   { href: '/profile/requests', label: 'Zahtevi' },
-  { href: '/omiljeni', label: 'Omiljeni' },
+  { href: '/profile/favorites', label: 'Omiljeni' },
 ] as const
 
 function getInitials(email?: string | null) {

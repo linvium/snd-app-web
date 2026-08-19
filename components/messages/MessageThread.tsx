@@ -18,6 +18,7 @@ import {
   messagePresentation,
   REQUESTS_PATH,
   requestCardDatesLabel,
+  shouldSubmitComposerOnEnter,
 } from '@/lib/messages'
 import { ApiError } from '@/lib/search'
 import { cn } from '@/lib/utils'
@@ -93,9 +94,9 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
 
   useEffect(() => {
     if (thread.data) markRead.mutate(conversationId)
-    // Mark once when the thread first loads.
+    // Mark when the thread is on screen, including after a new inbound message.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId, thread.data?.conversation.id])
+  }, [conversationId, thread.data?.conversation.id, lastMessageId])
 
   useEffect(() => {
     if (thread.error instanceof ApiError && thread.error.status === 404) {
@@ -109,7 +110,7 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
     list.scrollTop = list.scrollHeight
   }, [conversationId, lastMessageId, thread.data?.messages.length])
 
-  if (thread.isLoading) {
+  if (thread.isPending || (thread.isFetching && thread.data === undefined)) {
     return <ThreadSkeleton />
   }
 
@@ -255,26 +256,37 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
         })}
       </ol>
 
-      <form onSubmit={handleSubmit} className="flex shrink-0 items-center gap-2 border-t border-border bg-card px-3 py-3 sm:px-4">
-        <Textarea
-          data-testid="thread-message-input"
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
-          rows={2}
-          maxLength={2000}
-          placeholder="Napiši poruku…"
-          className="min-h-11 resize-none"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          data-testid="thread-send"
-          disabled={sendMessage.isPending}
-          className="rounded-full bg-brand-500 hover:bg-brand-600"
-          aria-label="Pošalji"
-        >
-          <SendIcon className="size-4" aria-hidden />
-        </Button>
+      <form onSubmit={handleSubmit} className="shrink-0 border-t border-border bg-card px-3 py-3 sm:px-4">
+        <div className="flex items-center gap-2">
+          <Textarea
+            data-testid="thread-message-input"
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
+            onKeyDown={(event) => {
+              if (!shouldSubmitComposerOnEnter(event)) return
+              event.preventDefault()
+              if (sendMessage.isPending) return
+              event.currentTarget.form?.requestSubmit()
+            }}
+            rows={2}
+            maxLength={2000}
+            placeholder="Napiši poruku…"
+            className="min-h-11 resize-none"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            data-testid="thread-send"
+            disabled={sendMessage.isPending}
+            className="rounded-full bg-brand-500 hover:bg-brand-600"
+            aria-label="Pošalji"
+          >
+            <SendIcon className="size-4" aria-hidden />
+          </Button>
+        </div>
+        <p className="mt-1.5 mb-0 text-[11px] leading-4 text-muted-foreground" data-testid="composer-hint">
+          Enter šalje poruku. Shift + Enter novi red.
+        </p>
       </form>
       {error ? (
         <p className="mt-0 mb-3 px-4 text-sm text-destructive" role="alert">
