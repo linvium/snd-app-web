@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { nextSlugCandidate, slugifyTitle } from '@/lib/listings/listings.slug'
 import {
   isAllCapsTitle,
+  itemValueWarning,
   publishFieldErrors,
   rsdToMinor,
   savingsForPackage,
@@ -84,6 +85,17 @@ describe('validateListingForm', () => {
     const { fields } = validateListingForm(valid({ title: 'BUSILICA BOSCH GSB' }))
     expect(fields.title).toBeUndefined()
   })
+
+  it('accepts a missing item value', () => {
+    const { fields, steps } = validateListingForm(valid({ itemValueRsd: null }))
+    expect(fields.itemValue).toBeUndefined()
+    expect(steps.some((step) => step.step === 'value')).toBe(false)
+  })
+
+  it('rejects an item value below the minimum when provided', () => {
+    const { fields } = validateListingForm(valid({ itemValueRsd: 50 }))
+    expect(fields.itemValue).toContain('1.000')
+  })
 })
 
 describe('money helpers', () => {
@@ -95,6 +107,16 @@ describe('money helpers', () => {
     const savings = savingsForPackage(800, 2100, 3)
     expect(savings?.perDayRsd).toBe(700)
     expect(savings?.percent).toBe(12)
+  })
+})
+
+describe('itemValueWarning', () => {
+  it('warns when value is low versus the daily price', () => {
+    expect(itemValueWarning(1000, 200, 80000)).toContain('niska')
+  })
+
+  it('does not show the high-value similar-items warning', () => {
+    expect(itemValueWarning(500_000, 800, 80000)).toBeUndefined()
   })
 })
 
@@ -113,6 +135,76 @@ describe('processListingImage', () => {
     expect(result.height).toBe(150)
     expect(result.variants.thumbnail.webp.byteLength).toBeGreaterThan(0)
     expect(result.variants.large.jpeg.byteLength).toBeGreaterThan(0)
+  })
+
+  it('does not persist source dimensions on the listing image row or API payload', async () => {
+    const { listingImageCreatedPayload, listingImageInsertRow } = await import(
+      '@/lib/listings/listings.images'
+    )
+    const row = listingImageInsertRow({
+      id: 'img-1',
+      listingId: 'listing-1',
+      thumbnailUrl: 'https://example.com/t.webp',
+      mediumUrl: 'https://example.com/m.webp',
+      largeUrl: 'https://example.com/l.webp',
+      sortOrder: 0,
+    })
+    const payload = listingImageCreatedPayload(
+      { id: row.id, thumbnail_url: row.thumbnail_url, sort_order: row.sort_order },
+      false
+    )
+
+    expect(row).toEqual({
+      id: 'img-1',
+      listing_id: 'listing-1',
+      url: 'https://example.com/l.webp',
+      thumbnail_url: 'https://example.com/t.webp',
+      medium_url: 'https://example.com/m.webp',
+      large_url: 'https://example.com/l.webp',
+      sort_order: 0,
+    })
+    expect(row).not.toHaveProperty('width')
+    expect(row).not.toHaveProperty('height')
+    expect(payload).not.toHaveProperty('width')
+    expect(payload).not.toHaveProperty('height')
+  })
+
+  it('crops a square original to 4:3 variants', async () => {
+    const sharp = (await import('sharp')).default
+    const { processListingImage } = await import('@/lib/listings/listings.images')
+    const buffer = await sharp({
+      create: { width: 300, height: 300, channels: 3, background: '#336699' },
+    })
+      .jpeg()
+      .toBuffer()
+
+    const result = await processListingImage(buffer)
+    const thumb = await sharp(result.variants.thumbnail.jpeg).metadata()
+    const medium = await sharp(result.variants.medium.jpeg).metadata()
+
+    expect(result.width).toBe(300)
+    expect(result.height).toBe(300)
+    expect(thumb.width).toBe(400)
+    expect(thumb.height).toBe(300)
+    expect(medium.width).toBe(800)
+    expect(medium.height).toBe(600)
+  })
+
+  it('caps the large variant at 1200px width and keeps a smaller thumb', async () => {
+    const sharp = (await import('sharp')).default
+    const { processListingImage } = await import('@/lib/listings/listings.images')
+    const buffer = await sharp({
+      create: { width: 2400, height: 1800, channels: 3, background: '#114477' },
+    })
+      .jpeg()
+      .toBuffer()
+
+    const result = await processListingImage(buffer)
+    const large = await sharp(result.variants.large.jpeg).metadata()
+    const thumb = await sharp(result.variants.thumbnail.jpeg).metadata()
+    expect(large.width).toBeLessThanOrEqual(1200)
+    expect(thumb.width).toBeLessThanOrEqual(400)
+    expect(result.variants.thumbnail.jpeg.byteLength).toBeLessThan(result.variants.large.jpeg.byteLength)
   })
 
   it('rejects non-image bytes', async () => {

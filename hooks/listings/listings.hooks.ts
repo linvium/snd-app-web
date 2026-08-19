@@ -1,6 +1,6 @@
 'use client'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { geoKeys, geoService, listingKeys, listingsService } from '@/lib/listings'
 import type { Listing, SaveListingInput } from '@/types/listing'
@@ -14,11 +14,16 @@ export function useListingDrafts(enabled = true) {
   })
 }
 
-export function useListing(id: string | null, enabled = true) {
+export function useListing(
+  id: string | null,
+  options: { enabled?: boolean; initialData?: Listing } = {}
+) {
+  const { enabled = true, initialData } = options
   return useQuery({
     queryKey: listingKeys.detail(id ?? ''),
-    queryFn: ({ signal }) => listingsService.getListing(id!),
+    queryFn: ({ signal }) => listingsService.getListing(id!, signal),
     enabled: Boolean(id) && enabled,
+    initialData,
   })
 }
 
@@ -33,83 +38,108 @@ export function useCreateDraft() {
   })
 }
 
-export function useSaveListing(id: string) {
+export function useSaveListing() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: SaveListingInput) => listingsService.saveListing(id, input),
+    mutationFn: ({ id, input }: { id: string; input: SaveListingInput }) =>
+      listingsService.saveListing(id, input),
     onSuccess: (listing) => {
-      queryClient.setQueryData(listingKeys.detail(id), listing)
+      queryClient.setQueryData(listingKeys.detail(listing.id), listing)
     },
   })
 }
 
-export function usePublishListing(id: string) {
+export function usePublishListing() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: () => listingsService.publishListing(id),
-    onSuccess: () => {
+    mutationFn: (id: string) => listingsService.publishListing(id),
+    onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: listingKeys.detail(id) })
       queryClient.invalidateQueries({ queryKey: listingKeys.drafts() })
     },
   })
 }
 
-export function usePauseListing(id: string) {
+export function usePauseListing() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: () => listingsService.pauseListing(id),
-    onSuccess: () => {
+    mutationFn: (id: string) => listingsService.pauseListing(id),
+    onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: listingKeys.detail(id) })
     },
   })
 }
 
-export function useResumeListing(id: string) {
+export function useResumeListing() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: () => listingsService.resumeListing(id),
-    onSuccess: () => {
+    mutationFn: (id: string) => listingsService.resumeListing(id),
+    onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: listingKeys.detail(id) })
     },
   })
 }
 
-export function useDeleteListing(id: string) {
+export function useUnpublishListing() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: () => listingsService.deleteListing(id),
-    onSuccess: () => {
+    mutationFn: (id: string) => listingsService.unpublishListing(id),
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: listingKeys.detail(id) })
+      queryClient.invalidateQueries({ queryKey: listingKeys.drafts() })
+    },
+  })
+}
+
+export function useDeleteListing() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => listingsService.deleteListing(id),
+    onSuccess: (_data, id) => {
       queryClient.removeQueries({ queryKey: listingKeys.detail(id) })
       queryClient.invalidateQueries({ queryKey: listingKeys.drafts() })
     },
   })
 }
 
-export function useUploadListingImage(listingId: string) {
+export function useUploadListingImage(ensureListingId: () => Promise<string>) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (file: File) => listingsService.uploadImage(listingId, file),
-    onSuccess: () => {
+    mutationFn: async (file: File) => {
+      const listingId = await ensureListingId()
+      return listingsService.uploadImage(listingId, file)
+    },
+    onSuccess: async () => {
+      const listingId = await ensureListingId()
       queryClient.invalidateQueries({ queryKey: listingKeys.detail(listingId) })
     },
   })
 }
 
-export function useDeleteListingImage(listingId: string) {
+export function useDeleteListingImage(listingId: string | null) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (imageId: string) => listingsService.deleteImage(listingId, imageId),
+    mutationFn: (imageId: string) => {
+      if (!listingId) throw new Error('Listing is not ready.')
+      return listingsService.deleteImage(listingId, imageId)
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: listingKeys.detail(listingId) })
+      if (listingId) {
+        queryClient.invalidateQueries({ queryKey: listingKeys.detail(listingId) })
+      }
     },
   })
 }
 
-export function useReorderListingImages(listingId: string) {
+export function useReorderListingImages(listingId: string | null) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (order: string[]) => listingsService.reorderImages(listingId, order),
+    mutationFn: (order: string[]) => {
+      if (!listingId) throw new Error('Listing is not ready.')
+      return listingsService.reorderImages(listingId, order)
+    },
     onMutate: async (order) => {
+      if (!listingId) return { previous: undefined }
       await queryClient.cancelQueries({ queryKey: listingKeys.detail(listingId) })
       const previous = queryClient.getQueryData<Listing>(listingKeys.detail(listingId))
       if (previous) {
@@ -125,12 +155,14 @@ export function useReorderListingImages(listingId: string) {
       return { previous }
     },
     onError: (_error, _order, context) => {
-      if (context?.previous) {
+      if (listingId && context?.previous) {
         queryClient.setQueryData(listingKeys.detail(listingId), context.previous)
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: listingKeys.detail(listingId) })
+      if (listingId) {
+        queryClient.invalidateQueries({ queryKey: listingKeys.detail(listingId) })
+      }
     },
   })
 }
@@ -150,6 +182,7 @@ export function useGeocode(query: string) {
     queryKey: geoKeys.geocode(trimmed),
     queryFn: ({ signal }) => geoService.geocode(trimmed, signal),
     enabled: trimmed.length >= 3,
-    staleTime: 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
   })
 }

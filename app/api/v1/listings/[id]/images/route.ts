@@ -2,7 +2,12 @@ import { NextRequest } from 'next/server'
 
 import { requireUser } from '@/lib/api/auth'
 import { apiError, apiOk, ERROR_CODES } from '@/lib/api/response'
-import { ImageProcessingError, processListingImage } from '@/lib/listings/listings.images'
+import {
+  ImageProcessingError,
+  listingImageCreatedPayload,
+  listingImageInsertRow,
+  processListingImage,
+} from '@/lib/listings/listings.images'
 import { loadOwnedListing } from '@/lib/listings/listings.server'
 import { MAX_LISTING_IMAGES } from '@/types/listing'
 
@@ -96,17 +101,16 @@ export async function POST(
 
   const { data: row, error } = await auth.supabase
     .from('listing_images')
-    .insert({
-      id: imageId,
-      listing_id: id,
-      url: largeUrl,
-      thumbnail_url: thumbnailUrl,
-      medium_url: mediumUrl,
-      large_url: largeUrl,
-      width: processed.width,
-      height: processed.height,
-      sort_order: sortOrder,
-    })
+    .insert(
+      listingImageInsertRow({
+        id: imageId,
+        listingId: id,
+        thumbnailUrl,
+        mediumUrl,
+        largeUrl,
+        sortOrder,
+      })
+    )
     .select('id, thumbnail_url, sort_order')
     .single()
 
@@ -119,15 +123,5 @@ export async function POST(
     return apiError(500, ERROR_CODES.INTERNAL, 'Nismo mogli da sačuvamo sliku.')
   }
 
-  return apiOk(
-    {
-      id: row.id,
-      thumbnail_url: row.thumbnail_url,
-      sort_order: row.sort_order,
-      width: processed.width,
-      height: processed.height,
-      is_portrait: processed.isPortrait,
-    },
-    201
-  )
+  return apiOk(listingImageCreatedPayload(row, processed.isPortrait), 201)
 }

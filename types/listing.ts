@@ -29,8 +29,6 @@ export interface ListingImage {
   thumbnail_url: string
   medium_url: string
   large_url: string
-  width: number
-  height: number
   sort_order: number
   created_at: string
 }

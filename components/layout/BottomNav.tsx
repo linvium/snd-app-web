@@ -14,7 +14,7 @@ const NAV_ITEMS: {
 }[] = [
   { href: '/', label: 'Početna', icon: HouseIcon },
   { href: '/search', label: 'Pretraga', icon: SearchIcon },
-  { href: '/listings/new', label: 'Objavi', icon: PlusIcon, emphasized: true },
+  { href: '/profile/listings/new', label: 'Objavi', icon: PlusIcon, emphasized: true },
   { href: '/messages', label: 'Poruke', icon: MessageSquareIcon },
   { href: '/profile', label: 'Profil', icon: UserIcon },
 ]

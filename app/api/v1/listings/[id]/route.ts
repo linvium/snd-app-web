@@ -89,12 +89,14 @@ export async function DELETE(
     )
   }
 
-  const { error } = await auth.supabase
+  const { data, error } = await auth.supabase
     .from('listings')
     .update({ status: 'deleted', deleted_at: new Date().toISOString() })
     .eq('id', id)
+    .select('status')
+    .maybeSingle()
 
-  if (error) {
+  if (error || data?.status !== 'deleted') {
     console.error('[listings] delete failed', error)
     return apiError(500, ERROR_CODES.INTERNAL, 'Nešto je krenulo naopako.')
   }

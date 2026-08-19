@@ -1,23 +1,17 @@
 import { expect, type Page } from '@playwright/test'
 
 import { IMAGE_PATHS, VALID_LISTING } from '../fixtures/listing-data'
+import { listingIdFromUrl } from './cleanup'
 
 export function visible(page: Page, testId: string) {
   return page.getByTestId(testId).locator('visible=true').first()
 }
 
 export async function openNewListing(page: Page) {
-  await page.goto('/listings/new')
-  const banner = page.getByTestId('draft-resume-banner')
-  await Promise.race([
-    page.waitForURL(/\/listings\/new\/[0-9a-f-]{36}/i, { timeout: 20_000 }),
-    banner.waitFor({ state: 'visible', timeout: 20_000 }),
-  ])
-  if (await banner.isVisible().catch(() => false)) {
-    await page.getByRole('button', { name: 'Počni novi' }).click()
-    await page.waitForURL(/\/listings\/new\/[0-9a-f-]{36}/i)
-  }
+  await page.goto('/profile/listings/new')
   await expect(visible(page, 'publish-form')).toBeVisible()
+  await expect(page.getByTestId('draft-resume-banner')).toHaveCount(0)
+  await expect(page).toHaveURL(/\/profile\/listings\/new$/)
 }
 
 export async function fillDescribe(
@@ -43,7 +37,9 @@ export async function waitForCoverPhoto(page: Page) {
 }
 
 export async function pickFirstLeafCategory(page: Page) {
-  await visible(page, 'category-picker').click()
+  const picker = visible(page, 'category-picker')
+  await expect(picker).toBeEnabled({ timeout: 15_000 })
+  await picker.click()
   for (let depth = 0; depth < 6; depth += 1) {
     const option = page.getByTestId('category-option').first()
     await expect(option).toBeVisible()
@@ -77,21 +73,35 @@ export async function fillItemValue(page: Page, value = VALID_LISTING.itemValue)
   await page.locator('#item-value').fill(value)
 }
 
-export async function fillRequiredSteps(page: Page) {
+export async function fillRequiredSteps(page: Page, options: { itemValue?: boolean } = {}) {
   await fillDescribe(page)
   await uploadPhotos(page, [IMAGE_PATHS.landscape])
   await waitForCoverPhoto(page)
   await pickFirstLeafCategory(page)
   await fillPrices(page)
   await pickFirstLocation(page)
-  await fillItemValue(page)
+  if (options.itemValue !== false) {
+    await fillItemValue(page)
+  }
+}
+
+export async function confirmPublish(page: Page) {
+  await expect(page.getByTestId('publish-confirm-button')).toBeVisible()
+  await page.getByTestId('publish-confirm-button').click()
 }
 
 export async function publishListing(page: Page) {
-  const button = visible(page, 'publish-button')
+  await visible(page, 'publish-button').click()
   await Promise.all([
-    page.waitForURL(/\/profile\/listings/),
-    button.click(),
+    page.waitForURL((url) => url.pathname === '/profile/listings'),
+    confirmPublish(page),
+  ])
+}
+
+export async function saveAsDraft(page: Page) {
+  await Promise.all([
+    page.waitForURL((url) => url.pathname === '/profile/listings'),
+    visible(page, 'save-draft-button').click(),
   ])
 }
 
@@ -103,6 +113,45 @@ export async function waitForAutosave(page: Page) {
 
 export async function expectToast(page: Page, text: string | RegExp) {
   await expect(page.getByLabel('Notifications alt+T').getByText(text).first()).toBeVisible()
+}
+
+export async function confirmStatusChange(page: Page) {
+  const confirm = page.getByTestId('status-confirm-button')
+  await expect(confirm).toBeVisible()
+  await confirm.click()
+}
+
+export async function mockGeocode(page: Page) {
+  await page.route('**/api/v1/geo/geocode**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: [
+          {
+            label: 'Knez Mihailova 1, Beograd',
+            street: 'Knez Mihailova 1',
+            city: 'Beograd',
+            postal_code: '11000',
+            latitude: 44.8176,
+            longitude: 20.4633,
+          },
+        ],
+        meta: { total: 1 },
+      }),
+    })
+  })
+}
+
+export async function openAddLocation(page: Page) {
+  const addButton = page.getByRole('button', { name: /Dodaj (lokaciju|prvu lokaciju)/ }).first()
+  await addButton.click()
+  await expect(page.getByRole('heading', { name: 'Dodaj lokaciju' })).toBeVisible()
+}
+
+export function trackIdFromUpload(responseUrl: string, ids: Set<string>) {
+  const id = listingIdFromUrl(responseUrl)
+  if (id) ids.add(id)
 }
 
 export async function moveSecondPhotoToCover(page: Page) {

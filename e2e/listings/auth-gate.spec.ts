@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 test.describe('email verification gate', () => {
   test('neverifikovan email vidi gate, ne formu', async ({ page }) => {
-    await page.goto('/listings/new')
+    await page.goto('/profile/listings/new')
     await expect(page.getByTestId('email-gate')).toBeVisible()
     await expect(page.getByText('Moraš potvrditi email adresu pre objave.')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Pošalji ponovo' })).toBeVisible()

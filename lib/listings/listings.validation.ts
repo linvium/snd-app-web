@@ -52,7 +52,7 @@ const STEP_MESSAGES: Record<StepKey, string> = {
   price: 'Unesi cenu za 1 dan',
   locations: 'Izaberi mesto predaje',
   cancellation: 'Izaberi uslove otkazivanja',
-  value: 'Unesi vrednost predmeta',
+  value: 'Proveri vrednost predmeta',
 }
 
 export function rsdToMinor(rsd: number): number {
@@ -137,11 +137,33 @@ export function validatePrices(values: {
 
 export function validateItemValue(itemValueRsd: number | null): string | undefined {
   if (itemValueRsd == null || !Number.isFinite(itemValueRsd)) {
-    return 'Unesi vrednost predmeta.'
+    return undefined
   }
   if (itemValueRsd < ITEM_VALUE_MIN_RSD || itemValueRsd > ITEM_VALUE_MAX_RSD) {
     return `Vrednost mora biti između ${ITEM_VALUE_MIN_RSD.toLocaleString('sr-RS')} i ${ITEM_VALUE_MAX_RSD.toLocaleString('sr-RS')} RSD.`
   }
+  return undefined
+}
+
+export function itemValueWarning(
+  itemValueRsd: number | null,
+  dailyRsd: number | null,
+  suggestedPrice1DayMinor: number | null | undefined
+): string | undefined {
+  if (itemValueRsd != null && dailyRsd != null && itemValueRsd < dailyRsd * 10) {
+    return 'Vrednost izgleda niska u odnosu na dnevnu cenu. Proveri da nisi pogrešio.'
+  }
+
+  // Hidden until we have real comparable-item data.
+  // if (
+  //   itemValueRsd != null &&
+  //   suggestedPrice1DayMinor &&
+  //   itemValueRsd > 20 * minorToRsd(suggestedPrice1DayMinor)
+  // ) {
+  //   return 'Vrednost je znatno viša od sličnih predmeta. Proveri iznos.'
+  // }
+  void suggestedPrice1DayMinor
+
   return undefined
 }
 

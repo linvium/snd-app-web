@@ -50,7 +50,7 @@ export default function CategoryDirectory() {
           Kategorije se pojavljuju čim neko objavi prvi predmet u njima.
         </p>
         <Button asChild>
-          <Link href="/listings/new">Objavi predmet</Link>
+          <Link href="/profile/listings/new">Objavi predmet</Link>
         </Button>
       </div>
     )
