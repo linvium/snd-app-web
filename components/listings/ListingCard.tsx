@@ -162,7 +162,7 @@ export default function ListingCard({
                 {item.rating_avg?.toFixed(1).replace('.', ',')}
               </span>
             ) : (
-              <span>Novo</span>
+              <span>Nema ocena</span>
             )}
           </p>
         </div>

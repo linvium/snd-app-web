@@ -94,6 +94,53 @@ test.describe('header layout', () => {
     expect(Math.abs(buttonCenterY - iconCenterY)).toBeLessThan(2)
   })
 
+  test('focusing a search field does not shrink or cover the others', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/search')
+
+    const search = page.getByTestId('header-search')
+    const q = search.getByTestId('search-segment-q')
+    const city = search.getByTestId('search-segment-city')
+    const dates = search.getByTestId('search-segment-dates')
+    const submit = search.getByRole('button', { name: 'Pretraži' })
+
+    const before = {
+      q: await q.boundingBox(),
+      city: await city.boundingBox(),
+      dates: await dates.boundingBox(),
+      submit: await submit.boundingBox(),
+    }
+    expect(before.q && before.city && before.dates && before.submit).toBeTruthy()
+
+    await city.click()
+    await expect(submit).toContainText('Pretraži')
+
+    await expect(async () => {
+      const after = {
+        q: await q.boundingBox(),
+        city: await city.boundingBox(),
+        dates: await dates.boundingBox(),
+        submit: await submit.boundingBox(),
+      }
+      expect(after.q && after.city && after.dates && after.submit).toBeTruthy()
+
+      expect(Math.abs(after.q!.width - before.q!.width)).toBeLessThan(4)
+      expect(Math.abs(after.city!.width - before.city!.width)).toBeLessThan(4)
+      expect(Math.abs(after.dates!.width - before.dates!.width)).toBeLessThan(4)
+      expect(after.submit!.width).toBeGreaterThan(before.submit!.width)
+
+      expect(after.submit!.x).toBeGreaterThanOrEqual(after.dates!.x)
+      expect(after.submit!.x + after.submit!.width).toBeLessThanOrEqual(after.dates!.x + after.dates!.width + 1)
+
+      const pill = await search.getByTestId('search-focus-pill').boundingBox()
+      const datesLabel = await dates.getByText('Datumi', { exact: true }).boundingBox()
+      const queryField = await search.getByPlaceholder('Pretraži predmete').boundingBox()
+      expect(pill && datesLabel && queryField).toBeTruthy()
+      expect(pill!.x + pill!.width).toBeLessThanOrEqual(datesLabel!.x)
+      expect(queryField!.x + queryField!.width).toBeLessThanOrEqual(pill!.x + 1)
+    }).toPass({ timeout: 4_000 })
+  })
+
   test('desktop search bar is centered and capped instead of filling the row', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
 

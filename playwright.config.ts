@@ -48,7 +48,7 @@ export default defineConfig({
     {
       name: 'guest',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: ['**/layout/header.spec.ts', '**/search/dates.spec.ts'],
+      testMatch: ['**/layout/header.spec.ts', '**/search/dates.spec.ts', '**/home/listings.spec.ts'],
     },
   ],
 })

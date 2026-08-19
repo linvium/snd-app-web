@@ -28,8 +28,9 @@ type Segment = 'q' | 'city' | 'dates'
 const SEGMENT_LABEL = 'text-xs font-semibold leading-none text-card-foreground'
 const SEGMENT_VALUE =
   'w-full min-w-0 truncate border-none bg-transparent p-0 text-sm leading-snug outline-none placeholder:text-muted-foreground'
-const SEGMENT_BASE =
-  'relative z-10 flex min-w-0 flex-1 basis-0 cursor-pointer flex-col justify-center gap-1.5 px-8 py-3.5 text-left'
+const SEARCH_COLUMN = 'relative z-10 flex min-w-0 flex-1 basis-0'
+const SEARCH_FIELD =
+  'flex min-w-0 cursor-pointer flex-col justify-center gap-1.5 py-3.5 text-left'
 const CLEAR_BUTTON =
   'absolute top-1/2 right-3 grid size-6 -translate-y-1/2 cursor-pointer place-items-center rounded-full border-none bg-zinc-200 text-zinc-600 hover:bg-zinc-300'
 
@@ -62,7 +63,7 @@ export default function HeaderSearchBar({
   const cityRef = useRef<HTMLInputElement>(null)
   const qSegRef = useRef<HTMLDivElement>(null)
   const citySegRef = useRef<HTMLDivElement>(null)
-  const datesSegRef = useRef<HTMLButtonElement>(null)
+  const datesSegRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setQuery(params.q ?? '')
@@ -165,15 +166,15 @@ export default function HeaderSearchBar({
     goToSegment('dates')
   }
 
-  const segmentClass = (segment: Segment) =>
+  const columnClass = (segment: Segment) =>
     cn(
-      SEGMENT_BASE,
+      SEARCH_COLUMN,
       'rounded-full transition-[background-color,box-shadow] duration-300 ease-in-out',
       open === segment && 'z-30',
       open !== null &&
         open !== segment &&
         hovered === segment &&
-        'before:pointer-events-none before:absolute before:inset-y-0 before:-z-10 before:-right-3 before:-left-3 before:rounded-full before:bg-zinc-300/70',
+        'before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-zinc-300/70',
       open === null && hovered === segment && 'bg-zinc-100'
     )
 
@@ -217,7 +218,8 @@ export default function HeaderSearchBar({
         >
           <div
             aria-hidden
-            className="pointer-events-none absolute top-0 bottom-0 z-20 rounded-full bg-card shadow-[0_6px_20px_rgba(0,0,0,0.12)] transition-all duration-300 ease-in-out"
+            data-testid="search-focus-pill"
+            className="pointer-events-none absolute top-0 bottom-0 z-20 rounded-full bg-card shadow-[0_6px_20px_rgba(0,0,0,0.12)] transition-opacity duration-200 ease-in-out"
             style={{
               left: pill.left,
               width: pill.width,
@@ -227,7 +229,8 @@ export default function HeaderSearchBar({
 
           <div
             ref={qSegRef}
-            className={cn(segmentClass('q'), open === 'q' && query && 'pr-12')}
+            data-testid="search-segment-q"
+            className={cn(columnClass('q'), SEARCH_FIELD, 'px-8', open === 'q' && query && 'pr-12')}
             onMouseEnter={() => setHovered('q')}
             onClick={() => {
               goToSegment('q')
@@ -274,7 +277,13 @@ export default function HeaderSearchBar({
 
           <div
             ref={citySegRef}
-            className={cn(segmentClass('city'), open === 'city' && (cityTerm || draftCity) && 'pr-12')}
+            data-testid="search-segment-city"
+            className={cn(
+              columnClass('city'),
+              SEARCH_FIELD,
+              'px-8',
+              open === 'city' && (cityTerm || draftCity) && 'pr-12'
+            )}
             onMouseEnter={() => setHovered('city')}
             onClick={() => {
               goToSegment('city')
@@ -326,44 +335,49 @@ export default function HeaderSearchBar({
 
           <Divider hidden={searchBarDividerHidden(open, hovered, 'after-city')} />
 
-          <button
+          <div
             ref={datesSegRef}
-            type="button"
-            aria-expanded={open === 'dates'}
+            data-testid="search-segment-dates"
+            className={cn(columnClass('dates'), 'basis-5 items-center')}
             onMouseEnter={() => setHovered('dates')}
-            onClick={() => goToSegment('dates')}
-            className={cn(segmentClass('dates'), 'border-none')}
           >
-            <span className={SEGMENT_LABEL}>Datumi</span>
-            <span
-              className={cn(
-                'truncate text-sm leading-snug',
-                dateLabel ? 'font-medium text-card-foreground' : 'text-muted-foreground'
-              )}
+            <button
+              type="button"
+              aria-expanded={open === 'dates'}
+              onClick={() => goToSegment('dates')}
+              className={cn(SEARCH_FIELD, 'flex-1 border-none bg-transparent pl-8 pr-3')}
             >
-              {dateLabel ?? 'Dodaj datume'}
-            </span>
-          </button>
+              <span className={SEGMENT_LABEL}>Datumi</span>
+              <span
+                className={cn(
+                  'w-full min-w-0 truncate text-sm leading-snug',
+                  dateLabel ? 'font-medium text-card-foreground' : 'text-muted-foreground'
+                )}
+              >
+                {dateLabel ?? 'Dodaj datume'}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={commitSearch}
-            aria-label="Pretraži"
-            className={cn(
-              'relative z-30 my-2 mr-2 ml-1 flex shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-brand-500 text-white transition-all duration-300 ease-in-out hover:bg-brand-600',
-              searchSubmitButtonLayoutClass(Boolean(open))
-            )}
-          >
-            <SearchIcon className="size-5 shrink-0" aria-hidden />
-            <span
+            <button
+              type="button"
+              onClick={commitSearch}
+              aria-label="Pretraži"
               className={cn(
-                'overflow-hidden text-sm font-semibold whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out',
-                open ? 'max-w-[88px] opacity-100' : 'w-0 max-w-0 opacity-0'
+                'relative z-30 my-2 mr-2 flex shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-brand-500 text-white transition-all duration-300 ease-in-out hover:bg-brand-600',
+                searchSubmitButtonLayoutClass(Boolean(open))
               )}
             >
-              Pretraži
-            </span>
-          </button>
+              <SearchIcon className="size-5 shrink-0" aria-hidden />
+              <span
+                className={cn(
+                  'overflow-hidden text-sm font-semibold whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out',
+                  open ? 'max-w-[88px] opacity-100' : 'w-0 max-w-0 opacity-0'
+                )}
+              >
+                Pretraži
+              </span>
+            </button>
+          </div>
         </div>
 
         {open === 'q' ? (

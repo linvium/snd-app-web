@@ -57,7 +57,8 @@ export function nextSearchBarSegment(segment: SearchBarSegment): SearchBarSegmen
 
 /**
  * Collapsed submit is a circle. A leftover flex gap around the hidden
- * "Pretraži" label would shift the icon off-centre.
+ * "Pretraži" label would shift the icon off-centre. The button lives inside
+ * the dates column so expanding the label cannot shrink q or city.
  */
 export function searchSubmitButtonLayoutClass(expanded: boolean): string {
   return expanded ? 'h-12 gap-2 px-4' : 'size-12'
