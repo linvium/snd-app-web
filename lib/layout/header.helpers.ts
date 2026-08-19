@@ -22,3 +22,9 @@ export function headerIsFullWidth(pathname: string): boolean {
 export function headerOverlaysHero(pathname: string): boolean {
   return pathname === '/'
 }
+
+/**
+ * Pulls homepage content under the in-flow header so the hero still starts at
+ * the top of the viewport. Utility (h-8, lg only) + main (h-14 / md:h-[72px]).
+ */
+export const HEADER_HERO_OVERLAP_CLASS = '-mt-14 md:-mt-[72px] lg:-mt-[104px]'

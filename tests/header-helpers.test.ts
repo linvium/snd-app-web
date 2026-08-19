@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  HEADER_HERO_OVERLAP_CLASS,
   HEADER_SEARCH_MAX_WIDTH_PX,
   HEADER_UTILITY_LINKS,
   headerIsFullWidth,
@@ -36,6 +37,10 @@ describe('headerOverlaysHero', () => {
   it('overlays the homepage hero from the top of the viewport', () => {
     expect(headerOverlaysHero('/')).toBe(true)
     expect(headerOverlaysHero('/search')).toBe(false)
+  })
+
+  it('pulls the hero under both homepage header rows', () => {
+    expect(HEADER_HERO_OVERLAP_CLASS).toBe('-mt-14 md:-mt-[72px] lg:-mt-[104px]')
   })
 })
 

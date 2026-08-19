@@ -55,51 +55,52 @@ export default function Header() {
     signOut.mutate()
   }
 
+  const innerClass = cn('mx-auto w-full px-4', isFullWidth ? 'md:px-6' : 'max-w-[1120px]')
+
   return (
-    <header
-      className={cn(
-        'z-30 transition-[background-color,box-shadow,color] duration-200 ease-in-out',
-        overlaysHero ? 'fixed inset-x-0 top-0' : 'sticky top-0 bg-card',
-        overlaysHero && (hasShadow ? 'bg-card' : 'bg-transparent'),
-        hasShadow && 'shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
-      )}
-    >
-      <div
+    <>
+      <div className="relative z-30">
+        <div className={innerClass}>
+          <nav
+            aria-label="Korisni linkovi"
+            data-testid="header-utility-nav"
+            className={cn(
+              'hidden h-8 items-center justify-end gap-4 text-[12px] font-medium lg:flex',
+              overlaysHero ? 'text-white/80' : 'text-zinc-500'
+            )}
+          >
+            {HEADER_UTILITY_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={overlaysHero ? 'hover:text-white' : 'hover:text-foreground'}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </div>
+
+      <header
         className={cn(
-          'mx-auto w-full px-4',
-          isFullWidth ? 'md:px-6' : 'max-w-[1120px]'
+          'sticky top-0 z-30 transition-[background-color,box-shadow,color,backdrop-filter] duration-200 ease-in-out',
+          overlaysHero && !hasShadow ? 'bg-transparent' : 'bg-card/80 backdrop-blur-md',
+          hasShadow && 'shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
         )}
       >
-        <nav
-          aria-label="Korisni linkovi"
-          data-testid="header-utility-nav"
-          className={cn(
-            'hidden h-8 items-center justify-end gap-4 text-[12px] font-medium lg:flex',
-            onHero ? 'text-white/80' : 'text-zinc-500'
-          )}
-        >
-          {HEADER_UTILITY_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={onHero ? 'hover:text-white' : 'hover:text-foreground'}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div
-          data-testid="header-main"
-          style={{ '--header-search-max': `${HEADER_SEARCH_MAX_WIDTH_PX}px` } as CSSProperties}
-          className={cn(
-            showsSearch
-              ? 'grid min-h-14 grid-cols-[auto_1fr] items-center gap-x-3 lg:min-h-20 lg:grid-cols-[minmax(12rem,1fr)_minmax(0,var(--header-search-max))_minmax(12rem,1fr)] lg:gap-x-5'
-              : 'flex h-14 items-center justify-between gap-4 md:h-[72px]'
-          )}
-        >
+        <div className={innerClass}>
+          <div
+            data-testid="header-main"
+            style={{ '--header-search-max': `${HEADER_SEARCH_MAX_WIDTH_PX}px` } as CSSProperties}
+            className={cn(
+              showsSearch
+                ? 'grid min-h-14 grid-cols-[auto_1fr] items-center gap-x-3 lg:min-h-20 lg:grid-cols-[minmax(12rem,1fr)_minmax(0,var(--header-search-max))_minmax(12rem,1fr)] lg:gap-x-5'
+                : 'flex h-14 items-center justify-between gap-4 md:h-[72px]'
+            )}
+          >
           <Link href="/" aria-label="SND početna" className="shrink-0 justify-self-start">
-            <Logo size="sm" />
+            <Logo size="sm" variant={overlaysHero ? 'horizontal' : 'symbol'} />
           </Link>
 
           {showsSearch ? (
@@ -181,8 +182,9 @@ export default function Header() {
               </>
             )}
           </div>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   )
 }

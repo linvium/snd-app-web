@@ -69,6 +69,62 @@ test.describe('header layout', () => {
     expect(heroBox!.height).toBeLessThan(720)
     expect(mainBox!.y).toBeGreaterThanOrEqual(heroBox!.y)
     expect(mainBox!.y).toBeLessThan(heroBox!.y + heroBox!.height)
+
+    await expect(page.getByRole('link', { name: 'SND početna' }).locator('img')).toHaveAttribute(
+      'src',
+      /snd_logo_horizontal/
+    )
+  })
+
+  test('utility bar scrolls away while the logo row stays sticky', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/')
+
+    if ((await page.getByTestId('header-main').count()) === 0) {
+      test.skip(true, 'Landing homepage does not render the app header')
+    }
+
+    const utility = page.getByTestId('header-utility-nav')
+    const main = page.getByTestId('header-main')
+    await expect(utility).toBeVisible()
+
+    await page.evaluate(() => window.scrollTo(0, 400))
+
+    await expect.poll(async () => {
+      const utilityBox = await utility.boundingBox()
+      const mainBox = await main.boundingBox()
+      if (!utilityBox || !mainBox) return false
+      return utilityBox.y + utilityBox.height <= 1 && mainBox.y <= 1
+    }).toBe(true)
+  })
+
+  test('homepage header uses a frosted white surface after scroll', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/')
+
+    if ((await page.getByTestId('header-main').count()) === 0) {
+      test.skip(true, 'Landing homepage does not render the app header')
+    }
+
+    const header = page.getByRole('banner')
+    await expect.poll(async () => header.evaluate((el) => getComputedStyle(el).backgroundColor)).toMatch(
+      /transparent|rgba\(0,\s*0,\s*0,\s*0\)/
+    )
+
+    await page.evaluate(() => window.scrollTo(0, 400))
+
+    await expect.poll(async () => {
+      return header.evaluate((el) => {
+        const style = getComputedStyle(el)
+        return {
+          color: style.backgroundColor,
+          blur: style.backdropFilter,
+        }
+      })
+    }).toMatchObject({
+      color: expect.stringMatching(/0\.8|\/\s*0\.8/),
+      blur: expect.stringMatching(/blur\(/),
+    })
   })
 
   test('collapsed search submit centres the icon in the circle', async ({ page }) => {

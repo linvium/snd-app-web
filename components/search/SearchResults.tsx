@@ -243,7 +243,7 @@ export default function SearchResults() {
 
         {/* Sticky, full window height minus the header (doc 03 §3.1). */}
         {isDesktopWide ? (
-          <aside className="sticky top-[160px] h-[calc(100vh-160px)] w-[32%]">{mapPanel}</aside>
+          <aside className="sticky top-[160px] h-[calc(100vh-160px)] w-[32%] lg:top-[120px] lg:h-[calc(100vh-120px)]">{mapPanel}</aside>
         ) : null}
 
         {isTablet && tabletView === 'map' ? (

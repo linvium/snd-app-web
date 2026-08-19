@@ -39,7 +39,7 @@ export default function FilterBar({
   const activeCount = countActiveFilters(params)
 
   return (
-    <div className="sticky top-[128px] z-20 bg-background md:top-[160px]">
+    <div className="sticky top-[128px] z-20 bg-background/80 backdrop-blur-md md:top-[160px] lg:top-20">
       <div className="flex w-fit items-center gap-0.5 px-4 py-1.5 md:px-6">
         <FiltersPopover
           params={params}
