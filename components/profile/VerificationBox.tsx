@@ -83,20 +83,19 @@ export function VerificationBox({
     <section
       data-testid="verification-box"
       data-state="unverified"
-      className={cn(
-        'flex flex-col gap-3 rounded-xl border border-warning/40 bg-warning-soft p-4 sm:flex-row sm:items-center',
-        className
-      )}
+      className={cn('flex flex-col gap-3 rounded-xl border border-warning/40 bg-warning-soft p-4', className)}
     >
-      <ShieldAlertIcon className="size-5 shrink-0 text-amber-700" aria-hidden />
-      <div className="min-w-0 flex-1">
-        <p className="m-0 text-sm font-semibold text-amber-900">{copy.title}</p>
-        <p className="mt-0.5 mb-0 text-[13px] leading-relaxed text-amber-900/80">
-          {status && status !== 'not_started' ? `${kycStatusLabel(status)} · ` : ''}
-          {copy.body}
-        </p>
+      <div className="flex items-start gap-3">
+        <ShieldAlertIcon className="mt-0.5 size-5 shrink-0 text-amber-700" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <p className="m-0 text-sm font-semibold text-amber-900">{copy.title}</p>
+          <p className="mt-0.5 mb-0 text-[13px] leading-relaxed text-amber-900/80">
+            {status && status !== 'not_started' ? `${kycStatusLabel(status)} · ` : ''}
+            {copy.body}
+          </p>
+        </div>
       </div>
-      <Button size="sm" asChild className="shrink-0">
+      <Button size="sm" asChild className="w-full">
         <Link href={SETTINGS_VERIFICATION}>{copy.cta}</Link>
       </Button>
     </section>

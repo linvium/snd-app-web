@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   bookingStatusPill,
+  ticketStatusPill,
   conversationMatchesQuery,
   conversationTabCounts,
   filterConversations,
@@ -54,6 +55,19 @@ describe('bookingStatusPill', () => {
     expect(bookingStatusPill('cancelled_by_owner')?.tone).toBe('late')
     expect(bookingStatusPill(null)).toBeNull()
     expect(bookingStatusPill('nešto_novo')).toBeNull()
+  })
+})
+
+describe('ticketStatusPill', () => {
+  it('tells the owner the request is waiting on them', () => {
+    expect(ticketStatusPill('requested', 'owner')).toEqual({ label: 'Čeka potvrdu', tone: 'wait' })
+  })
+
+  it('keeps the inbox wording for the renter', () => {
+    expect(ticketStatusPill('requested', 'renter')).toEqual({
+      label: 'Zahtev čeka odgovor',
+      tone: 'wait',
+    })
   })
 })
 
@@ -131,6 +145,13 @@ describe('bookingSteps', () => {
     const steps = bookingSteps(booking({ status: 'requested' }))
     expect(steps.map((step) => step.state)).toEqual(['done', 'current', 'todo', 'todo'])
     expect(steps[1].title).toBe('Potvrda vlasnika')
+    expect(steps[1].detail).toBe('Čeka odgovor')
+  })
+
+  it('addresses the owner on their own pending confirmation', () => {
+    const steps = bookingSteps(booking({ status: 'requested' }), { viewerRole: 'owner' })
+    expect(steps[1].title).toBe('Tvoja potvrda')
+    expect(steps[1].detail).toMatch(/^Ističe za |^Istekao$/)
   })
 
   it('advances once the booking is accepted', () => {

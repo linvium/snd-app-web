@@ -12,7 +12,7 @@ import type { ConversationSummary } from '@/types'
  */
 export function ThreadDetailPanel({ conversation }: { conversation: ConversationSummary }) {
   const { listing, booking } = conversation
-  const steps = bookingSteps(booking)
+  const steps = bookingSteps(booking, { viewerRole: conversation.viewer_role })
   const listingHref = listing.slug ? `/listings/${listing.slug}` : null
 
   return (
@@ -99,7 +99,7 @@ export function ThreadDetailPanel({ conversation }: { conversation: Conversation
           </ol>
           {booking?.start_date && booking.end_date ? (
             <p className="mt-3 mb-0 text-[12px] text-muted-foreground">
-              {formatTicketDate(booking.start_date)} — {formatTicketDate(booking.end_date)}
+              {formatTicketDate(booking.start_date)} - {formatTicketDate(booking.end_date)}
             </p>
           ) : null}
         </section>

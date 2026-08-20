@@ -1,7 +1,11 @@
+'use client'
+
 import { ArrowRightIcon } from 'lucide-react'
 
-import { bookingStatusPill, type BookingPillTone } from '@/lib/messages'
+import { Button } from '@/components/ui/button'
+import { ticketStatusPill, type BookingPillTone } from '@/lib/messages'
 import { formatTicketDate } from '@/lib/messages/booking-steps'
+import { bookingDurationLabel, ownerReviewMoney } from '@/lib/messages/request-review.helpers'
 import { formatPriceMinor } from '@/lib/search/search.helpers'
 import { cn } from '@/lib/utils'
 import type { ConversationBookingSummary, ConversationListing, ConversationRole } from '@/types'
@@ -20,23 +24,33 @@ const STRIP_TONE: Record<BookingPillTone, string> = {
   late: 'bg-destructive',
 }
 
-function daysLabel(days: number | null): string | null {
-  if (!days || days <= 0) return null
-  const lastTwo = days % 100
-  const last = days % 10
-  if (lastTwo >= 11 && lastTwo <= 14) return `${days} dana`
-  if (last === 1) return `${days} dan`
-  if (last >= 2 && last <= 4) return `${days} dana`
-  return `${days} dana`
+const DATE_LABEL = 'm-0 text-[11px] font-semibold tracking-[0.09em] text-muted-foreground uppercase'
+const DATE_VALUE = 'mt-0.5 mb-0 text-sm font-semibold text-card-foreground'
+
+function DateCell({
+  label,
+  value,
+  hint,
+}: {
+  label: string
+  value: string
+  hint?: string | null
+}) {
+  return (
+    <div className="min-w-0">
+      <p className={DATE_LABEL}>{label}</p>
+      <p className={DATE_VALUE}>{value}</p>
+      {hint ? <p className="mt-0.5 mb-0 text-[12px] text-muted-foreground">{hint}</p> : null}
+    </div>
+  )
 }
 
 /**
  * The rental request, rendered inside the conversation where it was made.
  *
- * It reports what the request actually says — dates, length, the listing's
- * daily rate — and stops there. The booking row carries a price snapshot taken
- * off the 1-day rate that ignores the 3- and 7-day packages, so it is not shown
- * as a total; the two sides settle the figure in the thread.
+ * For the owner while the request is still open, the card is the place to
+ * accept, decline, or propose other dates. The renter sees the same facts
+ * without payout figures - those belong on the owner's side.
  */
 export function BookingTicket({
   booking,
@@ -44,18 +58,35 @@ export function BookingTicket({
   role,
   partyName,
   compact = false,
+  expiryLabel,
+  actionBusy = false,
+  actionError,
+  onReview,
+  onAccept,
+  onDecline,
+  onPropose,
 }: {
   booking: ConversationBookingSummary
   listing: ConversationListing
   role: ConversationRole
   partyName: string
   compact?: boolean
+  expiryLabel?: string | null
+  actionBusy?: boolean
+  actionError?: string | null
+  onReview?: () => void
+  onAccept?: () => void
+  onDecline?: () => void
+  onPropose?: () => void
 }) {
-  const pill = bookingStatusPill(booking.status)
+  const pill = ticketStatusPill(booking.status, role)
   const tone = pill?.tone ?? 'done'
   const from = formatTicketDate(booking.start_date)
   const to = formatTicketDate(booking.end_date)
-  const days = daysLabel(booking.days_count)
+  const days = bookingDurationLabel(booking.days_count)
+  const ownerPending = role === 'owner' && booking.status === 'requested'
+  const money = ownerPending ? ownerReviewMoney(booking, listing) : null
+  const showActions = ownerPending && onAccept && onDecline && onPropose
 
   return (
     <article
@@ -80,63 +111,152 @@ export function BookingTicket({
             </h3>
           </div>
           {pill ? (
-            <span
-              className={cn(
-                'shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
-                PILL_TONE[pill.tone]
-              )}
-            >
-              {pill.label}
-            </span>
+            onReview && ownerPending ? (
+              <button
+                type="button"
+                data-testid="request-card-review"
+                onClick={onReview}
+                className={cn(
+                  'shrink-0 cursor-pointer rounded-full border-0 px-2.5 py-0.5 text-[11px] font-semibold',
+                  PILL_TONE[pill.tone]
+                )}
+              >
+                {pill.label}
+              </button>
+            ) : (
+              <span
+                className={cn(
+                  'shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+                  PILL_TONE[pill.tone]
+                )}
+              >
+                {pill.label}
+              </span>
+            )
           ) : null}
         </header>
 
         {from && to ? (
-          <div className="mx-4 flex items-center gap-3 border-y border-dashed border-border py-3">
-            <div className="min-w-0 flex-1">
-              <p className="m-0 text-[11px] font-semibold tracking-[0.09em] text-muted-foreground uppercase">
-                Preuzimanje
-              </p>
-              <p className="mt-0.5 mb-0 text-sm font-semibold text-card-foreground">{from}</p>
+          ownerPending ? (
+            <div className="mx-4 grid grid-cols-3 border-y border-dashed border-border py-3">
+              <DateCell label="Preuzimanje" value={from} />
+              <div className="border-l border-dashed border-border px-2 sm:px-3">
+                <DateCell label="Vraćanje" value={to} />
+              </div>
+              <div className="border-l border-dashed border-border pl-2 sm:pl-3">
+                <DateCell
+                  label="Trajanje"
+                  value={days ?? 'lično preuzimanje'}
+                  hint={days ? 'lično preuzimanje' : null}
+                />
+              </div>
             </div>
-            <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-            <div className="min-w-0 flex-1">
-              <p className="m-0 text-[11px] font-semibold tracking-[0.09em] text-muted-foreground uppercase">
-                Vraćanje
-              </p>
-              <p className="mt-0.5 mb-0 text-sm font-semibold text-card-foreground">{to}</p>
+          ) : (
+            <div className="mx-4 flex items-center gap-3 border-y border-dashed border-border py-3">
+              <div className="min-w-0 flex-1">
+                <p className={DATE_LABEL}>Preuzimanje</p>
+                <p className={DATE_VALUE}>{from}</p>
+              </div>
+              <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className={DATE_LABEL}>Vraćanje</p>
+                <p className={DATE_VALUE}>{to}</p>
+              </div>
             </div>
-          </div>
+          )
         ) : (
           <p className="mx-4 border-y border-dashed border-border py-3 text-[13px] text-muted-foreground">
-            Datumi nisu izabrani — dogovorite ih u razgovoru.
+            Datumi nisu izabrani - dogovorite ih u razgovoru.
           </p>
         )}
 
-        <dl className="m-0 grid gap-1 px-4 pt-3 pb-4 text-[13px]">
-          {days ? (
-            <div className="flex justify-between gap-3">
-              <dt className="m-0 text-muted-foreground">Trajanje</dt>
-              <dd className="m-0 font-medium text-card-foreground">{days}</dd>
-            </div>
-          ) : null}
-          {listing.price_1_day_minor ? (
-            <div className="flex justify-between gap-3">
-              <dt className="m-0 text-muted-foreground">Cena po danu</dt>
-              <dd className="m-0 font-medium text-card-foreground">
-                {formatPriceMinor(listing.price_1_day_minor)}
-              </dd>
-            </div>
-          ) : null}
-          {booking.reference ? (
-            <div className="flex justify-between gap-3">
-              <dt className="m-0 text-muted-foreground">Broj zahteva</dt>
-              <dd className="m-0 font-mono text-[12px] font-medium text-card-foreground">
-                {booking.reference}
-              </dd>
-            </div>
-          ) : null}
-        </dl>
+            {money ? (
+              <dl className="m-0 grid gap-1.5 px-4 pt-3 text-sm text-card-foreground">
+                {money.dailyMinor && money.days ? (
+                  <div className="flex justify-between gap-3">
+                    <dt className="m-0 text-muted-foreground">
+                      {formatPriceMinor(money.dailyMinor)} × {bookingDurationLabel(money.days)}
+                    </dt>
+                    <dd className="m-0">{formatPriceMinor(money.rentalMinor)}</dd>
+                  </div>
+                ) : null}
+                {money.depositMinor ? (
+                  <div className="flex justify-between gap-3">
+                    <dt className="m-0 text-muted-foreground">Depozit (vraća se)</dt>
+                    <dd className="m-0">{formatPriceMinor(money.depositMinor)}</dd>
+                  </div>
+                ) : null}
+                <div className="flex justify-between gap-3">
+                  <dt className="m-0 text-muted-foreground">
+                    Naknada platforme ({money.feePercent}%)
+                  </dt>
+                  <dd className="m-0">{formatPriceMinor(money.feeMinor)}</dd>
+                </div>
+                <div className="mt-1 flex justify-between gap-3 border-t border-border pt-2.5 text-[15px] font-bold">
+                  <dt>Ti dobijaš</dt>
+                  <dd className="m-0">{formatPriceMinor(money.payoutMinor)}</dd>
+                </div>
+              </dl>
+            ) : !ownerPending ? (
+          <dl className="m-0 grid gap-1 px-4 pt-3 pb-4 text-[13px]">
+            {days ? (
+              <div className="flex justify-between gap-3">
+                <dt className="m-0 text-muted-foreground">Trajanje</dt>
+                <dd className="m-0 font-medium text-card-foreground">{days}</dd>
+              </div>
+            ) : null}
+            {booking.reference ? (
+              <div className="flex justify-between gap-3">
+                <dt className="m-0 text-muted-foreground">Broj zahteva</dt>
+                <dd className="m-0 font-mono text-[12px] font-medium text-card-foreground">
+                  {booking.reference}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : null}
+
+        {showActions ? (
+          <div className="flex flex-wrap items-center gap-2 px-4 pt-3 pb-4">
+            {actionError ? (
+              <p className="m-0 w-full text-sm text-destructive" role="alert">
+                {actionError}
+              </p>
+            ) : null}
+            <Button
+              size="sm"
+              data-testid="request-card-accept"
+              disabled={actionBusy}
+              onClick={onAccept}
+              className="bg-brand-500 hover:bg-brand-600"
+            >
+              Prihvati zahtev
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              data-testid="request-card-propose"
+              disabled={actionBusy}
+              onClick={onPropose}
+            >
+              Predloži druge datume
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              data-testid="request-card-decline"
+              disabled={actionBusy}
+              onClick={onDecline}
+            >
+              Odbij
+            </Button>
+            {expiryLabel ? (
+              <p className="m-0 ml-auto text-[12.5px] font-semibold text-amber-700">{expiryLabel}</p>
+            ) : null}
+          </div>
+        ) : ownerPending ? (
+          <div className="h-3" />
+        ) : null}
       </div>
     </article>
   )

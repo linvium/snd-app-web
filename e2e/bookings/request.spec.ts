@@ -165,12 +165,21 @@ test.describe('renter request', () => {
     const firstId = page.url().match(/\/profile\/requests\/([0-9a-f-]{36})/)?.[1]
     expect(firstId).toBeTruthy()
 
-    await page.getByTestId('thread-back').click()
+    await page.goto('/profile/requests')
     await expect(page).toHaveURL(/\/profile\/requests\/?$/)
     await expect(page.getByTestId('conversation-row')).toHaveCount(1)
 
+    await page.route('**/api/v1/conversations**', async (route) => {
+      if (route.request().method() === 'GET') {
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+      }
+      await route.continue()
+    })
+
     await openContactListing(page)
     await expect(page.getByTestId('contact-owner-button')).toHaveCount(0)
+    await expect(page.getByTestId('send-message-button')).toHaveCount(0)
+    await expect(page.getByTestId('open-conversation-button')).toBeVisible()
     await page.getByTestId('open-conversation-button').click()
     await expect(page).toHaveURL(new RegExp(`/profile/requests/${firstId}`))
   })

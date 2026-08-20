@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  completenessActions,
   formatCount,
   formatPercent,
   formatRating,
@@ -112,31 +111,11 @@ describe('sortActions', () => {
   })
 })
 
-describe('completenessActions', () => {
-  it('turns the first gaps into calm queue rows', () => {
-    const actions = completenessActions(
-      {
-        percentage: 40,
-        items: [
-          { name: 'Profilna slika', completed: false, link: '/a' },
-          { name: 'KYC verifikacija', completed: false, link: '/b' },
-          { name: 'O meni', completed: false, link: '/c' },
-        ],
-      },
-      2
-    )
-
-    expect(actions).toHaveLength(2)
-    expect(actions[0].title).toBe('Dodaj profilnu sliku')
-    expect(actions[0].tone).toBe('calm')
-    expect(actions[1].href).toBe('/b')
-  })
-})
-
 describe('profileActionTitle', () => {
   it('falls back to the raw name', () => {
     expect(profileActionTitle('Nešto novo')).toBe('Nešto novo')
     expect(profileActionTitle('Lokacija')).toBe('Dodaj lokaciju preuzimanja')
+    expect(profileActionTitle('Profilna slika')).toBe('Dodaj profilnu sliku')
   })
 })
 

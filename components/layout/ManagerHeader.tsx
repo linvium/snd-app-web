@@ -6,7 +6,7 @@ import { MessageSquareIcon } from 'lucide-react'
 
 import HeaderSearch from '@/components/search/HeaderSearch'
 import Logo from '@/components/ui/Logo'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { AccountMenuAvatar } from '@/components/layout/AccountMenuAvatar'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -24,11 +24,6 @@ import { MANAGER_REQUESTS, MANAGER_SETTINGS } from '@/lib/profiles'
 import { cn } from '@/lib/utils'
 
 export const MANAGER_HEADER_HEIGHT_CLASS = 'h-16'
-
-function getInitials(email?: string | null) {
-  if (!email) return '?'
-  return email.charAt(0).toUpperCase()
-}
 
 /**
  * The manager's own top bar.
@@ -105,11 +100,7 @@ export default function ManagerHeader({ hiddenOnMobile = false }: { hiddenOnMobi
                 aria-label="Meni naloga"
                 className="cursor-pointer rounded-full border-none bg-transparent p-0 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               >
-                <Avatar className="size-9 after:border-transparent">
-                  <AvatarFallback className="bg-brand-500 text-sm font-semibold text-white">
-                    {getInitials(user.email)}
-                  </AvatarFallback>
-                </Avatar>
+                <AccountMenuAvatar />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" sideOffset={8} className="w-[220px] p-2">

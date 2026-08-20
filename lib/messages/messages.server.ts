@@ -185,6 +185,28 @@ export async function listConversations(
   return sortConversationsForInbox(conversations)
 }
 
+export async function findListingConversationId(
+  supabase: SupabaseClient,
+  listingId: string,
+  userId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('listing_id', listingId)
+    .or(`renter_id.eq.${userId},owner_id.eq.${userId}`)
+    .order('last_message_at', { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    console.error('[messages] listing conversation lookup failed', error)
+    return null
+  }
+
+  return (data?.id as string | undefined) ?? null
+}
+
 export async function getConversationThread(
   supabase: SupabaseClient,
   userId: string,

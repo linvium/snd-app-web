@@ -1,9 +1,4 @@
-import type {
-  DashboardAction,
-  DashboardListingRow,
-  DashboardTotals,
-  ProfileCompleteness,
-} from '@/types'
+import type { DashboardAction, DashboardListingRow, DashboardTotals } from '@/types'
 
 /** "Dobro jutro" / "Dobar dan" / "Dobro veče" from the local hour. */
 export function greetingForHour(hour: number): string {
@@ -125,26 +120,6 @@ export function profileActionTitle(name: string): string {
     default:
       return name
   }
-}
-
-/**
- * Completeness gaps become queue rows, so the profile nag is not a second
- * to-do list competing with the real one further down the page.
- */
-export function completenessActions(
-  completeness: ProfileCompleteness,
-  limit = 2
-): DashboardAction[] {
-  return completeness.items.slice(0, limit).map((item) => ({
-    id: `profile:${item.name}`,
-    kind: 'profile' as const,
-    tone: 'calm' as const,
-    title: profileActionTitle(item.name),
-    detail: 'Popunjen profil dobija više zahteva.',
-    href: item.link,
-    cta: 'Dopuni',
-    thumbnail_url: null,
-  }))
 }
 
 /** True when the account has nothing listed and nothing pending yet. */

@@ -5,7 +5,7 @@ import { listConversations } from '@/lib/messages/messages.server'
 import { requestCardDatesLabel, requestThreadPath } from '@/lib/messages'
 import { calculateProfileCompleteness } from '@/lib/profiles/profile.completeness'
 import { formatMemberSince, getProfileInitials } from '@/lib/profiles/profile.helpers'
-import { completenessActions, sortActions } from '@/lib/dashboard/dashboard.helpers'
+import { sortActions } from '@/lib/dashboard/dashboard.helpers'
 import { getDisplayName } from '@/types'
 import type {
   ConversationSummary,
@@ -204,7 +204,6 @@ export async function loadDashboard(
   const actions = sortActions([
     ...buildRequestActions(conversations, now.getTime()),
     ...buildDraftActions(listings),
-    ...completenessActions(completeness),
   ])
 
   const profile = user.user_profiles

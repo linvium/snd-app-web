@@ -7,4 +7,4 @@ export {
   isIsoDate,
   previewMessage,
 } from './bookings.helpers'
-export { validateCreateRequestInput, validateMessageBody } from './bookings.validation'
+export { validateCreateRequestInput, validateMessageBody, isBookingResponseAction, validateProposedDates } from './bookings.validation'

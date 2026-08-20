@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   conversationPartyLabel,
   conversationsForListing,
+  listingContactActionsPending,
+  resolveListingConversationId,
   formatConversationTime,
   formatMessageClock,
   formatMessageDayLabel,
@@ -31,6 +33,25 @@ describe('messagePresentation', () => {
     expect(
       messagePresentation({ type: 'text', sender_id: '11111111-1111-4111-8111-111111111111' })
     ).toBe('text_bubble')
+  })
+
+  it('renders an owner response as a bubble when it has a sender', () => {
+    expect(
+      messagePresentation({
+        type: 'booking_accepted',
+        sender_id: '11111111-1111-4111-8111-111111111111',
+      })
+    ).toBe('text_bubble')
+    expect(
+      messagePresentation({
+        type: 'booking_declined',
+        sender_id: '11111111-1111-4111-8111-111111111111',
+      })
+    ).toBe('text_bubble')
+  })
+
+  it('keeps a booking status without a sender as a system notice', () => {
+    expect(messagePresentation({ type: 'booking_accepted', sender_id: null })).toBe('system')
   })
 
   it('knows the spec type is a booking request', () => {
@@ -102,6 +123,106 @@ describe('conversationsForListing', () => {
     expect(conversationsForListing(rows, '11111111-1111-4111-8111-111111111111').map((row) => row.id)).toEqual([
       'a',
     ])
+  })
+})
+
+describe('resolveListingConversationId', () => {
+  it('keeps the server id until the client fetch settles', () => {
+    expect(
+      resolveListingConversationId({
+        fetchedId: undefined,
+        fetchSettled: false,
+        fetchFailed: false,
+        initialId: 'conv-1',
+      })
+    ).toBe('conv-1')
+  })
+
+  it('uses the fetched id once the list has loaded', () => {
+    expect(
+      resolveListingConversationId({
+        fetchedId: 'conv-2',
+        fetchSettled: true,
+        fetchFailed: false,
+        initialId: 'conv-1',
+      })
+    ).toBe('conv-2')
+  })
+
+  it('clears the id when the list loaded and there is no conversation', () => {
+    expect(
+      resolveListingConversationId({
+        fetchedId: undefined,
+        fetchSettled: true,
+        fetchFailed: false,
+        initialId: 'conv-1',
+      })
+    ).toBeNull()
+  })
+
+  it('falls back to the server id when the client fetch fails', () => {
+    expect(
+      resolveListingConversationId({
+        fetchedId: undefined,
+        fetchSettled: true,
+        fetchFailed: true,
+        initialId: 'conv-1',
+      })
+    ).toBe('conv-1')
+  })
+})
+
+describe('listingContactActionsPending', () => {
+  it('shows a skeleton while auth or the conversation list is still unknown', () => {
+    expect(
+      listingContactActionsPending({
+        conversationId: null,
+        isSignedIn: false,
+        authLoading: true,
+        fetchSettled: false,
+      })
+    ).toBe(true)
+    expect(
+      listingContactActionsPending({
+        conversationId: null,
+        isSignedIn: true,
+        authLoading: false,
+        fetchSettled: false,
+      })
+    ).toBe(true)
+  })
+
+  it('does not flash send CTAs when a conversation id is already known', () => {
+    expect(
+      listingContactActionsPending({
+        conversationId: 'conv-1',
+        isSignedIn: false,
+        authLoading: true,
+        fetchSettled: false,
+      })
+    ).toBe(false)
+  })
+
+  it('shows send CTAs for a guest after auth has settled', () => {
+    expect(
+      listingContactActionsPending({
+        conversationId: null,
+        isSignedIn: false,
+        authLoading: false,
+        fetchSettled: false,
+      })
+    ).toBe(false)
+  })
+
+  it('does not skeleton again on a background refetch after an empty list', () => {
+    expect(
+      listingContactActionsPending({
+        conversationId: null,
+        isSignedIn: true,
+        authLoading: false,
+        fetchSettled: true,
+      })
+    ).toBe(false)
   })
 })
 

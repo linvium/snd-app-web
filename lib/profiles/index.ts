@@ -11,6 +11,7 @@ export {
   isValidSerbianPhone,
 } from './profile.helpers'
 export { calculateProfileCompleteness } from './profile.completeness'
+// `profile.avatar.ts` stays off this barrel - it pulls Sharp, which cannot ship to the client.
 export {
   MANAGER_ROOT,
   MANAGER_LISTINGS,
