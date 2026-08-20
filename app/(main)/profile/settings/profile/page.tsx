@@ -51,7 +51,12 @@ export default function SettingsProfilePage() {
         >
           {profile?.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatar_url} alt="" className="size-full object-cover" />
+            <img
+              src={profile.avatar_url}
+              alt=""
+              data-testid="profile-avatar"
+              className="size-full object-cover"
+            />
           ) : (
             <>
               <span

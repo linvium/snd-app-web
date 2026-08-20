@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { AvatarUploadField } from '@/components/profile/AvatarUploadField'
 import { Button } from '@/components/ui/button'
 import { PageLoading } from '@/components/ui/page-loading'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TextField } from '@/components/ui/text-field'
-import { useCurrentUser, useLocations, useUpdateProfile } from '@/hooks/user'
+import { useCurrentUser, useLocations, useUpdateProfile, useUploadAvatar } from '@/hooks/user'
+import { ApiError } from '@/lib/search'
 import {
   SETTINGS_LOCATIONS,
   SETTINGS_PROFILE,
@@ -23,6 +25,7 @@ export default function EditProfilePage() {
   const { data: user, isLoading: userLoading } = useCurrentUser()
   const { data: locations = [], isLoading: locationsLoading } = useLocations()
   const updateProfile = useUpdateProfile()
+  const uploadAvatar = useUploadAvatar()
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -30,8 +33,11 @@ export default function EditProfilePage() {
   const [phone, setPhone] = useState('')
   const [about, setAbout] = useState('')
   const [primaryLocationId, setPrimaryLocationId] = useState('')
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [savedMessage, setSavedMessage] = useState('')
+  const previewUrlRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!user?.user_profiles) return
@@ -42,7 +48,16 @@ export default function EditProfilePage() {
     setPhone(phoneLocalPart(profile.phone))
     setAbout(profile.about ?? '')
     setPrimaryLocationId(profile.primary_location_id ?? '')
-  }, [user])
+    if (!avatarFile) setAvatarPreview(profile.avatar_url ?? null)
+  }, [user, avatarFile])
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current?.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrlRef.current)
+      }
+    }
+  }, [])
 
   const suggestedDisplayName = (() => {
     const first = firstName.trim()
@@ -71,6 +86,21 @@ export default function EditProfilePage() {
     return Object.keys(next).length === 0
   }
 
+  const handleAvatarSelected = (file: File) => {
+    setErrors((current) => {
+      const next = { ...current }
+      delete next.avatar
+      return next
+    })
+    if (previewUrlRef.current?.startsWith('blob:')) {
+      URL.revokeObjectURL(previewUrlRef.current)
+    }
+    const previewUrl = URL.createObjectURL(file)
+    previewUrlRef.current = previewUrl
+    setAvatarFile(file)
+    setAvatarPreview(previewUrl)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSavedMessage('')
@@ -79,6 +109,9 @@ export default function EditProfilePage() {
     const normalizedPhone = phone.trim() ? normalizePhone(phone) : ''
 
     try {
+      if (avatarFile) {
+        await uploadAvatar.mutateAsync(avatarFile)
+      }
       await updateProfile.mutateAsync({
         first_name: firstName.trim() || null,
         last_name: lastName.trim() || null,
@@ -90,9 +123,20 @@ export default function EditProfilePage() {
       setSavedMessage('Sačuvano')
       setTimeout(() => router.push(SETTINGS_PROFILE), 600)
     } catch {
-      // error surfaced via updateProfile.isError
+      // error surfaced via mutation isError
     }
   }
+
+  const saving = updateProfile.isPending || uploadAvatar.isPending
+  const saveError =
+    (uploadAvatar.error instanceof ApiError
+      ? uploadAvatar.error.message
+      : uploadAvatar.error instanceof Error
+        ? uploadAvatar.error.message
+        : null) ||
+    (updateProfile.error instanceof ApiError
+      ? updateProfile.error.message
+      : (updateProfile.error as Error)?.message)
 
   if (userLoading || locationsLoading) {
     return <PageLoading>Učitavanje…</PageLoading>
@@ -102,38 +146,54 @@ export default function EditProfilePage() {
     <div>
       <h1 className="mb-6 hidden text-[22px] font-normal text-foreground lg:block">Izmeni profil</h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-[18px]">
-        <TextField
-          label="Ime"
-          name="first_name"
-          value={firstName}
-          maxLength={100}
-          error={errors.firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-        />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-[18px]" data-testid="edit-profile-form">
+        <div className="flex items-start gap-4">
+          <AvatarUploadField
+            previewUrl={avatarPreview}
+            error={errors.avatar}
+            disabled={saving}
+            onFileSelected={handleAvatarSelected}
+            onError={(message) => setErrors((current) => ({ ...current, avatar: message }))}
+          />
 
-        <TextField
-          label="Prezime"
-          name="last_name"
-          value={lastName}
-          maxLength={100}
-          error={errors.lastName}
-          onChange={(e) => setLastName(e.target.value)}
-        />
+          <div
+            className="flex min-w-0 flex-1 flex-col gap-[18px]"
+            data-testid="profile-name-fields"
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <TextField
+                label="Ime"
+                name="first_name"
+                value={firstName}
+                maxLength={100}
+                error={errors.firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+              <TextField
+                label="Prezime"
+                name="last_name"
+                value={lastName}
+                maxLength={100}
+                error={errors.lastName}
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </div>
 
-        <TextField
-          label="Prikazano ime"
-          name="display_name"
-          value={displayName}
-          maxLength={120}
-          error={errors.displayName}
-          helperText={
-            suggestedDisplayName
-              ? `Ako ostaviš prazno, prikazivaće se: '${suggestedDisplayName}'`
-              : 'Ako ostaviš prazno, prikazivaće se ime iz naloga.'
-          }
-          onChange={(e) => setDisplayName(e.target.value)}
-        />
+            <TextField
+              label="Prikazano ime"
+              name="display_name"
+              value={displayName}
+              maxLength={120}
+              error={errors.displayName}
+              helperText={
+                suggestedDisplayName
+                  ? `Ako ostaviš prazno, prikazivaće se: '${suggestedDisplayName}'`
+                  : 'Ako ostaviš prazno, prikazivaće se ime iz naloga.'
+              }
+              onChange={(e) => setDisplayName(e.target.value)}
+            />
+          </div>
+        </div>
 
         <div className="flex w-full flex-col gap-1.5">
           <Label htmlFor="phone" className="text-sm font-medium text-foreground">
@@ -222,7 +282,7 @@ export default function EditProfilePage() {
         </div>
 
         <div className="mt-2 flex flex-col gap-3">
-          <Button type="submit" fullWidth size="lg" loading={updateProfile.isPending}>
+          <Button type="submit" fullWidth size="lg" loading={saving}>
             Sačuvaj promene
           </Button>
           <Link
@@ -237,9 +297,9 @@ export default function EditProfilePage() {
           <p className="m-0 text-center font-semibold text-success">{savedMessage}</p>
         ) : null}
 
-        {updateProfile.isError ? (
+        {updateProfile.isError || uploadAvatar.isError ? (
           <p className="m-0 text-center text-sm text-destructive">
-            {(updateProfile.error as Error)?.message || 'Greška pri čuvanju. Pokušaj ponovo.'}
+            {saveError || 'Greška pri čuvanju. Pokušaj ponovo.'}
           </p>
         ) : null}
       </form>

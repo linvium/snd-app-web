@@ -15,12 +15,14 @@ import {
 } from 'lucide-react'
 
 import { BookingTicket } from '@/components/messages/BookingTicket'
+import { PendingRequestBanner, RequestReviewDialog } from '@/components/messages/RequestReviewDialog'
 import { ThreadDetailPanel } from '@/components/messages/ThreadDetailPanel'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { useAuthSession } from '@/context/AuthContext'
+import { useRespondToBookingRequest } from '@/hooks/bookings'
 import { useConversation, useMarkConversationRead, useSendMessage } from '@/hooks/messages'
 import { formatRating, pluralizeRatings, responseTimeText } from '@/lib/listings/listings.detail'
 import {
@@ -30,6 +32,7 @@ import {
   formatMessageDayLabel,
   messageDayKey,
   messagePresentation,
+  requestExpiryCaption,
   shouldSubmitComposerOnEnter,
 } from '@/lib/messages'
 import { ApiError } from '@/lib/search'
@@ -76,9 +79,13 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
   const thread = useConversation(conversationId)
   const sendMessage = useSendMessage(conversationId)
   const markRead = useMarkConversationRead()
+  const respond = useRespondToBookingRequest()
   const [body, setBody] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [ticketError, setTicketError] = useState<string | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [reviewMode, setReviewMode] = useState<'review' | 'propose'>('review')
   const listRef = useRef<HTMLOListElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const lastMessageId = thread.data?.messages.at(-1)?.id
@@ -120,6 +127,29 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
   const responseText = responseTimeText(party)
   const ratingText = formatRating(party.rating_avg)
   const awaitingOwner = conversation.viewer_role === 'owner' && booking?.status === 'requested'
+
+  const openReview = (mode: 'review' | 'propose' = 'review') => {
+    setTicketError(null)
+    setReviewMode(mode)
+    setReviewOpen(true)
+  }
+
+  const handleTicketRespond = (action: 'accept' | 'decline') => {
+    if (!booking) return
+    setTicketError(null)
+    respond.mutate(
+      { bookingId: booking.id, action },
+      {
+        onError: (respondError) => {
+          setTicketError(
+            respondError instanceof ApiError
+              ? respondError.message
+              : 'Odgovor nije sačuvan. Pokušaj ponovo.'
+          )
+        },
+      }
+    )
+  }
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -225,14 +255,8 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
           <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         </Link>
 
-        {awaitingOwner ? (
-          <div className="flex shrink-0 items-center gap-2.5 border-b border-warning/40 bg-warning-soft px-3 py-2.5">
-            <ClockIcon className="size-4 shrink-0 text-amber-700" strokeWidth={2} aria-hidden />
-            <p className="m-0 flex-1 text-[12.5px] leading-snug text-amber-900">
-              <span className="block font-semibold">Zahtev čeka tvoj odgovor</span>
-              Odgovori u razgovoru i dogovorite preuzimanje.
-            </p>
-          </div>
+        {awaitingOwner && booking ? (
+          <PendingRequestBanner booking={booking} onReview={() => openReview('review')} />
         ) : null}
 
         <ol
@@ -264,8 +288,22 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
                       listing={listing}
                       role={conversation.viewer_role}
                       partyName={partyName}
+                      expiryLabel={requestExpiryCaption(booking.requested_at)}
+                      actionBusy={respond.isPending}
+                      actionError={ticketError}
+                      onReview={awaitingOwner ? () => openReview('review') : undefined}
+                      onAccept={awaitingOwner ? () => handleTicketRespond('accept') : undefined}
+                      onDecline={awaitingOwner ? () => handleTicketRespond('decline') : undefined}
+                      onPropose={awaitingOwner ? () => openReview('propose') : undefined}
                     />
                   ) : null
+                ) : presentation === 'system' ? (
+                  <p
+                    data-testid="system-message"
+                    className="m-0 self-center text-center text-[12.5px] text-muted-foreground"
+                  >
+                    {message.body}
+                  </p>
                 ) : (
                   <div
                     data-testid="text-message"
@@ -397,6 +435,19 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
             <ThreadDetailPanel conversation={conversation} />
           </div>
         </div>
+      ) : null}
+
+      {awaitingOwner && booking ? (
+        <RequestReviewDialog
+          open={reviewOpen}
+          onOpenChange={(open) => {
+            setReviewOpen(open)
+            if (!open) setReviewMode('review')
+          }}
+          booking={booking}
+          listing={listing}
+          initialMode={reviewMode}
+        />
       ) : null}
     </div>
   )

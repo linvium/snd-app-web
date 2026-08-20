@@ -36,6 +36,8 @@ export default defineConfig({
         '**/bookings/request.spec.ts',
         '**/messages/thread.spec.ts',
         '**/favorites/list.spec.ts',
+        '**/dashboard/actions.spec.ts',
+        '**/profile/edit.spec.ts',
       ],
     },
     {

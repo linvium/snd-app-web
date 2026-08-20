@@ -48,3 +48,18 @@ export interface CreateBookingRequestResponse {
   booking: Booking
   conversationId: string
 }
+
+export type BookingResponseAction = 'accept' | 'decline' | 'propose'
+
+export interface RespondToBookingInput {
+  bookingId: string
+  action: BookingResponseAction
+  startDate?: string | null
+  endDate?: string | null
+}
+
+export interface RespondToBookingResponse {
+  bookingId: string
+  status: BookingStatus
+  conversationId: string
+}

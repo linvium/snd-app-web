@@ -24,6 +24,17 @@ export function useUpdateProfile() {
   })
 }
 
+export function useUploadAvatar() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (file: File) => userService.uploadAvatar(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.all })
+    },
+  })
+}
+
 export function usePublicProfile(userId: string) {
   return useQuery({
     queryKey: userQueryKeys.public(userId),

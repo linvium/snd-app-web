@@ -20,6 +20,10 @@ import SimilarListings from '@/components/listings/detail/SimilarListings'
 import { useAuthSession } from '@/context/AuthContext'
 import { useRecordListingView } from '@/hooks/listings'
 import { useListingConversations } from '@/hooks/messages'
+import {
+  listingContactActionsPending,
+  resolveListingConversationId,
+} from '@/lib/messages'
 import type { ListingDetail, ListingReview, ReviewSummary } from '@/types/listing-detail'
 
 interface ListingDetailViewProps {
@@ -27,6 +31,7 @@ interface ListingDetailViewProps {
   summary: ReviewSummary
   reviews: ListingReview[]
   ownerOtherCount: number
+  initialConversationId: string | null
 }
 
 /**
@@ -46,13 +51,25 @@ export default function ListingDetailView({
   summary,
   reviews,
   ownerOtherCount,
+  initialConversationId,
 }: ListingDetailViewProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user } = useAuthSession()
+  const { user, loading } = useAuthSession()
   const existing = useListingConversations(listing.id, Boolean(user) && !listing.is_own_listing)
-  const existingConversationId =
-    Boolean(user) && !existing.isLoading ? existing.data[0]?.id ?? null : null
+  const fetchSettled = existing.isSuccess || existing.isError
+  const existingConversationId = resolveListingConversationId({
+    fetchedId: existing.data[0]?.id,
+    fetchSettled,
+    fetchFailed: existing.isError,
+    initialId: initialConversationId,
+  })
+  const contactActionsPending = listingContactActionsPending({
+    conversationId: existingConversationId,
+    isSignedIn: Boolean(user),
+    authLoading: loading,
+    fetchSettled,
+  })
 
   const [requestOpen, setRequestOpen] = useState(false)
   const [dates, setDates] = useState<{ from: string | null; to: string | null }>({
@@ -115,6 +132,7 @@ export default function ListingDetailView({
                 onDatesChange={handleDatesChange}
                 onStartRequest={() => setRequestOpen(true)}
                 existingConversationId={existingConversationId}
+                contactActionsPending={contactActionsPending}
                 variant="plain"
               />
             </div>
@@ -143,6 +161,7 @@ export default function ListingDetailView({
               onDatesChange={handleDatesChange}
               onStartRequest={() => setRequestOpen(true)}
               existingConversationId={existingConversationId}
+              contactActionsPending={contactActionsPending}
             />
           </div>
         </div>
@@ -157,9 +176,13 @@ export default function ListingDetailView({
         onDatesChange={handleDatesChange}
         onStartRequest={() => setRequestOpen(true)}
         existingConversationId={existingConversationId}
+        contactActionsPending={contactActionsPending}
       />
 
-      {listing.is_own_listing || listing.status !== 'published' ? null : (
+      {listing.is_own_listing ||
+      listing.status !== 'published' ||
+      contactActionsPending ||
+      existingConversationId ? null : (
         <ContactOwnerDialog
           open={requestOpen}
           onOpenChange={setRequestOpen}

@@ -5,7 +5,6 @@ import {
   FileTextIcon,
   ImageIcon,
   MessageSquareIcon,
-  UserRoundIcon,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -17,7 +16,6 @@ const KIND_ICONS: Record<ActionKind, LucideIcon> = {
   request: ClockIcon,
   unread: MessageSquareIcon,
   draft: FileTextIcon,
-  profile: UserRoundIcon,
 }
 
 const TONE_STRIP: Record<ActionTone, string> = {
@@ -78,8 +76,8 @@ function ActionRow({ action }: { action: DashboardAction }) {
 
 /**
  * The one list on the page that is about doing something rather than knowing
- * something — pending requests, unanswered messages, unfinished drafts and
- * profile gaps, worst first.
+ * something - pending requests, unanswered messages and unfinished drafts,
+ * worst first.
  */
 export function ActionQueue({ actions }: { actions: DashboardAction[] }) {
   if (actions.length === 0) {

@@ -1,6 +1,5 @@
 export {
   LISTING_STATUS_LABEL,
-  completenessActions,
   formatCount,
   formatLongDate,
   formatPercent,

@@ -1,4 +1,4 @@
-export { useCurrentUser, useUpdateProfile, usePublicProfile } from './user.hooks'
+export { useCurrentUser, useUpdateProfile, useUploadAvatar, usePublicProfile } from './user.hooks'
 export {
   useLocations,
   useAddLocation,

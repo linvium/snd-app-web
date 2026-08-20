@@ -1,5 +1,18 @@
+import { ApiError } from '@/lib/search/search.service'
 import { createClient } from '@/lib/supabase/client'
+import type { ApiErrorBody } from '@/types/search'
 import type { SndUser, UpdateProfileInput } from '@/types'
+
+async function parseJson<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as ApiErrorBody | null
+    throw new ApiError(
+      response.status,
+      body?.error ?? { code: 'UNKNOWN', message: 'Nismo mogli da sačuvamo sliku. Pokušaj ponovo.' }
+    )
+  }
+  return (await response.json()) as T
+}
 
 const getClient = () => createClient()
 
@@ -48,6 +61,18 @@ export const userService = {
     const { error } = await supabase.from('user_profiles').update(input).eq('user_id', user.id)
 
     if (error) throw error
+  },
+
+  uploadAvatar: async (file: File): Promise<{ avatar_url: string }> => {
+    const form = new FormData()
+    form.append('file', file)
+    const response = await fetch('/api/v1/profile/avatar', {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      body: form,
+    })
+    const payload = await parseJson<{ data: { avatar_url: string } }>(response)
+    return payload.data
   },
 
   getPublicProfile: async (userId: string) => {

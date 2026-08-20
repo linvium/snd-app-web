@@ -1,1 +1,1 @@
-export { useCreateBookingRequest } from './bookings.hooks'
+export { useCreateBookingRequest, useRespondToBookingRequest } from './bookings.hooks'

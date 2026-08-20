@@ -8,6 +8,7 @@ import { AlertCircleIcon, CalendarIcon, InfoIcon, StarIcon } from 'lucide-react'
 import DateRangePicker from '@/components/search/DateRangePicker'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAuthSession } from '@/context/AuthContext'
 import { useListingQuote } from '@/hooks/listings'
 import { useMediaQuery } from '@/hooks/search'
@@ -31,6 +32,7 @@ export interface BookingCardProps {
   onDatesChange: (from: string | null, to: string | null) => void
   onStartRequest: () => void
   existingConversationId?: string | null
+  contactActionsPending?: boolean
   /** Set on the mobile sheet, where the card is already inside a modal. */
   variant?: 'sticky' | 'plain'
 }
@@ -50,6 +52,7 @@ export default function BookingCard({
   onDatesChange,
   onStartRequest,
   existingConversationId = null,
+  contactActionsPending = false,
   variant = 'sticky',
 }: BookingCardProps) {
   const router = useRouter()
@@ -110,6 +113,7 @@ export default function BookingCard({
   const loginNext = `/listings/${listing.slug}${from && to ? `?from=${from}&to=${to}` : ''}`
 
   const handleContact = () => {
+    if (contactActionsPending) return
     if (!user) {
       router.push(`/auth/login?next=${encodeURIComponent(loginNext)}`)
       return
@@ -227,7 +231,12 @@ export default function BookingCard({
         ) : null}
 
         <div className="mt-4 flex flex-col gap-2">
-          {existingConversationId ? (
+          {contactActionsPending ? (
+            <div data-testid={showTestIds ? 'contact-actions-skeleton' : undefined} className="flex flex-col gap-2">
+              <Skeleton className="h-11 w-full rounded-md" />
+              <Skeleton className="h-11 w-full rounded-md" />
+            </div>
+          ) : existingConversationId ? (
             <Button className="bg-brand-500 hover:bg-brand-600" asChild>
               <Link
                 href={requestThreadPath(existingConversationId)}

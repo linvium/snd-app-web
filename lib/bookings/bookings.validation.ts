@@ -53,3 +53,16 @@ export function validateMessageBody(body: string | undefined): string | null {
   if (trimmed.length > MESSAGE_MAX) return `Poruka može imati najviše ${MESSAGE_MAX} karaktera.`
   return null
 }
+
+export function isBookingResponseAction(value: unknown): value is 'accept' | 'decline' | 'propose' {
+  return value === 'accept' || value === 'decline' || value === 'propose'
+}
+
+export function validateProposedDates(startDate: string | null, endDate: string | null): string | null {
+  if (!startDate || !endDate) return 'Izaberi oba datuma.'
+  if (!isIsoDate(startDate) || !isIsoDate(endDate)) return 'Datumi nisu ispravni.'
+  if (endDate < startDate) return 'Datum do mora biti posle datuma od.'
+  if (startDate < utcTodayIso()) return 'Datum ne može biti u prošlosti.'
+  if (inclusiveDaysCount(startDate, endDate) == null) return 'Datumi nisu ispravni.'
+  return null
+}

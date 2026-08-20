@@ -4,7 +4,7 @@ import type { ProfileCompleteness } from './user'
 
 export type ActionTone = 'urgent' | 'attention' | 'calm'
 
-export type ActionKind = 'request' | 'unread' | 'draft' | 'profile'
+export type ActionKind = 'request' | 'unread' | 'draft'
 
 export interface DashboardAction {
   id: string

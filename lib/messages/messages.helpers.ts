@@ -1,5 +1,5 @@
 import { formatDateRange } from '@/lib/search/search.helpers'
-import type { Message, MessagePresentation, MessageType } from '@/types/message'
+import type { ConversationRole, Message, MessagePresentation, MessageType } from '@/types/message'
 
 export function isBookingRequestType(type: MessageType | string): boolean {
   return type === 'system_booking_requested' || type === 'booking_request'
@@ -9,6 +9,7 @@ export function messagePresentation(
   message: Pick<Message, 'type' | 'sender_id'>
 ): MessagePresentation {
   if (isBookingRequestType(message.type)) return 'request_card'
+  if (message.sender_id) return 'text_bubble'
   if (message.type === 'text') return 'text_bubble'
   return 'system'
 }
@@ -53,6 +54,28 @@ export function conversationsForListing<T extends { listing: { id: string } }>(
   listingId: string
 ): T[] {
   return conversations.filter((conversation) => conversation.listing.id === listingId)
+}
+
+export function resolveListingConversationId(input: {
+  fetchedId: string | undefined
+  fetchSettled: boolean
+  fetchFailed: boolean
+  initialId: string | null
+}): string | null {
+  if (input.fetchFailed) return input.initialId
+  if (input.fetchSettled) return input.fetchedId ?? null
+  return input.initialId
+}
+
+export function listingContactActionsPending(input: {
+  conversationId: string | null
+  isSignedIn: boolean
+  authLoading: boolean
+  fetchSettled: boolean
+}): boolean {
+  if (input.conversationId) return false
+  if (input.authLoading) return true
+  return input.isSignedIn && !input.fetchSettled
 }
 
 function lastMessageTime(iso: string | null): number {
@@ -176,7 +199,18 @@ export function bookingStatusPill(status: string | null | undefined): BookingPil
   }
 }
 
-/** Bookings still waiting on somebody — used for the "Zahtevi" tab. */
+/** Status on the request card inside the thread. Inbox rows keep bookingStatusPill. */
+export function ticketStatusPill(
+  status: string | null | undefined,
+  role: ConversationRole
+): BookingPill | null {
+  if (role === 'owner' && status === 'requested') {
+    return { label: 'Čeka potvrdu', tone: 'wait' }
+  }
+  return bookingStatusPill(status)
+}
+
+/** Bookings still waiting on somebody - used for the "Zahtevi" tab. */
 export function isOpenRequestStatus(status: string | null | undefined): boolean {
   return status === 'requested'
 }
