@@ -12,3 +12,11 @@ export function isListingPublishPath(pathname: string): boolean {
     pathname.startsWith('/listings/new')
   )
 }
+
+/**
+ * The public item page, `/listings/<slug>`. The publish flow lives under
+ * `/listings/new`, which looks the same to a regex and is not this.
+ */
+export function isListingDetailPath(pathname: string): boolean {
+  return /^\/listings\/[^/]+$/.test(pathname) && !isListingPublishPath(pathname)
+}

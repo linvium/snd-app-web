@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { AlertCircleIcon, CalendarIcon, InfoIcon, StarIcon } from 'lucide-react'
 
+import PriceTiers from '@/components/listings/detail/PriceTable'
 import DateRangePicker from '@/components/search/DateRangePicker'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -33,7 +34,11 @@ export interface BookingCardProps {
   onStartRequest: () => void
   existingConversationId?: string | null
   contactActionsPending?: boolean
-  /** Set on the mobile sheet, where the card is already inside a modal. */
+  /**
+   * `plain` on the copies inside a dialog, which must not carry the test hooks
+   * - two elements answering to `contact-owner-button` is an ambiguous
+   * selector, not a redundant one.
+   */
   variant?: 'sticky' | 'plain'
 }
 
@@ -68,12 +73,7 @@ export default function BookingCard({
   // disabled - the owner's business here is managing, not renting.
   if (listing.is_own_listing) {
     return (
-      <aside
-        className={cn(
-          'rounded-xl border border-border bg-card p-5',
-          variant === 'sticky' && 'lg:sticky lg:top-24'
-        )}
-      >
+      <aside className="rounded-xl border border-border bg-card p-5">
         <p className="m-0 text-base font-semibold text-card-foreground">Ovo je tvoj oglas</p>
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Vidiš ga onako kako ga vide drugi.
@@ -92,12 +92,7 @@ export default function BookingCard({
 
   if (listing.status !== 'published') {
     return (
-      <aside
-        className={cn(
-          'rounded-xl border border-border bg-muted p-5',
-          variant === 'sticky' && 'lg:sticky lg:top-24'
-        )}
-      >
+      <aside className="rounded-xl border border-border bg-muted p-5">
         <p className="m-0 text-sm font-medium text-foreground">Ovaj oglas trenutno nije aktivan.</p>
       </aside>
     )
@@ -127,14 +122,14 @@ export default function BookingCard({
 
   return (
     <>
-      <aside
-        className={cn(
-          'rounded-xl border border-border bg-card p-5 shadow-sm',
-          variant === 'sticky' && 'lg:sticky lg:top-24'
-        )}
-      >
+      {/* The one surface on the page that reads as raised: everything else is a
+          document, this is the control. Sticky positioning belongs to whoever
+          places the card, not to the card - `variant` only decides whether the
+          test hooks are on, so the same component can appear in a dialog
+          without colliding with the copy in the page. */}
+      <aside className="rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(24,24,27,0.04),0_14px_32px_-20px_rgba(24,24,27,0.35)]">
         <div className="flex items-baseline justify-between gap-3">
-          <p className="m-0 text-xl font-semibold text-card-foreground">
+          <p className="m-0 text-2xl font-semibold tracking-tight text-card-foreground">
             {formatPricePerDay(listing.price_1_day_minor)}
           </p>
           {rating && listing.rating_count > 0 ? (
@@ -147,6 +142,10 @@ export default function BookingCard({
             </p>
           ) : null}
         </div>
+
+        {/* The package ladder argues for longer rentals, so it belongs before
+            the dates are picked - after that the quote below is the truth. */}
+        {hasDates ? null : <PriceTiers listing={listing} />}
 
         <button
           type="button"

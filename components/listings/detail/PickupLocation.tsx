@@ -44,12 +44,20 @@ export default function PickupLocation({
 
   return (
     <section>
-      <h2 className="mt-0 mb-3 text-lg font-semibold text-card-foreground">Gde se preuzima</h2>
-
-      <p className="mt-0 mb-3 flex items-center gap-1.5 text-sm text-foreground">
-        <MapPinIcon className="size-4 text-zinc-400" strokeWidth={1.8} aria-hidden />
-        {[place, distance ? `${distance} od tebe` : null].filter(Boolean).join(' · ')}
-      </p>
+      <div className="mt-0 mb-3 flex items-center gap-2.5">
+        <span
+          aria-hidden
+          className="grid size-9 flex-none place-items-center rounded-lg bg-muted text-zinc-500"
+        >
+          <MapPinIcon className="size-[18px]" strokeWidth={1.8} />
+        </span>
+        <div>
+          <h2 className="m-0 text-base font-semibold text-card-foreground">Gde se preuzima</h2>
+          <p className="m-0 text-[13px] text-muted-foreground">
+            {[place, distance ? `${distance} od tebe` : null].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+      </div>
 
       <PickupMap locations={locations} canSeeExact={canSeeExact} label={place} />
 

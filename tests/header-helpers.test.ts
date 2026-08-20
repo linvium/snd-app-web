@@ -22,14 +22,17 @@ describe('headerShowsSearch', () => {
 })
 
 describe('headerIsFullWidth', () => {
-  it('spans the viewport on the homepage and search', () => {
+  it('spans the viewport on the homepage, search and the item page', () => {
     expect(headerIsFullWidth('/')).toBe(true)
     expect(headerIsFullWidth('/search')).toBe(true)
+    expect(headerIsFullWidth('/listings/nikon-z6-iii')).toBe(true)
   })
 
   it('keeps a centered shell on other pages', () => {
     expect(headerIsFullWidth('/faq')).toBe(false)
     expect(headerIsFullWidth('/garancija')).toBe(false)
+    // The publish flow lives under /listings/new and is not the item page.
+    expect(headerIsFullWidth('/listings/new')).toBe(false)
   })
 })
 

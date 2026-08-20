@@ -69,7 +69,13 @@ export default function Header() {
 
   return (
     <>
-      <div className="relative z-30">
+      {/* The utility row is part of the same surface as the toolbar under it:
+          left on the page background it read as a separate strip with a seam
+          across the top of the header. Only the homepage keeps it transparent,
+          where the whole header sits on the hero. */}
+      <div
+        className={cn('relative z-30', overlaysHero ? null : 'bg-card/80 backdrop-blur-md')}
+      >
         <div className={innerClass}>
           <nav
             aria-label="Korisni linkovi"
@@ -96,6 +102,10 @@ export default function Header() {
         className={cn(
           'sticky top-0 z-30 transition-[background-color,box-shadow,color,backdrop-filter] duration-200 ease-in-out',
           overlaysHero && !hasShadow ? 'bg-transparent' : 'bg-card/80 backdrop-blur-md',
+          // A hairline closes the header off from the page under it. The
+          // homepage is left out on purpose: its header has no edge to draw
+          // over the hero, and the 1px would throw off HEADER_HERO_OVERLAP_CLASS.
+          overlaysHero ? null : 'border-b border-border',
           hasShadow && 'shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
         )}
       >
