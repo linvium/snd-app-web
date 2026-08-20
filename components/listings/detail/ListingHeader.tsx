@@ -230,7 +230,6 @@ export default function ListingHeader({ listing }: { listing: ListingDetail }) {
         )}
 
         <span>
-          Iznajmljuje{' '}
           <Link
             href={`/users/${owner.id}`}
             className="font-medium text-card-foreground no-underline hover:underline"

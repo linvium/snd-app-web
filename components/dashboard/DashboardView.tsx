@@ -23,9 +23,6 @@ export function DashboardView({ data }: { data: DashboardSummary }) {
           <Button variant="secondary" size="sm" asChild>
             <Link href={MANAGER_LISTINGS}>Moji oglasi</Link>
           </Button>
-          <Button size="sm" asChild>
-            <Link href={LISTING_NEW_PATH}>Objavi novu stvar</Link>
-          </Button>
         </div>
       </div>
 
