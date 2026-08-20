@@ -17,7 +17,7 @@ const NAV_ICONS: Record<(typeof BOTTOM_NAV_LINKS)[number]['href'], LucideIcon> =
   '/profile': UserIcon,
 }
 
-export default function BottomNav() {
+export default function BottomNav({ hidden = false }: { hidden?: boolean } = {}) {
   const pathname = usePathname()
   const { user } = useAuthSession()
   const unread = useUnreadMessageCount(Boolean(user))
@@ -25,7 +25,10 @@ export default function BottomNav() {
   return (
     <nav
       aria-label="Donja navigacija"
-      className="fixed right-0 bottom-0 left-0 z-40 grid h-[calc(56px+env(safe-area-inset-bottom))] grid-cols-5 items-center border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
+      className={cn(
+        'fixed right-0 bottom-0 left-0 z-40 grid h-[calc(56px+env(safe-area-inset-bottom))] grid-cols-5 items-center border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden',
+        hidden && 'hidden'
+      )}
     >
       {BOTTOM_NAV_LINKS.map((item) => {
         const isActive = bottomNavItemIsActive(pathname, item.href)

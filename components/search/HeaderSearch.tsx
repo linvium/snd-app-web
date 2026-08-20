@@ -15,7 +15,7 @@ import type { SearchParams } from '@/types/search'
  * On `/search` this edits the search in place; anywhere else it starts a new
  * one, which is the point of keeping the bar visible everywhere (doc 03 §4).
  */
-export default function HeaderSearch() {
+export default function HeaderSearch({ compact = false }: { compact?: boolean } = {}) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -42,6 +42,7 @@ export default function HeaderSearch() {
   return (
     <>
       <HeaderSearchBar
+        compact={compact}
         params={params}
         onSubmit={(changes) => go(withFilters(params, changes))}
         onOpenMobileModal={() => setModalOpen(true)}

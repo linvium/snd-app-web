@@ -26,13 +26,20 @@ import { cn } from '@/lib/utils'
 import { useAuthSession } from '@/context/AuthContext'
 import { useSignOut } from '@/hooks/auth'
 import { useUnreadMessageCount } from '@/hooks/messages'
+import {
+  MANAGER_FAVORITES,
+  MANAGER_LISTINGS,
+  MANAGER_REQUESTS,
+  MANAGER_ROOT,
+  MANAGER_SETTINGS,
+} from '@/lib/profiles'
 
 const ACCOUNT_MENU_ITEMS = [
-  { href: '/profile', label: 'Moj profil' },
-  { href: '/profile/listings', label: 'Moji oglasi' },
-  { href: '/bookings', label: 'Moje rezervacije' },
-  { href: '/profile/requests', label: 'Zahtevi' },
-  { href: '/profile/favorites', label: 'Omiljeni' },
+  { href: MANAGER_ROOT, label: 'Pregled' },
+  { href: MANAGER_LISTINGS, label: 'Moji oglasi' },
+  { href: MANAGER_REQUESTS, label: 'Zahtevi' },
+  { href: MANAGER_FAVORITES, label: 'Omiljeni' },
+  { href: MANAGER_SETTINGS, label: 'Podešavanja' },
 ] as const
 
 function getInitials(email?: string | null) {
@@ -137,7 +144,7 @@ export default function Header() {
 
               {user ? (
                 <Link
-                  href="/profile/requests"
+                  href={MANAGER_REQUESTS}
                   aria-label={unread > 0 ? `Zahtevi, ${unread} nepročitanih` : 'Zahtevi'}
                   data-testid="header-messages"
                   className={cn(

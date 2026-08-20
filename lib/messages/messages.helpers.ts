@@ -131,3 +131,105 @@ export function shouldSubmitComposerOnEnter(event: {
   if (event.nativeEvent?.isComposing) return false
   return event.key === 'Enter' && !event.shiftKey
 }
+
+export type ConversationTab = 'all' | 'unread' | 'requests'
+
+export const CONVERSATION_TABS: readonly { key: ConversationTab; label: string }[] = [
+  { key: 'all', label: 'Sve' },
+  { key: 'unread', label: 'Nepročitano' },
+  { key: 'requests', label: 'Zahtevi' },
+] as const
+
+export type BookingPillTone = 'wait' | 'ok' | 'done' | 'late'
+
+export interface BookingPill {
+  label: string
+  tone: BookingPillTone
+}
+
+/**
+ * The reservation state, shown on the row itself so the inbox says what is
+ * burning without opening every conversation.
+ */
+export function bookingStatusPill(status: string | null | undefined): BookingPill | null {
+  switch (status) {
+    case 'requested':
+      return { label: 'Zahtev čeka odgovor', tone: 'wait' }
+    case 'accepted':
+      return { label: 'Prihvaćeno', tone: 'ok' }
+    case 'paid':
+    case 'in_progress':
+      return { label: 'Rezervisano', tone: 'ok' }
+    case 'completed':
+      return { label: 'Završeno', tone: 'done' }
+    case 'declined':
+      return { label: 'Odbijeno', tone: 'done' }
+    case 'expired':
+      return { label: 'Isteklo', tone: 'late' }
+    case 'cancelled_by_renter':
+    case 'cancelled_by_owner':
+      return { label: 'Otkazano', tone: 'late' }
+    case 'payment_failed':
+      return { label: 'Plaćanje nije prošlo', tone: 'late' }
+    default:
+      return null
+  }
+}
+
+/** Bookings still waiting on somebody — used for the "Zahtevi" tab. */
+export function isOpenRequestStatus(status: string | null | undefined): boolean {
+  return status === 'requested'
+}
+
+type FilterableConversation = {
+  unread_count: number
+  booking: { status: string } | null
+  listing: { title: string }
+  other_party: { display_name: string }
+  last_message_preview: string | null
+}
+
+export function conversationMatchesQuery<T extends FilterableConversation>(
+  conversation: T,
+  query: string
+): boolean {
+  const term = query.trim().toLowerCase()
+  if (!term) return true
+  return [
+    conversation.listing.title,
+    conversation.other_party.display_name,
+    conversation.last_message_preview ?? '',
+  ].some((field) => field.toLowerCase().includes(term))
+}
+
+export function filterConversations<T extends FilterableConversation>(
+  conversations: T[],
+  tab: ConversationTab,
+  query = ''
+): T[] {
+  return conversations.filter((conversation) => {
+    if (!conversationMatchesQuery(conversation, query)) return false
+    if (tab === 'unread') return conversation.unread_count > 0
+    if (tab === 'requests') return isOpenRequestStatus(conversation.booking?.status)
+    return true
+  })
+}
+
+export function conversationTabCounts<T extends FilterableConversation>(
+  conversations: T[]
+): Record<ConversationTab, number> {
+  return {
+    all: conversations.length,
+    unread: conversations.filter((conversation) => conversation.unread_count > 0).length,
+    requests: conversations.filter((conversation) => isOpenRequestStatus(conversation.booking?.status))
+      .length,
+  }
+}
+
+/** Reply templates the composer can drop in — plain text, nothing pre-sent. */
+export const QUICK_REPLIES: readonly string[] = [
+  'Da, dostupno je.',
+  'Kada ti odgovara preuzimanje?',
+  'Nažalost, zauzeto je u tom terminu.',
+  'Javi se kad krećeš, pa da se nađemo.',
+] as const

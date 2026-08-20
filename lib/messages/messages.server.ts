@@ -45,16 +45,33 @@ async function hydrateConversations(
   const bookingIds = rows.map((row) => row.booking_id).filter((id): id is string => Boolean(id))
   const otherIds = [...new Set(rows.map((row) => (row.renter_id === userId ? row.owner_id : row.renter_id)))]
 
-  const [{ data: listings }, { data: images }, { data: parties }, { data: bookings }] = await Promise.all([
-    supabase.from('listings').select('id, title, slug').in('id', listingIds),
+  const [{ data: listings }, { data: images }, { data: parties }, { data: partyProfiles }, { data: bookings }] =
+    await Promise.all([
+    supabase
+      .from('listings')
+      .select('id, title, slug, price_1_day_minor, item_value_minor')
+      .in('id', listingIds),
     supabase
       .from('listing_images')
       .select('listing_id, thumbnail_url, sort_order')
       .in('listing_id', listingIds)
       .order('sort_order', { ascending: true }),
     supabase.rpc('snd_conversation_parties', { p_user_ids: otherIds }),
+    // Reputation the item page already exposes through a column-limited view;
+    // the chat header shows the same numbers rather than inventing its own.
+    supabase
+      .from('public_owner_profiles')
+      .select(
+        'user_id, rating_avg, rating_count, avg_response_minutes, response_rate, is_verified, conversation_count'
+      )
+      .in('user_id', otherIds),
     bookingIds.length > 0
-      ? supabase.from('bookings').select('id, start_date, end_date, status').in('id', bookingIds)
+      ? supabase
+          .from('bookings')
+          .select(
+            'id, reference, start_date, end_date, days_count, status, rental_price_minor, total_minor, requested_at'
+          )
+          .in('id', bookingIds)
       : Promise.resolve({ data: [] }),
   ])
 
@@ -76,14 +93,30 @@ async function hydrateConversations(
       email: string | null
     }>).map((row) => [row.user_id, row])
   )
+  const profileByUser = new Map(
+    ((partyProfiles ?? []) as Array<{
+      user_id: string
+      rating_avg: number | string | null
+      rating_count: number | null
+      avg_response_minutes: number | null
+      response_rate: number | string | null
+      is_verified: boolean | null
+      conversation_count: number | null
+    }>).map((row) => [row.user_id, row])
+  )
   const bookingById = new Map(
     (bookings ?? []).map((row) => [
       row.id as string,
       {
         id: row.id as string,
+        reference: (row.reference as string | null) ?? null,
         start_date: (row.start_date as string | null) ?? null,
         end_date: (row.end_date as string | null) ?? null,
+        days_count: (row.days_count as number | null) ?? null,
         status: row.status as string,
+        rental_price_minor: (row.rental_price_minor as number | null) ?? null,
+        total_minor: (row.total_minor as number | null) ?? null,
+        requested_at: (row.requested_at as string | null) ?? null,
       } satisfies ConversationBookingSummary,
     ])
   )
@@ -91,6 +124,7 @@ async function hydrateConversations(
   return rows.map((row) => {
     const otherId = row.renter_id === userId ? row.owner_id : row.renter_id
     const party = partyByUser.get(otherId)
+    const partyProfile = profileByUser.get(otherId)
     const listing = listingById.get(row.listing_id)
     return {
       id: row.id,
@@ -99,6 +133,8 @@ async function hydrateConversations(
         title: (listing?.title as string | null) ?? 'Oglas',
         slug: (listing?.slug as string | null) ?? null,
         thumbnail_url: thumbByListing.get(row.listing_id) ?? null,
+        price_1_day_minor: (listing?.price_1_day_minor as number | null) ?? null,
+        item_value_minor: (listing?.item_value_minor as number | null) ?? null,
       },
       other_party: {
         id: otherId,
@@ -113,7 +149,15 @@ async function hydrateConversations(
           party?.email ?? null
         ),
         avatar_url: party?.avatar_url ?? null,
+        is_verified: Boolean(partyProfile?.is_verified),
+        rating_avg: partyProfile?.rating_avg == null ? null : Number(partyProfile.rating_avg),
+        rating_count: Number(partyProfile?.rating_count ?? 0),
+        avg_response_minutes: partyProfile?.avg_response_minutes ?? null,
+        response_rate:
+          partyProfile?.response_rate == null ? null : Number(partyProfile.response_rate),
+        conversation_count: Number(partyProfile?.conversation_count ?? 0),
       },
+      viewer_role: row.owner_id === userId ? 'owner' : 'renter',
       booking: row.booking_id ? bookingById.get(row.booking_id) ?? null : null,
       last_message_at: row.last_message_at,
       last_message_preview: row.last_message_preview,

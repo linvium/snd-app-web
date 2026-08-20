@@ -21,6 +21,12 @@ interface HeaderSearchBarProps {
   onSubmit: (changes: Partial<SearchParams>) => void
   /** Mobile taps do not edit in place — they open the full-screen modal (§5.1). */
   onOpenMobileModal: () => void
+  /**
+   * One-line variant for the manager's 64px top bar: the query segment and the
+   * submit button only, at 40px. City and dates stay reachable through the
+   * full bar on /search, which is where a search actually gets refined.
+   */
+  compact?: boolean
 }
 
 type Segment = 'q' | 'city' | 'dates'
@@ -45,6 +51,7 @@ export default function HeaderSearchBar({
   params,
   onSubmit,
   onOpenMobileModal,
+  compact = false,
 }: HeaderSearchBarProps) {
   const [open, setOpen] = useState<Segment | null>(null)
   const [hovered, setHovered] = useState<Segment | null>(null)
@@ -142,6 +149,10 @@ export default function HeaderSearchBar({
   }
 
   const advanceFromQuery = () => {
+    if (compact) {
+      commitSearch()
+      return
+    }
     const next = nextSearchBarSegment('q')
     if (next === 'city') goToSegment('city')
   }
@@ -149,12 +160,22 @@ export default function HeaderSearchBar({
   const pickPopularTerm = (term: string) => {
     setQuery(term)
     setDraftCategory(null)
+    if (compact) {
+      onSubmit({ q: term, category: null })
+      setOpen(null)
+      return
+    }
     goToSegment('city')
   }
 
   const pickCategory = (name: string, slug: string) => {
     setQuery(name)
     setDraftCategory(slug)
+    if (compact) {
+      onSubmit({ q: name, category: slug })
+      setOpen(null)
+      return
+    }
     goToSegment('city')
   }
 
@@ -184,7 +205,10 @@ export default function HeaderSearchBar({
       <button
         type="button"
         onClick={onOpenMobileModal}
-        className="flex h-12 w-full cursor-pointer items-center gap-2.5 rounded-full border border-border bg-card px-4 text-left shadow-sm md:hidden"
+        className={cn(
+          'flex w-full cursor-pointer items-center gap-2.5 rounded-full border border-border bg-card px-4 text-left shadow-sm md:hidden',
+          compact ? 'h-10' : 'h-12'
+        )}
       >
         <SearchIcon className="size-[18px] shrink-0 text-zinc-500" aria-hidden />
         <span
@@ -210,10 +234,13 @@ export default function HeaderSearchBar({
         <div
           ref={barRef}
           className={cn(
-            'relative flex h-16 items-stretch rounded-full border border-border transition-colors duration-300 ease-in-out',
-            open
+            'relative flex items-stretch rounded-full border border-border transition-colors duration-300 ease-in-out',
+            compact ? 'h-10' : 'h-16',
+            open && !compact
               ? 'border-transparent bg-zinc-200 shadow-none'
-              : 'bg-card shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.04)]'
+              : compact
+                ? 'bg-muted/60'
+                : 'bg-card shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.04)]'
           )}
         >
           <div
@@ -223,21 +250,26 @@ export default function HeaderSearchBar({
             style={{
               left: pill.left,
               width: pill.width,
-              opacity: pill.visible ? 1 : 0,
+              opacity: pill.visible && !compact ? 1 : 0,
             }}
           />
 
           <div
             ref={qSegRef}
             data-testid="search-segment-q"
-            className={cn(columnClass('q'), SEARCH_FIELD, 'px-8', open === 'q' && query && 'pr-12')}
+            className={cn(
+              columnClass('q'),
+              SEARCH_FIELD,
+              compact ? 'gap-0 px-4 py-0' : 'px-8',
+              open === 'q' && query && 'pr-12'
+            )}
             onMouseEnter={() => setHovered('q')}
             onClick={() => {
               goToSegment('q')
               queryRef.current?.focus()
             }}
           >
-            <span className={SEGMENT_LABEL}>Šta tražiš?</span>
+            {compact ? null : <span className={SEGMENT_LABEL}>Šta tražiš?</span>}
             <input
               ref={queryRef}
               type="text"
@@ -273,6 +305,18 @@ export default function HeaderSearchBar({
             ) : null}
           </div>
 
+          {compact ? (
+            <button
+              type="button"
+              onClick={commitSearch}
+              aria-label="Pretraži"
+              data-testid="search-submit-compact"
+              className="relative z-30 my-1 mr-1 grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border-none bg-brand-500 text-white transition-colors hover:bg-brand-600"
+            >
+              <SearchIcon className="size-4 shrink-0" aria-hidden />
+            </button>
+          ) : (
+            <>
           <Divider hidden={searchBarDividerHidden(open, hovered, 'after-q')} />
 
           <div
@@ -378,6 +422,8 @@ export default function HeaderSearchBar({
               </span>
             </button>
           </div>
+            </>
+          )}
         </div>
 
         {open === 'q' ? (
