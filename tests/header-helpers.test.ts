@@ -16,7 +16,7 @@ describe('headerShowsSearch', () => {
 
   it('shows search in the header on every other page', () => {
     expect(headerShowsSearch('/search')).toBe(true)
-    expect(headerShowsSearch('/garancija')).toBe(true)
+    expect(headerShowsSearch('/support/guarantee')).toBe(true)
     expect(headerShowsSearch('/profile/listings')).toBe(true)
   })
 })
@@ -29,8 +29,8 @@ describe('headerIsFullWidth', () => {
   })
 
   it('keeps a centered shell on other pages', () => {
-    expect(headerIsFullWidth('/faq')).toBe(false)
-    expect(headerIsFullWidth('/garancija')).toBe(false)
+    expect(headerIsFullWidth('/support/faq')).toBe(false)
+    expect(headerIsFullWidth('/support/guarantee')).toBe(false)
     // The publish flow lives under /listings/new and is not the item page.
     expect(headerIsFullWidth('/listings/new')).toBe(false)
   })
@@ -56,10 +56,10 @@ describe('HEADER_SEARCH_MAX_WIDTH_PX', () => {
 describe('HEADER_UTILITY_LINKS', () => {
   it('lists the tiny top-bar pages in order', () => {
     expect(HEADER_UTILITY_LINKS.map((link) => [link.href, link.label])).toEqual([
-      ['/kako-funkcionise', 'Kako funkcioniše'],
-      ['/garancija', 'Garancija'],
-      ['/faq', 'Česta pitanja'],
-      ['/contact', 'Kontakt'],
+      ['/support/how-it-works', 'Kako funkcioniše'],
+      ['/support/guarantee', 'Garancija'],
+      ['/support/faq', 'Česta pitanja'],
+      ['/support/contact', 'Kontakt'],
     ])
   })
 })

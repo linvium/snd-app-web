@@ -118,7 +118,7 @@ export function ThreadDetailPanel({ conversation }: { conversation: Conversation
             Važi samo za dogovore sklopljene kroz platformu. Slikaj predmet pri predaji i pri
             vraćanju.
           </p>
-          <Link href="/garancija" className="mt-2 inline-block font-semibold text-info underline">
+          <Link href="/support/guarantee" className="mt-2 inline-block font-semibold text-info underline">
             Kako garancija radi
           </Link>
         </div>

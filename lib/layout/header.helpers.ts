@@ -1,10 +1,15 @@
 import { isListingDetailPath } from '@/lib/listings/listings.paths'
 
+/**
+ * The utility row. Each one is an editorial page (`public.pages`), so a plain
+ * click opens it in the support sheet over the current screen while the href
+ * stays a real, indexable route for crawlers and for cmd-click.
+ */
 export const HEADER_UTILITY_LINKS = [
-  { href: '/kako-funkcionise', label: 'Kako funkcioniše' },
-  { href: '/garancija', label: 'Garancija' },
-  { href: '/faq', label: 'Česta pitanja' },
-  { href: '/contact', label: 'Kontakt' },
+  { href: '/support/how-it-works', label: 'Kako funkcioniše' },
+  { href: '/support/guarantee', label: 'Garancija' },
+  { href: '/support/faq', label: 'Česta pitanja' },
+  { href: '/support/contact', label: 'Kontakt' },
 ] as const
 
 /** Desktop header search is centered and capped; it does not fill leftover space. */

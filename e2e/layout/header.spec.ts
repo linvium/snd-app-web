@@ -200,7 +200,7 @@ test.describe('header layout', () => {
   test('desktop search bar is centered and capped instead of filling the row', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
 
-    for (const path of ['/search', '/faq']) {
+    for (const path of ['/search', '/support/faq']) {
       await page.goto(path)
       const main = await page.getByTestId('header-main').boundingBox()
       const search = await page.getByTestId('header-search').boundingBox()
@@ -228,14 +228,38 @@ test.describe('header layout', () => {
     ).toBe(false)
   })
 
-  test('utility pages render', async ({ page }) => {
-    await page.goto('/kako-funkcionise')
-    await expect(page.getByRole('heading', { name: 'Kako funkcioniše' })).toBeVisible()
+  test('utility pages render as their own routes', async ({ page }) => {
+    await page.goto('/support/how-it-works')
+    await expect(page.getByRole('heading', { name: 'Kako funkcioniše', level: 1 })).toBeVisible()
 
+    await page.goto('/support/faq')
+    await expect(page.getByRole('heading', { name: 'Česta pitanja', level: 1 })).toBeVisible()
+
+    await page.goto('/support/contact')
+    await expect(page.getByRole('heading', { name: 'Kontakt', level: 1 })).toBeVisible()
+  })
+
+  test('old utility URLs redirect to /support', async ({ page }) => {
     await page.goto('/faq')
-    await expect(page.getByRole('heading', { name: 'Česta pitanja' })).toBeVisible()
+    await expect(page).toHaveURL(/\/support\/faq$/)
 
     await page.goto('/contact')
-    await expect(page.getByRole('heading', { name: 'Kontakt' })).toBeVisible()
+    await expect(page).toHaveURL(/\/support\/contact$/)
+  })
+
+  test('a utility link opens the support sheet instead of leaving the page', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/search')
+
+    await page.getByTestId('header-utility-nav').getByRole('link', { name: 'Garancija' }).click()
+
+    const sheet = page.getByTestId('support-sheet')
+    await expect(sheet).toBeVisible()
+    await expect(sheet.getByRole('heading', { name: 'Garancija', level: 1 })).toBeVisible()
+    await expect(page).toHaveURL(/\/search/)
+
+    await page.keyboard.press('Escape')
+    await expect(sheet).toBeHidden()
+    await expect(page).toHaveURL(/\/search/)
   })
 })

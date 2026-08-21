@@ -116,16 +116,27 @@ test.describe('publish listing', () => {
     await expect(page).toHaveURL(/\/profile\/listings\/?(?:\?.*)?$/)
   })
 
-  test('garancija i predaja otvaraju se u novom tabu', async ({ page }) => {
+  test('garancija i predaja otvaraju se u panelu bez napustanja forme', async ({ page }) => {
     await start(page)
     await pickFirstLeafCategory(page)
-    const guarantee = page.getByTestId('guarantee-link')
-    await expect(guarantee).toHaveAttribute('href', '/garancija')
-    await expect(guarantee).toHaveAttribute('target', '_blank')
 
-    const pickup = page.getByTestId('pickup-help-link')
-    await expect(pickup).toHaveAttribute('href', '/pomoc/predaja')
-    await expect(pickup).toHaveAttribute('target', '_blank')
+    const guarantee = page.getByTestId('guarantee-link')
+    await expect(guarantee).toHaveAttribute('href', '/support/guarantee')
+    await expect(page.getByTestId('pickup-help-link')).toHaveAttribute(
+      'href',
+      '/support/pickup-and-return'
+    )
+
+    await guarantee.click()
+    const sheet = page.getByTestId('support-sheet')
+    await expect(sheet).toBeVisible()
+    await expect(sheet.getByRole('heading', { name: 'Garancija', level: 1 })).toBeVisible()
+
+    // The form is still there underneath, and the URL never moved.
+    await sheet.getByRole('button', { name: 'Zatvori' }).click()
+    await expect(sheet).toBeHidden()
+    await expect(visible(page, 'publish-form')).toBeVisible()
+    await expect(page).toHaveURL(/\/profile\/listings\/new/)
   })
 
   test('stari create URL radi redirect', async ({ page }) => {

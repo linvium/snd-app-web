@@ -51,7 +51,7 @@ export default function GuaranteeCard({
         ) : null}
 
         <Link
-          href="/guarantee"
+          href="/support/guarantee"
           className="mt-2 inline-block text-sm font-semibold text-brand-700 no-underline hover:underline"
         >
           Kako radi garancija →

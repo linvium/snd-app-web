@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/context/AuthContext'
 import { QueryProvider } from '@/providers/QueryProvider'
+import { SupportSheetProvider } from '@/components/pages/SupportSheetProvider'
 import { Toaster } from '@/components/ui/sonner'
 import { cn } from '@/lib/utils'
 import './globals.css'
@@ -53,7 +54,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={cn(inter.className, 'font-sans antialiased')}>
         <QueryProvider>
           <AuthProvider>
-            {children}
+            {/* Help opens over whatever the reader is doing, on every screen -
+                including auth and the KYC flow, which sit outside (main). */}
+            <SupportSheetProvider>{children}</SupportSheetProvider>
             <Toaster />
           </AuthProvider>
         </QueryProvider>

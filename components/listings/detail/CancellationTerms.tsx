@@ -50,7 +50,7 @@ export default function CancellationTerms({ policy }: { policy: CancellationPoli
       </ul>
 
       <Link
-        href="/cancellation-policy"
+        href="/support/cancellation-policy"
         className="mt-3 inline-block text-sm font-semibold text-brand-700 no-underline hover:underline"
       >
         Više o pravilima otkazivanja →
