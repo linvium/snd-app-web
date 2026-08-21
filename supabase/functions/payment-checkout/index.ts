@@ -16,6 +16,34 @@ import { resolveProvider } from '../_shared/payments/index.ts'
  * webhook that arrives before the browser does still has something to match.
  */
 
+/**
+ * Config problems, as opposed to a provider having a bad minute.
+ *
+ * An unset key never reaches the provider; a wrong one comes back as an
+ * authentication error. Both mean somebody has to fix a secret before any
+ * payment on this deployment can succeed.
+ */
+function isMisconfigured(error: unknown, message: string): boolean {
+  const type = (error as { type?: string } | null)?.type
+  const status = (error as { statusCode?: number } | null)?.statusCode
+  return (
+    message.includes('is not set') ||
+    type === 'StripeAuthenticationError' ||
+    type === 'StripePermissionError' ||
+    status === 401 ||
+    status === 403
+  )
+}
+
+/**
+ * Card networks have a floor - Stripe's is about $0.50 equivalent - and a
+ * booking cheaper than that cannot be taken by card at all.
+ */
+function isAmountTooSmall(error: unknown, message: string): boolean {
+  const code = (error as { code?: string } | null)?.code
+  return code === 'amount_too_small' || message.includes('must convert to at least')
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -137,14 +165,27 @@ Deno.serve(async (req) => {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'checkout failed'
+
     // Too little of the link's life left for the provider's minimum session.
     if (message.includes('LINK_EXPIRING')) {
       return jsonResponse({ error: 'EXPIRED' }, 410, corsHeaders)
     }
-    if (message.includes('is not set')) {
-      console.error('payment-checkout: provider not configured', message)
+
+    // Under the provider's floor for a card charge. A property of this booking's
+    // total, not a bad moment - the renter retrying changes nothing.
+    if (isAmountTooSmall(error, message)) {
+      console.error('payment-checkout: amount below provider minimum -', message)
+      return jsonResponse({ error: 'AMOUNT_TOO_SMALL' }, 422, corsHeaders)
+    }
+
+    // A missing key and a rejected key are the same fact to the renter:
+    // payments are not configured. Neither is worth a retry, so neither gets
+    // the "try again" of a 502. The log line names which one it was.
+    if (isMisconfigured(error, message)) {
+      console.error('payment-checkout: provider not configured -', message)
       return jsonResponse({ error: 'PAYMENTS_UNAVAILABLE' }, 503, corsHeaders)
     }
+
     console.error('payment-checkout: provider error', error)
     return jsonResponse({ error: 'PROVIDER_ERROR', detail: message }, 502, corsHeaders)
   }

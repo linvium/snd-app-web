@@ -295,6 +295,15 @@ export async function startPaymentCheckout(
         ),
       }
     }
+    if (status === 422) {
+      return {
+        response: apiError(
+          422,
+          ERROR_CODES.VALIDATION_FAILED,
+          'Iznos je premali za plaćanje karticom. Javi se vlasniku da dogovorite duži termin.'
+        ),
+      }
+    }
     if (status === 503) {
       return {
         response: apiError(503, ERROR_CODES.INTERNAL, 'Plaćanje trenutno nije dostupno. Javi se podršci.'),

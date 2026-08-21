@@ -54,10 +54,13 @@ Checkout is hosted and card-only, so no card data and no publishable key ever
 reach an SND page. Sessions are clamped to the payment link's own deadline,
 which is why the link must have at least 30 minutes left for a checkout to open.
 
-**Before going live, confirm Stripe supports the billing entity and RSD.** The
-amount is passed straight through in minor units (para), which is right for a
-two-decimal currency; a currency Stripe does not support will fail loudly at
-`checkout.sessions.create` rather than mischarge.
+RSD works: Stripe treats it as a two-decimal currency, so `amount_minor` (para)
+passes straight through — `176000` is charged as РСД1.760,00. Still confirm
+Stripe supports your billing entity before going live.
+
+**Card charges have a floor of roughly $0.50 equivalent**, about 55-60 RSD. A
+booking under it comes back as `AMOUNT_TOO_SMALL` (422) and cannot be paid by
+card at all — worth remembering when testing against cheap seed listings.
 
 A refused card does not end the reservation: `snd_record_payment_failure`
 records the attempt, clears the session so a retry opens a fresh one, and leaves
