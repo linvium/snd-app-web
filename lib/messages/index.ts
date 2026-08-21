@@ -1,6 +1,8 @@
 export { messagesService } from './messages.service'
 export { conversationKeys } from './messages.query'
 export { REQUESTS_PATH, requestThreadPath } from './messages.paths'
+export { bookingSteps, bookingStageIndex, formatTicketDate } from './booking-steps'
+export type { BookingStep, BookingStepState } from './booking-steps'
 export {
   CONVERSATION_TABS,
   QUICK_REPLIES,

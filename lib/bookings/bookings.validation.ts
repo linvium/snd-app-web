@@ -1,4 +1,5 @@
-import { MESSAGE_MAX, MESSAGE_MIN } from '@/types/booking'
+import { MESSAGE_MAX, MESSAGE_MIN, REVIEW_COMMENT_MAX } from '@/types/booking'
+import type { BookingResponseAction, SubmitBookingReviewInput } from '@/types/booking'
 import { inclusiveDaysCount, isIsoDate, utcTodayIso } from '@/lib/bookings/bookings.helpers'
 
 const UUID_RE =
@@ -54,8 +55,31 @@ export function validateMessageBody(body: string | undefined): string | null {
   return null
 }
 
-export function isBookingResponseAction(value: unknown): value is 'accept' | 'decline' | 'propose' {
-  return value === 'accept' || value === 'decline' || value === 'propose'
+const RESPONSE_ACTIONS: readonly BookingResponseAction[] = [
+  'accept',
+  'decline',
+  'propose',
+  'mark_picked_up',
+  'mark_returned',
+]
+
+export function isBookingResponseAction(value: unknown): value is BookingResponseAction {
+  return RESPONSE_ACTIONS.includes(value as BookingResponseAction)
+}
+
+export function validateReviewInput(input: SubmitBookingReviewInput): Record<string, string> {
+  const fields: Record<string, string> = {}
+
+  if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5) {
+    fields.rating = 'Izaberi ocenu od 1 do 5.'
+  }
+
+  const comment = input.comment?.trim() ?? ''
+  if (comment.length > REVIEW_COMMENT_MAX) {
+    fields.comment = `Komentar može imati najviše ${REVIEW_COMMENT_MAX} karaktera.`
+  }
+
+  return fields
 }
 
 export function validateProposedDates(startDate: string | null, endDate: string | null): string | null {

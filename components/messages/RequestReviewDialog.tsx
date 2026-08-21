@@ -61,6 +61,7 @@ function RequestReviewActions({
   error,
   mode,
   canSubmitPropose,
+  canAccept,
   onAccept,
   onDecline,
   onOpenPropose,
@@ -73,6 +74,7 @@ function RequestReviewActions({
   error: string | null
   mode: 'review' | 'propose'
   canSubmitPropose: boolean
+  canAccept: boolean
   onAccept: () => void
   onDecline: () => void
   onOpenPropose: () => void
@@ -90,13 +92,18 @@ function RequestReviewActions({
         <>
           <Button
             data-testid="request-accept"
-            disabled={busy}
+            disabled={busy || !canAccept}
             loading={acceptPending}
             onClick={onAccept}
             className="h-11 bg-brand-500 hover:bg-brand-600"
           >
             Prihvati zahtev
           </Button>
+          {!canAccept ? (
+            <p className="m-0 text-[12.5px] text-muted-foreground">
+              Prihvatanje šalje link za plaćanje, pa prvo predloži datume.
+            </p>
+          ) : null}
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="secondary"
@@ -359,6 +366,7 @@ export function RequestReviewDialog({
       error={error}
       mode={mode}
       canSubmitPropose={Boolean(from && to)}
+      canAccept={Boolean(booking.start_date && booking.end_date)}
       onAccept={() => handleRespond('accept')}
       onDecline={() => handleRespond('decline')}
       onOpenPropose={() => {

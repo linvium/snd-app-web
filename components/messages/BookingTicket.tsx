@@ -87,6 +87,9 @@ export function BookingTicket({
   const ownerPending = role === 'owner' && booking.status === 'requested'
   const money = ownerPending ? ownerReviewMoney(booking, listing) : null
   const showActions = ownerPending && onAccept && onDecline && onPropose
+  // Accepting mints a payment link, and there is nothing to charge for a term
+  // nobody agreed on - so a dateless request offers a proposal, not a yes.
+  const hasDates = Boolean(booking.start_date && booking.end_date)
 
   return (
     <article
@@ -223,15 +226,21 @@ export function BookingTicket({
                 {actionError}
               </p>
             ) : null}
-            <Button
-              size="sm"
-              data-testid="request-card-accept"
-              disabled={actionBusy}
-              onClick={onAccept}
-              className="bg-brand-500 hover:bg-brand-600"
-            >
-              Prihvati zahtev
-            </Button>
+            {hasDates ? (
+              <Button
+                size="sm"
+                data-testid="request-card-accept"
+                disabled={actionBusy}
+                onClick={onAccept}
+                className="bg-brand-500 hover:bg-brand-600"
+              >
+                Prihvati zahtev
+              </Button>
+            ) : (
+              <p className="m-0 w-full text-[12.5px] text-muted-foreground">
+                Predloži datume da bi zahtev mogao da bude prihvaćen.
+              </p>
+            )}
             <Button
               size="sm"
               variant="secondary"

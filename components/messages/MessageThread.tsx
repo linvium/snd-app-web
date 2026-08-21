@@ -14,7 +14,10 @@ import {
   XIcon,
 } from 'lucide-react'
 
+import { BookingStageActions } from '@/components/messages/BookingStageActions'
 import { BookingTicket } from '@/components/messages/BookingTicket'
+import { LeaveReviewDialog } from '@/components/messages/LeaveReviewDialog'
+import { PaymentLinkCard } from '@/components/messages/PaymentLinkCard'
 import { PendingRequestBanner, RequestReviewDialog } from '@/components/messages/RequestReviewDialog'
 import { ThreadDetailPanel } from '@/components/messages/ThreadDetailPanel'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -86,6 +89,7 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [reviewOpen, setReviewOpen] = useState(false)
   const [reviewMode, setReviewMode] = useState<'review' | 'propose'>('review')
+  const [ratingOpen, setRatingOpen] = useState(false)
   const listRef = useRef<HTMLOListElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const lastMessageId = thread.data?.messages.at(-1)?.id
@@ -259,6 +263,14 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
           <PendingRequestBanner booking={booking} onReview={() => openReview('review')} />
         ) : null}
 
+        {booking ? (
+          <BookingStageActions
+            booking={booking}
+            role={conversation.viewer_role}
+            onReview={() => setRatingOpen(true)}
+          />
+        ) : null}
+
         <ol
           ref={listRef}
           className="snd-thin-scroll m-0 flex min-h-0 flex-1 list-none flex-col gap-3 overflow-y-auto p-4"
@@ -297,6 +309,12 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
                       onPropose={awaitingOwner ? () => openReview('propose') : undefined}
                     />
                   ) : null
+                ) : presentation === 'payment_card' ? (
+                  <PaymentLinkCard
+                    message={message}
+                    booking={booking}
+                    role={conversation.viewer_role}
+                  />
                 ) : presentation === 'system' ? (
                   <p
                     data-testid="system-message"
@@ -435,6 +453,16 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
             <ThreadDetailPanel conversation={conversation} />
           </div>
         </div>
+      ) : null}
+
+      {booking ? (
+        <LeaveReviewDialog
+          open={ratingOpen}
+          onOpenChange={setRatingOpen}
+          bookingId={booking.id}
+          partyName={partyName}
+          listingTitle={listing.title}
+        />
       ) : null}
 
       {awaitingOwner && booking ? (

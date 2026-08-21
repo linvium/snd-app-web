@@ -97,8 +97,8 @@ export async function loadListingDetail(
       )
       .eq('user_id', ownerId)
       .maybeSingle(),
-    // Availability is one readable table: a trigger mirrors accepted, paid and
-    // running bookings into `blocked_dates` (doc 00 §6.4), so the public
+    // Availability is one readable table: a trigger mirrors accepted, booked and
+    // picked-up bookings into `blocked_dates` (doc 00 §6.4), so the public
     // calendar never has to read `bookings`.
     supabase
       .from('blocked_dates')
@@ -121,7 +121,7 @@ export async function loadListingDetail(
           .select('pickup_location_id')
           .eq('listing_id', listingId)
           .eq('renter_id', viewer.id)
-          .in('status', ['paid', 'in_progress'])
+          .in('status', ['booked', 'picked_up'])
       : Promise.resolve({ data: [] }),
   ])
 

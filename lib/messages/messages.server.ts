@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { apiError, ERROR_CODES } from '@/lib/api/response'
 import { validateMessageBody } from '@/lib/bookings/bookings.validation'
 import { conversationPartyLabel, sortConversationsForInbox } from '@/lib/messages/messages.helpers'
+import type { BookingPaymentLink } from '@/types/booking'
 import type {
   ConversationBookingSummary,
   ConversationSummary,
@@ -45,8 +46,15 @@ async function hydrateConversations(
   const bookingIds = rows.map((row) => row.booking_id).filter((id): id is string => Boolean(id))
   const otherIds = [...new Set(rows.map((row) => (row.renter_id === userId ? row.owner_id : row.renter_id)))]
 
-  const [{ data: listings }, { data: images }, { data: parties }, { data: partyProfiles }, { data: bookings }] =
-    await Promise.all([
+  const [
+    { data: listings },
+    { data: images },
+    { data: parties },
+    { data: partyProfiles },
+    { data: bookings },
+    { data: paymentLinks },
+    { data: viewerReviews },
+  ] = await Promise.all([
     supabase
       .from('listings')
       .select('id, title, slug, price_1_day_minor, item_value_minor')
@@ -69,9 +77,25 @@ async function hydrateConversations(
       ? supabase
           .from('bookings')
           .select(
-            'id, reference, start_date, end_date, days_count, status, rental_price_minor, total_minor, requested_at'
+            'id, reference, start_date, end_date, days_count, status, rental_price_minor, total_minor, requested_at, accepted_at, booked_at, picked_up_at, returned_at, rated_at'
           )
           .in('id', bookingIds)
+      : Promise.resolve({ data: [] }),
+    // The live link is what the renter needs and what the owner is waiting on,
+    // so it travels with the booking rather than being dug out of a message.
+    bookingIds.length > 0
+      ? supabase
+          .from('booking_payment_links')
+          .select('booking_id, token, status, amount_minor, expires_at, paid_at')
+          .in('booking_id', bookingIds)
+          .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] }),
+    bookingIds.length > 0
+      ? supabase
+          .from('reviews')
+          .select('booking_id')
+          .in('booking_id', bookingIds)
+          .eq('author_id', userId)
       : Promise.resolve({ data: [] }),
   ])
 
@@ -104,6 +128,32 @@ async function hydrateConversations(
       conversation_count: number | null
     }>).map((row) => [row.user_id, row])
   )
+  // Newest first from the query, so the first row per booking is the current
+  // link and older cancelled ones never shadow it.
+  const linkByBooking = new Map<string, BookingPaymentLink>()
+  for (const row of (paymentLinks ?? []) as Array<{
+    booking_id: string
+    token: string
+    status: BookingPaymentLink['status']
+    amount_minor: number
+    expires_at: string
+    paid_at: string | null
+  }>) {
+    if (!linkByBooking.has(row.booking_id)) {
+      linkByBooking.set(row.booking_id, {
+        token: row.token,
+        status: row.status,
+        amount_minor: row.amount_minor,
+        expires_at: row.expires_at,
+        paid_at: row.paid_at,
+      })
+    }
+  }
+
+  const reviewedBookings = new Set(
+    ((viewerReviews ?? []) as Array<{ booking_id: string }>).map((row) => row.booking_id)
+  )
+
   const bookingById = new Map(
     (bookings ?? []).map((row) => [
       row.id as string,
@@ -117,6 +167,13 @@ async function hydrateConversations(
         rental_price_minor: (row.rental_price_minor as number | null) ?? null,
         total_minor: (row.total_minor as number | null) ?? null,
         requested_at: (row.requested_at as string | null) ?? null,
+        accepted_at: (row.accepted_at as string | null) ?? null,
+        booked_at: (row.booked_at as string | null) ?? null,
+        picked_up_at: (row.picked_up_at as string | null) ?? null,
+        returned_at: (row.returned_at as string | null) ?? null,
+        rated_at: (row.rated_at as string | null) ?? null,
+        payment_link: linkByBooking.get(row.id as string) ?? null,
+        viewer_has_reviewed: reviewedBookings.has(row.id as string),
       } satisfies ConversationBookingSummary,
     ])
   )
