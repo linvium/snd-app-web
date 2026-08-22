@@ -1,11 +1,13 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import Footer from '@/components/layout/Footer'
 import Header from '@/components/layout/Header'
 import ManagerHeader from '@/components/layout/ManagerHeader'
 import BottomNav from '@/components/layout/BottomNav'
 import { isListingPublishPath } from '@/lib/listings/listings.paths'
 import { isLandingHomepage } from '@/lib/home/homepage-mode'
+import { footerIsVisible } from '@/lib/layout/footer.helpers'
 import { HEADER_HERO_OVERLAP_CLASS, headerOverlaysHero } from '@/lib/layout/header.helpers'
 import { isManagerPath, isRequestThreadPath } from '@/lib/profiles'
 import { cn } from '@/lib/utils'
@@ -56,6 +58,9 @@ export default function MainFrame({ children }: { children: React.ReactNode }) {
         )}
       >
         {children}
+        {/* Inside the padded wrapper: on a phone the bottom nav is fixed over
+            the page, and a footer outside it would end underneath the bar. */}
+        {footerIsVisible(pathname) ? <Footer /> : null}
       </div>
       {isPublishFlow ? null : <BottomNav />}
     </div>

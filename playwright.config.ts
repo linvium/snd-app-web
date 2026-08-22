@@ -55,6 +55,7 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
       testMatch: [
         '**/layout/header.spec.ts',
+        '**/layout/footer.spec.ts',
         '**/search/dates.spec.ts',
         '**/search/layout.spec.ts',
         '**/home/listings.spec.ts',
