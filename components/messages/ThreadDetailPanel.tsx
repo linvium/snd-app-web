@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { CheckIcon, ImageIcon, ShieldCheckIcon } from 'lucide-react'
 
-import { bookingSteps, formatTicketDate } from '@/lib/messages/booking-steps'
+import { bookingSteps } from '@/lib/messages/booking-steps'
 import { formatPriceMinor } from '@/lib/search/search.helpers'
 import { cn } from '@/lib/utils'
 import type { ConversationSummary } from '@/types'
@@ -97,11 +97,6 @@ export function ThreadDetailPanel({ conversation }: { conversation: Conversation
               </li>
             ))}
           </ol>
-          {booking?.start_date && booking.end_date ? (
-            <p className="mt-3 mb-0 text-[12px] text-muted-foreground">
-              {formatTicketDate(booking.start_date)} - {formatTicketDate(booking.end_date)}
-            </p>
-          ) : null}
         </section>
       ) : null}
 

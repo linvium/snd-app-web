@@ -64,12 +64,26 @@ export default function LandingHome() {
 
       <main className="relative flex flex-1 flex-col">
         <section className="px-5 pt-10 pb-8 text-center md:pt-14 md:pb-10">
-          <h1 className="m-0 mt-4 text-[clamp(36px,9vw,64px)] leading-[0.95] font-normal tracking-[-0.045em] text-[#001a36]">
-            IZNAJMI<span className="text-[#f0b010]">.</span> KORISTI<span className="text-[#209080]">.</span>{' '}
-            VRATI<span className="text-[#e8703a]">.</span>
+          <h1 className="m-0 mt-4 flex flex-col items-center gap-4 text-[clamp(30px,7.6vw,56px)] md:gap-5 leading-[0.95] font-normal tracking-[-0.045em] text-[#001a36]">
+            <span>
+              IZNAJMI<span className="text-[#f0b010]">.</span> KORISTI<span className="text-[#209080]">.</span>{' '}
+              VRATI<span className="text-[#e8703a]">.</span>
+            </span>
+            <span
+              aria-hidden
+              className="flex w-full max-w-[280px] items-center gap-3 text-[12px] leading-none font-medium tracking-[0.3em] uppercase text-[#001a36]/40"
+            >
+              <span className="h-px flex-1 bg-[#001a36]/12" />
+              ili
+              <span className="h-px flex-1 bg-[#001a36]/12" />
+            </span>
+            <span className="text-[#001a36]/45">
+              OBJAVI<span className="text-[#f0b010]/70">.</span> IZDAJ<span className="text-[#209080]/70">.</span>{' '}
+              ZARADI<span className="text-[#e8703a]/70">.</span>
+            </span>
           </h1>
-          <p className="mx-auto mt-5 max-w-[440px] text-[17px] leading-relaxed text-[#001a36]/65">
-            Stvari od ljudi iz tvog kraja. Jeftino, sigurno, garantovano.
+          <p className="mx-auto mt-5 max-w-[460px] text-[17px] leading-relaxed text-[#001a36]/65">
+            Stvari od ljudi iz tvog kraja. Uzmi šta ti treba, zaradi od onoga što ti stoji.
           </p>
         </section>
 

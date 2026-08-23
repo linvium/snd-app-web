@@ -39,7 +39,7 @@ const ACCOUNT_MENU_ITEMS = [
   { href: MANAGER_LISTINGS, label: 'Moji oglasi' },
   { href: MANAGER_REQUESTS, label: 'Zahtevi' },
   { href: MANAGER_FAVORITES, label: 'Omiljeni' },
-  { href: MANAGER_SETTINGS, label: 'Podešavanja' },
+  { href: MANAGER_SETTINGS, label: 'Opcije' },
 ] as const
 
 export default function Header() {

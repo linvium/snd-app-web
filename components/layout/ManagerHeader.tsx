@@ -105,7 +105,7 @@ export default function ManagerHeader({ hiddenOnMobile = false }: { hiddenOnMobi
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" sideOffset={8} className="w-[220px] p-2">
               <DropdownMenuItem asChild className="px-3 py-2.5 text-sm font-medium">
-                <Link href={MANAGER_SETTINGS}>Podešavanja</Link>
+                <Link href={MANAGER_SETTINGS}>Opcije</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="px-3 py-2.5 text-sm font-medium">
                 <Link href="/">Nazad na sajt</Link>

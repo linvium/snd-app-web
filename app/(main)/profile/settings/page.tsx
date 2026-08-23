@@ -15,12 +15,12 @@ export default function SettingsIndexPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="m-0 hidden text-[22px] font-normal text-foreground lg:block">Podešavanja</h1>
+      <h1 className="m-0 hidden text-[22px] font-normal text-foreground lg:block">Opcije</h1>
 
       <VerificationBox status={kyc?.status ?? null} />
 
       <nav
-        aria-label="Podešavanja"
+        aria-label="Opcije"
         className="overflow-hidden rounded-xl border border-border bg-card"
       >
         {SETTINGS_NAV.map((item, index) => (

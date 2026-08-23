@@ -37,7 +37,7 @@ export const MANAGER_NAV: readonly ManagerNavItem[] = [
   { key: 'listings', href: MANAGER_LISTINGS, label: 'Oglasi' },
   { key: 'requests', href: MANAGER_REQUESTS, label: 'Zahtevi', counter: 'unread' },
   { key: 'favorites', href: MANAGER_FAVORITES, label: 'Omiljeni' },
-  { key: 'settings', href: MANAGER_SETTINGS, label: 'Podešavanja', footer: true },
+  { key: 'settings', href: MANAGER_SETTINGS, label: 'Opcije'},
 ] as const
 
 export interface SettingsNavItem {
