@@ -39,7 +39,7 @@ export default function HomeScreen() {
             <span className="text-white/55">OBJAVI. IZDAJ. ZARADI.</span>
           </h1>
           <p className="mb-8 max-w-[440px] text-[17px] leading-normal text-white/80">
-            Stvari od ljudi iz tvog kraja. Uzmi šta ti treba, zaradi od onoga što ti stoji.
+            Pozajmi šta ti treba, zaradi od onoga što ti stoji.
           </p>
 
           <div className="mb-8 w-full text-left">

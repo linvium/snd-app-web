@@ -83,7 +83,7 @@ export default function LandingHome() {
             </span>
           </h1>
           <p className="mx-auto mt-5 max-w-[460px] text-[17px] leading-relaxed text-[#001a36]/65">
-            Stvari od ljudi iz tvog kraja. Uzmi šta ti treba, zaradi od onoga što ti stoji.
+            Pozajmi šta ti treba, zaradi od onoga što ti stoji.
           </p>
         </section>
 
