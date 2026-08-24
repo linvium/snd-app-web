@@ -33,7 +33,8 @@ export function formatMemberSince(iso: string): string {
       month: 'long',
       year: 'numeric',
     }).format(new Date(iso))
-    return `Član od ${monthYear}.`
+    // sr-Latn already ends the month/year with a period; appending one gives "2026..".
+    return `Član od ${monthYear.replace(/\.$/, '')}.`
   } catch {
     return ''
   }

@@ -191,12 +191,9 @@ export function CategoryStep({
               : 'Pokriće zavisi od kategorije.'}
           </p>
           <Button variant="link" className="h-auto p-0 text-[13px]" asChild>
-            <a
-              href="/garancija"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-testid="guarantee-link"
-            >
+            {/* No target="_blank" any more: the support sheet opens over the
+                form, which is what the new tab was working around. */}
+            <a href="/support/guarantee" data-testid="guarantee-link">
               Više o garanciji →
             </a>
           </Button>

@@ -10,7 +10,9 @@ export function useConversations(enabled = true) {
     queryKey: conversationKeys.list(),
     queryFn: ({ signal }) => messagesService.listConversations(signal),
     enabled,
-    staleTime: 10 * 1000,
+    staleTime: 5 * 1000,
+    refetchInterval: 5 * 1000,
+    refetchOnWindowFocus: true,
   })
 }
 

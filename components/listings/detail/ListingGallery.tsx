@@ -17,6 +17,13 @@ function altFor(title: string, index: number, total: number): string {
 }
 
 /**
+ * Thumbnails past this point collapse into a "+N" tile. Five is where a strip
+ * of previews stops being scannable and starts being a filmstrip that hides
+ * part of the photo it is sitting on.
+ */
+const MAX_THUMBS = 5
+
+/**
  * The gallery (doc 04 §3).
  *
  * Desktop lays out a mosaic whose shape follows the image count — one big, or
@@ -30,6 +37,7 @@ function altFor(title: string, index: number, total: number): string {
  */
 export default function ListingGallery({ images, title }: ListingGalleryProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [heroIndex, setHeroIndex] = useState(0)
   const [visibleIndex, setVisibleIndex] = useState(0)
   const stripRef = useRef<HTMLDivElement>(null)
 
@@ -45,6 +53,12 @@ export default function ListingGallery({ images, title }: ListingGalleryProps) {
     },
     [total]
   )
+
+  // Arrowing through the overlay moves the hero behind it, so closing lands on
+  // the photo you were actually looking at rather than snapping back.
+  useEffect(() => {
+    if (lightboxIndex !== null) setHeroIndex(lightboxIndex)
+  }, [lightboxIndex])
 
   useEffect(() => {
     if (!isOpen) return
@@ -119,63 +133,82 @@ export default function ListingGallery({ images, title }: ListingGalleryProps) {
         ) : null}
       </div>
 
-      {/* Desktop mosaic. */}
-      <div
-        className={cn(
-          'relative hidden overflow-hidden rounded-xl md:grid md:gap-2',
-          total === 1 && 'md:grid-cols-1',
-          total === 2 && 'md:grid-cols-2',
-          total === 3 && 'md:grid-cols-2 md:grid-rows-2',
-          total >= 4 && 'md:grid-cols-4 md:grid-rows-2'
-        )}
-      >
-        {images.slice(0, total >= 5 ? 5 : total).map((image, index) => (
-          <button
-            key={image.id}
-            type="button"
-            onClick={() => setLightboxIndex(index)}
-            aria-label={`Otvori ${altFor(title, index, total)}`}
-            className={cn(
-              'group relative cursor-pointer overflow-hidden border-none bg-muted p-0',
-              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400',
-              total === 1 && 'aspect-[2/1]',
-              total === 2 && 'aspect-4/3',
-              // Three images: one tall on the left, two stacked on the right.
-              total === 3 && index === 0 && 'row-span-2 aspect-auto',
-              total === 3 && index > 0 && 'aspect-4/3',
-              total >= 4 && index === 0 && 'col-span-2 row-span-2 aspect-auto',
-              total >= 4 && index > 0 && 'aspect-4/3'
-            )}
-          >
-            <Image
-              src={index === 0 ? image.large_url : image.medium_url}
-              alt={altFor(title, index, total)}
-              fill
-              sizes={index === 0 ? '(max-width: 1023px) 100vw, 50vw' : '25vw'}
-              priority={index === 0}
-              fetchPriority={index === 0 ? 'high' : undefined}
-              loading={index === 0 ? undefined : 'lazy'}
-              className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-            />
+      {/* Desktop: one photo at full size with the others as previews laid over
+          its foot. The mosaic gave five photos equal billing and cropped four
+          of them to do it - here the item is shown once, properly, and the
+          strip is a way in rather than a second subject competing with it. */}
+      <div className="relative hidden overflow-hidden rounded-xl bg-muted md:block">
+        <button
+          type="button"
+          onClick={() => setLightboxIndex(heroIndex)}
+          aria-label={`Otvori ${altFor(title, heroIndex, total)} preko celog ekrana`}
+          className="group relative block aspect-[2/1] w-full cursor-pointer border-none bg-muted p-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-400"
+        >
+          <Image
+            key={images[heroIndex].id}
+            src={images[heroIndex].large_url}
+            alt={altFor(title, heroIndex, total)}
+            fill
+            // From lg up the gallery lives in the left column (~728px), not the
+            // full page width, so a viewport-relative hint over-fetches.
+            sizes="(max-width: 1023px) 100vw, 728px"
+            priority={heroIndex === 0}
+            fetchPriority={heroIndex === 0 ? 'high' : undefined}
+            className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+          />
 
-            {/* The overflow badge sits on the last visible tile. */}
-            {total > 5 && index === 4 ? (
-              <span className="absolute inset-0 grid place-items-center bg-zinc-900/55 text-lg font-semibold text-white">
-                +{total - 5}
-              </span>
-            ) : null}
-          </button>
-        ))}
+          <span className="pointer-events-none absolute top-3 right-3 flex items-center gap-1.5 rounded-lg bg-zinc-900/65 px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+            <GridIcon className="size-3.5" aria-hidden />
+            {total > 1 ? 'Prikaži sve slike' : 'Uvećaj'}
+          </span>
+        </button>
 
         {total > 1 ? (
-          <button
-            type="button"
-            onClick={() => setLightboxIndex(0)}
-            className="absolute right-4 bottom-4 flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-[13px] font-semibold text-zinc-800 shadow-sm transition-colors hover:bg-zinc-50"
-          >
-            <GridIcon className="size-4" aria-hidden />
-            Prikaži sve slike
-          </button>
+          // The scrim is inert so the whole photo stays clickable; only the
+          // tiles themselves take the pointer back.
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-zinc-950/65 to-transparent pt-12 pb-3">
+            <div className="pointer-events-auto flex items-center gap-2">
+              {images.slice(0, MAX_THUMBS).map((image, index) => {
+                // The last visible tile carries whatever is left behind it.
+                const hidden = total - MAX_THUMBS
+                const isOverflow = hidden > 0 && index === MAX_THUMBS - 1
+                const isCurrent = index === heroIndex && !isOverflow
+
+                return (
+                  <button
+                    key={image.id}
+                    type="button"
+                    onClick={() => (isOverflow ? setLightboxIndex(index) : setHeroIndex(index))}
+                    aria-label={
+                      isOverflow
+                        ? `Prikaži još ${hidden + 1} slika`
+                        : `Prikaži ${altFor(title, index, total)}`
+                    }
+                    aria-current={isCurrent}
+                    className={cn(
+                      'relative h-12 w-16 flex-none cursor-pointer overflow-hidden rounded-md border-2 bg-zinc-800 p-0 transition',
+                      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white',
+                      isCurrent ? 'border-white' : 'border-white/40 opacity-80 hover:opacity-100'
+                    )}
+                  >
+                    <Image
+                      src={image.thumbnail_url}
+                      alt=""
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                    />
+
+                    {isOverflow ? (
+                      <span className="absolute inset-0 grid place-items-center bg-zinc-950/65 text-sm font-semibold text-white">
+                        +{hidden + 1}
+                      </span>
+                    ) : null}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         ) : null}
       </div>
 

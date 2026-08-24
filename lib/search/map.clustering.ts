@@ -5,6 +5,13 @@ import type { MapPin } from '@/types/search'
 export const MAP_MIN_ZOOM = 6
 export const MAP_MAX_ZOOM = 17
 
+/** Light Carto Voyager basemap - pale streets and parks, closer to a simple map than OSM's default. */
+export const SEARCH_MAP_TILE_URL =
+  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+
+export const SEARCH_MAP_TILE_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+
 /**
  * Three clustering regimes, by zoom (doc 03 §9.2).
  *

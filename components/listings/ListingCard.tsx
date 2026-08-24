@@ -129,6 +129,7 @@ export default function ListingCard({
           <button
             type="button"
             onClick={handleFavorite}
+            data-testid="listing-card-favorite"
             aria-label={item.is_favorite ? 'Ukloni iz omiljenih' : 'Dodaj u omiljene'}
             aria-pressed={item.is_favorite}
             className="absolute top-2.5 right-2.5 grid size-8 cursor-pointer place-items-center rounded-full border-none bg-transparent text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400"

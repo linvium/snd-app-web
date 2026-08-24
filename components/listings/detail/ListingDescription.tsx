@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { InfoIcon } from 'lucide-react'
+import { FileTextIcon, InfoIcon } from 'lucide-react'
 
 import { prepareDescription } from '@/lib/listings'
 
@@ -20,7 +20,15 @@ export default function ListingDescription({ description }: { description: strin
 
   return (
     <section>
-      <h2 className="mt-0 mb-3 text-lg font-semibold text-card-foreground">Opis</h2>
+      <div className="mt-0 mb-3 flex items-center gap-2.5">
+        <span
+          aria-hidden
+          className="grid size-9 flex-none place-items-center rounded-lg bg-muted text-zinc-500"
+        >
+          <FileTextIcon className="size-[18px]" strokeWidth={1.8} />
+        </span>
+        <h2 className="m-0 text-base font-semibold text-card-foreground">Opis</h2>
+      </div>
 
       <p className="m-0 text-base leading-7 whitespace-pre-wrap text-foreground">
         {expanded || !isTruncated ? text : `${preview}…`}

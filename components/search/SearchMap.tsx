@@ -12,6 +12,8 @@ import {
   clusterSize,
   MAP_MAX_ZOOM,
   MAP_MIN_ZOOM,
+  SEARCH_MAP_TILE_ATTRIBUTION,
+  SEARCH_MAP_TILE_URL,
   type MapEntry,
 } from '@/lib/search/map.clustering'
 import { boundsCenter, boundsToRadiusKm, formatPriceMinor, type Coordinates } from '@/lib/search'
@@ -93,9 +95,10 @@ export default function SearchMap({
       attributionControl: true,
     })
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer(SEARCH_MAP_TILE_URL, {
       maxZoom: MAP_MAX_ZOOM,
-      attribution: '&copy; OpenStreetMap',
+      attribution: SEARCH_MAP_TILE_ATTRIBUTION,
+      subdomains: 'abcd',
     }).addTo(map)
 
     layerRef.current = L.layerGroup().addTo(map)

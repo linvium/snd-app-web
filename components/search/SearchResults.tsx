@@ -185,8 +185,9 @@ export default function SearchResults() {
 
       <div className="flex">
         <div
+          data-testid="search-list-panel"
           className={cn(
-            'w-full xl:w-[68%]',
+            'w-full min-w-0 xl:w-1/2',
             // On tablet the map replaces the list rather than sitting beside it.
             isTablet && tabletView === 'map' && 'hidden'
           )}
@@ -231,7 +232,7 @@ export default function SearchResults() {
                 <div
                   data-testid="search-results"
                   className={cn(
-                    'grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4',
+                    'grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4',
                     // Dim, do not blank, while a filter change is in flight.
                     results.isFetching && listings.length > 0 && 'opacity-60 transition-opacity'
                   )}
@@ -268,7 +269,12 @@ export default function SearchResults() {
 
         {/* Sticky, full window height minus the header (doc 03 §3.1). */}
         {isDesktopWide ? (
-          <aside className="sticky top-[160px] h-[calc(100vh-160px)] w-[32%] lg:top-[120px] lg:h-[calc(100vh-120px)]">{mapPanel}</aside>
+          <aside
+            data-testid="search-map-aside"
+            className="sticky top-[160px] h-[calc(100vh-160px)] w-1/2 shrink-0 p-3 pl-1 lg:top-[120px] lg:h-[calc(100vh-120px)]"
+          >
+            <div className="h-full overflow-hidden rounded-2xl">{mapPanel}</div>
+          </aside>
         ) : null}
 
         {isTablet && tabletView === 'map' ? (

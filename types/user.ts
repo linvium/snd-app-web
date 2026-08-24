@@ -49,6 +49,9 @@ export interface SndLocation {
   deleted_at: string | null
 }
 
+export const MAX_AVATAR_BYTES = 10 * 1024 * 1024
+export const AVATAR_SIZE_PX = 512
+
 export interface UpdateProfileInput {
   first_name?: string | null
   last_name?: string | null

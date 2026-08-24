@@ -26,11 +26,20 @@ export default function HomeScreen() {
         <div aria-hidden className="absolute inset-0 bg-black/45" />
 
         <div className="relative z-10 mx-auto flex h-full w-full max-w-[900px] flex-col items-center justify-center px-5 pt-24 pb-10 text-center">
-          <h1 className="mb-3 text-[clamp(28px,7vw,40px)] leading-[1.15] font-normal tracking-[-0.03em] text-white">
-            IZNAJMI. KORISTI. VRATI.
+          <h1 className="mb-3 flex flex-col items-center gap-3 text-[clamp(26px,6.4vw,38px)] leading-[1.1] font-normal tracking-[-0.03em] text-white">
+            <span>IZNAJMI. KORISTI. VRATI.</span>
+            <span
+              aria-hidden
+              className="flex w-full max-w-[240px] items-center gap-3 text-[11px] leading-none font-medium tracking-[0.3em] uppercase text-white/45"
+            >
+              <span className="h-px flex-1 bg-white/20" />
+              ili
+              <span className="h-px flex-1 bg-white/20" />
+            </span>
+            <span className="text-white/55">OBJAVI. IZDAJ. ZARADI.</span>
           </h1>
-          <p className="mb-8 max-w-[420px] text-[17px] leading-normal text-white/80">
-            Stvari od ljudi iz tvog kraja. Jeftino, sigurno, garantovano.
+          <p className="mb-8 max-w-[440px] text-[17px] leading-normal text-white/80">
+            Pozajmi šta ti treba, zaradi od onoga što ti stoji.
           </p>
 
           <div className="mb-8 w-full text-left">

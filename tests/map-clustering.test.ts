@@ -8,6 +8,8 @@ import {
   clusterSize,
   MAP_MAX_ZOOM,
   MAP_MIN_ZOOM,
+  SEARCH_MAP_TILE_ATTRIBUTION,
+  SEARCH_MAP_TILE_URL,
 } from '@/lib/search/map.clustering'
 import type { MapPin } from '@/types/search'
 
@@ -139,5 +141,13 @@ describe('boundsOf', () => {
 
   it('returns nothing when there is nothing to frame', () => {
     expect(boundsOf([])).toBeNull()
+  })
+})
+
+describe('search map tiles', () => {
+  it('uses the light Carto Voyager basemap instead of default OSM tiles', () => {
+    expect(SEARCH_MAP_TILE_URL).toContain('basemaps.cartocdn.com')
+    expect(SEARCH_MAP_TILE_URL).toContain('voyager')
+    expect(SEARCH_MAP_TILE_ATTRIBUTION).toContain('CARTO')
   })
 })

@@ -1,9 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { apiError, ERROR_CODES } from '@/lib/api/response'
-import { previewMessage } from '@/lib/bookings/bookings.helpers'
 import { validateMessageBody } from '@/lib/bookings/bookings.validation'
 import { conversationPartyLabel, sortConversationsForInbox } from '@/lib/messages/messages.helpers'
+import type { BookingPaymentLink } from '@/types/booking'
 import type {
   ConversationBookingSummary,
   ConversationSummary,
@@ -46,16 +46,56 @@ async function hydrateConversations(
   const bookingIds = rows.map((row) => row.booking_id).filter((id): id is string => Boolean(id))
   const otherIds = [...new Set(rows.map((row) => (row.renter_id === userId ? row.owner_id : row.renter_id)))]
 
-  const [{ data: listings }, { data: images }, { data: parties }, { data: bookings }] = await Promise.all([
-    supabase.from('listings').select('id, title, slug').in('id', listingIds),
+  const [
+    { data: listings },
+    { data: images },
+    { data: parties },
+    { data: partyProfiles },
+    { data: bookings },
+    { data: paymentLinks },
+    { data: viewerReviews },
+  ] = await Promise.all([
+    supabase
+      .from('listings')
+      .select('id, title, slug, price_1_day_minor, item_value_minor')
+      .in('id', listingIds),
     supabase
       .from('listing_images')
       .select('listing_id, thumbnail_url, sort_order')
       .in('listing_id', listingIds)
       .order('sort_order', { ascending: true }),
     supabase.rpc('snd_conversation_parties', { p_user_ids: otherIds }),
+    // Reputation the item page already exposes through a column-limited view;
+    // the chat header shows the same numbers rather than inventing its own.
+    supabase
+      .from('public_owner_profiles')
+      .select(
+        'user_id, rating_avg, rating_count, avg_response_minutes, response_rate, is_verified, conversation_count'
+      )
+      .in('user_id', otherIds),
     bookingIds.length > 0
-      ? supabase.from('bookings').select('id, start_date, end_date, status').in('id', bookingIds)
+      ? supabase
+          .from('bookings')
+          .select(
+            'id, reference, start_date, end_date, days_count, status, rental_price_minor, total_minor, requested_at, accepted_at, booked_at, picked_up_at, returned_at, rated_at'
+          )
+          .in('id', bookingIds)
+      : Promise.resolve({ data: [] }),
+    // The live link is what the renter needs and what the owner is waiting on,
+    // so it travels with the booking rather than being dug out of a message.
+    bookingIds.length > 0
+      ? supabase
+          .from('booking_payment_links')
+          .select('booking_id, token, status, amount_minor, expires_at, paid_at')
+          .in('booking_id', bookingIds)
+          .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] }),
+    bookingIds.length > 0
+      ? supabase
+          .from('reviews')
+          .select('booking_id')
+          .in('booking_id', bookingIds)
+          .eq('author_id', userId)
       : Promise.resolve({ data: [] }),
   ])
 
@@ -77,14 +117,63 @@ async function hydrateConversations(
       email: string | null
     }>).map((row) => [row.user_id, row])
   )
+  const profileByUser = new Map(
+    ((partyProfiles ?? []) as Array<{
+      user_id: string
+      rating_avg: number | string | null
+      rating_count: number | null
+      avg_response_minutes: number | null
+      response_rate: number | string | null
+      is_verified: boolean | null
+      conversation_count: number | null
+    }>).map((row) => [row.user_id, row])
+  )
+  // Newest first from the query, so the first row per booking is the current
+  // link and older cancelled ones never shadow it.
+  const linkByBooking = new Map<string, BookingPaymentLink>()
+  for (const row of (paymentLinks ?? []) as Array<{
+    booking_id: string
+    token: string
+    status: BookingPaymentLink['status']
+    amount_minor: number
+    expires_at: string
+    paid_at: string | null
+  }>) {
+    if (!linkByBooking.has(row.booking_id)) {
+      linkByBooking.set(row.booking_id, {
+        token: row.token,
+        status: row.status,
+        amount_minor: row.amount_minor,
+        expires_at: row.expires_at,
+        paid_at: row.paid_at,
+      })
+    }
+  }
+
+  const reviewedBookings = new Set(
+    ((viewerReviews ?? []) as Array<{ booking_id: string }>).map((row) => row.booking_id)
+  )
+
   const bookingById = new Map(
     (bookings ?? []).map((row) => [
       row.id as string,
       {
         id: row.id as string,
+        reference: (row.reference as string | null) ?? null,
         start_date: (row.start_date as string | null) ?? null,
         end_date: (row.end_date as string | null) ?? null,
+        days_count: (row.days_count as number | null) ?? null,
         status: row.status as string,
+        rental_price_minor: (row.rental_price_minor as number | null) ?? null,
+        total_minor: (row.total_minor as number | null) ?? null,
+        requested_at: (row.requested_at as string | null) ?? null,
+        accepted_at: (row.accepted_at as string | null) ?? null,
+        booked_at: (row.booked_at as string | null) ?? null,
+        picked_up_at: (row.picked_up_at as string | null) ?? null,
+        returned_at: (row.returned_at as string | null) ?? null,
+        rated_at: (row.rated_at as string | null) ?? null,
+        payment_link: linkByBooking.get(row.id as string) ?? null,
+        viewer_has_reviewed: reviewedBookings.has(row.id as string),
       } satisfies ConversationBookingSummary,
     ])
   )
@@ -92,6 +181,7 @@ async function hydrateConversations(
   return rows.map((row) => {
     const otherId = row.renter_id === userId ? row.owner_id : row.renter_id
     const party = partyByUser.get(otherId)
+    const partyProfile = profileByUser.get(otherId)
     const listing = listingById.get(row.listing_id)
     return {
       id: row.id,
@@ -100,6 +190,8 @@ async function hydrateConversations(
         title: (listing?.title as string | null) ?? 'Oglas',
         slug: (listing?.slug as string | null) ?? null,
         thumbnail_url: thumbByListing.get(row.listing_id) ?? null,
+        price_1_day_minor: (listing?.price_1_day_minor as number | null) ?? null,
+        item_value_minor: (listing?.item_value_minor as number | null) ?? null,
       },
       other_party: {
         id: otherId,
@@ -114,7 +206,15 @@ async function hydrateConversations(
           party?.email ?? null
         ),
         avatar_url: party?.avatar_url ?? null,
+        is_verified: Boolean(partyProfile?.is_verified),
+        rating_avg: partyProfile?.rating_avg == null ? null : Number(partyProfile.rating_avg),
+        rating_count: Number(partyProfile?.rating_count ?? 0),
+        avg_response_minutes: partyProfile?.avg_response_minutes ?? null,
+        response_rate:
+          partyProfile?.response_rate == null ? null : Number(partyProfile.response_rate),
+        conversation_count: Number(partyProfile?.conversation_count ?? 0),
       },
+      viewer_role: row.owner_id === userId ? 'owner' : 'renter',
       booking: row.booking_id ? bookingById.get(row.booking_id) ?? null : null,
       last_message_at: row.last_message_at,
       last_message_preview: row.last_message_preview,
@@ -140,6 +240,28 @@ export async function listConversations(
 
   const conversations = await hydrateConversations(supabase, (data ?? []) as ConversationRow[], userId)
   return sortConversationsForInbox(conversations)
+}
+
+export async function findListingConversationId(
+  supabase: SupabaseClient,
+  listingId: string,
+  userId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('listing_id', listingId)
+    .or(`renter_id.eq.${userId},owner_id.eq.${userId}`)
+    .order('last_message_at', { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    console.error('[messages] listing conversation lookup failed', error)
+    return null
+  }
+
+  return (data?.id as string | undefined) ?? null
 }
 
 export async function getConversationThread(
@@ -215,46 +337,44 @@ export async function sendConversationMessage(
   }
 
   const trimmed = body.trim()
-  const { data: message, error: insertError } = await supabase
-    .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_id: userId,
-      type: 'text',
-      body: trimmed,
-    })
-    .select('id, conversation_id, sender_id, type, body, metadata, created_at')
-    .single()
+  const { data, error: sendError } = await supabase.rpc('snd_send_text_message', {
+    p_conversation_id: conversationId,
+    p_body: trimmed,
+  })
 
-  if (insertError || !message) {
-    console.error('[messages] insert failed', insertError)
+  if (sendError) {
+    const message = sendError.message ?? ''
+    if (message.includes('UNAUTHENTICATED')) {
+      return { response: apiError(401, ERROR_CODES.UNAUTHENTICATED, 'Prijavi se da nastaviš.') }
+    }
+    if (message.includes('VALIDATION_FAILED')) {
+      return { response: apiError(422, ERROR_CODES.VALIDATION_FAILED, 'Napiši poruku.') }
+    }
+    if (message.includes('NOT_FOUND')) {
+      return { response: apiError(404, ERROR_CODES.NOT_FOUND, 'Razgovor nije pronađen.') }
+    }
+    console.error('[messages] send rpc failed', sendError)
     return { response: apiError(500, ERROR_CODES.INTERNAL, 'Poruka nije poslata. Pokušaj ponovo.') }
   }
 
-  const conversation = row as ConversationRow
-  const isRenter = conversation.renter_id === userId
-  const { error: updateError } = await supabase
-    .from('conversations')
-    .update({
-      last_message_at: new Date().toISOString(),
-      last_message_preview: previewMessage(trimmed),
-      renter_unread_count: isRenter ? 0 : conversation.renter_unread_count + 1,
-      owner_unread_count: isRenter ? conversation.owner_unread_count + 1 : 0,
-    })
-    .eq('id', conversationId)
-
-  if (updateError) {
-    console.error('[messages] conversation preview update failed', updateError)
+  const message = data as {
+    id: string
+    conversation_id: string
+    sender_id: string | null
+    type: MessageType
+    body: string | null
+    metadata: Record<string, unknown> | null
+    created_at: string
   }
 
   return {
-    id: message.id as string,
-    conversation_id: message.conversation_id as string,
-    sender_id: (message.sender_id as string | null) ?? null,
-    type: message.type as MessageType,
-    body: (message.body as string | null) ?? null,
-    metadata: (message.metadata as Record<string, unknown> | null) ?? null,
-    created_at: message.created_at as string,
+    id: message.id,
+    conversation_id: message.conversation_id,
+    sender_id: message.sender_id,
+    type: message.type,
+    body: message.body,
+    metadata: message.metadata,
+    created_at: message.created_at,
   }
 }
 

@@ -1,10 +1,18 @@
 'use client'
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { favoritesService } from '@/lib/favorites'
+import { favoriteKeys, favoritesService } from '@/lib/favorites'
 import { searchKeys } from '@/lib/search'
-import type { SearchResponse } from '@/types/search'
+import type { SearchResponse, SearchResultListing } from '@/types/search'
+
+export function useFavoriteListings(enabled = true) {
+  return useQuery({
+    queryKey: favoriteKeys.list(),
+    queryFn: ({ signal }) => favoritesService.list(signal),
+    enabled,
+  })
+}
 
 /**
  * The heart flips immediately and the page does not reload (doc 02 §5.3).
@@ -20,8 +28,10 @@ export function useToggleFavorite() {
 
     onMutate: async ({ listingId, isFavorite }) => {
       await queryClient.cancelQueries({ queryKey: searchKeys.all })
+      await queryClient.cancelQueries({ queryKey: favoriteKeys.all })
 
-      const snapshot = queryClient.getQueriesData<SearchResponse>({ queryKey: searchKeys.all })
+      const searchSnapshot = queryClient.getQueriesData<SearchResponse>({ queryKey: searchKeys.all })
+      const favoritesSnapshot = queryClient.getQueryData<SearchResultListing[]>(favoriteKeys.list())
 
       queryClient.setQueriesData<SearchResponse>({ queryKey: searchKeys.all }, (previous) => {
         if (!previous?.data) return previous
@@ -33,13 +43,26 @@ export function useToggleFavorite() {
         }
       })
 
-      return { snapshot }
+      if (isFavorite) {
+        queryClient.setQueryData<SearchResultListing[]>(favoriteKeys.list(), (previous) =>
+          (previous ?? []).filter((listing) => listing.id !== listingId)
+        )
+      }
+
+      return { searchSnapshot, favoritesSnapshot }
     },
 
     onError: (_error, _variables, context) => {
-      for (const [key, value] of context?.snapshot ?? []) {
+      for (const [key, value] of context?.searchSnapshot ?? []) {
         queryClient.setQueryData(key, value)
       }
+      if (context?.favoritesSnapshot) {
+        queryClient.setQueryData(favoriteKeys.list(), context.favoritesSnapshot)
+      }
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: favoriteKeys.list() })
     },
   })
 }

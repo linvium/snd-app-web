@@ -30,9 +30,6 @@ export function MyListings({
       <ListingPublishedToast />
       <div className="hidden items-center justify-between gap-3 lg:flex">
         <h1 className="m-0 text-[22px] font-normal text-foreground">Moji oglasi</h1>
-        <Button size="sm" asChild>
-          <Link href={LISTING_NEW_PATH}>Objavi stvar</Link>
-        </Button>
       </div>
 
       {listings.length === 0 ? (

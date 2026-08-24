@@ -25,10 +25,10 @@ export function LocationsStep({
     <div className="flex flex-col gap-3">
       <p className="m-0 text-[13px] leading-5 text-muted-foreground">
         Tačna adresa se ne prikazuje pre nego što rezervacija bude plaćena i potvrđena.{' '}
+        {/* Opens in the support sheet over the half-filled form, rather than
+            in the new tab this used to need. */}
         <a
-          href="/pomoc/predaja"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/support/pickup-and-return"
           data-testid="pickup-help-link"
           className="font-medium text-brand-700 no-underline hover:underline"
         >

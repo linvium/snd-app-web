@@ -35,6 +35,9 @@ export default defineConfig({
         '**/listings/edit.spec.ts',
         '**/bookings/request.spec.ts',
         '**/messages/thread.spec.ts',
+        '**/favorites/list.spec.ts',
+        '**/dashboard/actions.spec.ts',
+        '**/profile/edit.spec.ts',
       ],
     },
     {
@@ -50,7 +53,13 @@ export default defineConfig({
     {
       name: 'guest',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: ['**/layout/header.spec.ts', '**/search/dates.spec.ts', '**/home/listings.spec.ts'],
+      testMatch: [
+        '**/layout/header.spec.ts',
+        '**/layout/footer.spec.ts',
+        '**/search/dates.spec.ts',
+        '**/search/layout.spec.ts',
+        '**/home/listings.spec.ts',
+      ],
     },
   ],
 })

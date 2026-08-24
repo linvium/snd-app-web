@@ -19,8 +19,17 @@ export default function AuthMarketingPanel({
       />
 
       <div className="relative flex max-w-[440px] flex-col gap-7">
-        <h2 className="m-0 text-[clamp(22px,2.4vw,32px)] font-normal leading-tight tracking-[-0.02em] whitespace-nowrap">
-          IZNAJMI. KORISTI. VRATI.
+        <h2 className="m-0 flex flex-col gap-3 text-[clamp(20px,2.2vw,29px)] font-normal leading-tight tracking-[-0.02em]">
+          <span className="whitespace-nowrap">IZNAJMI. KORISTI. VRATI.</span>
+          <span
+            aria-hidden
+            className="flex w-full max-w-[240px] items-center gap-3 text-[11px] leading-none font-medium tracking-[0.3em] uppercase text-white/45"
+          >
+            <span className="h-px flex-1 bg-white/20" />
+            ili
+            <span className="h-px flex-1 bg-white/20" />
+          </span>
+          <span className="whitespace-nowrap text-white/55">OBJAVI. IZDAJ. ZARADI.</span>
         </h2>
 
         <blockquote className="m-0 border-none p-0">

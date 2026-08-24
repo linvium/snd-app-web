@@ -5,14 +5,17 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { AlertCircleIcon, CalendarIcon, InfoIcon, StarIcon } from 'lucide-react'
 
+import PriceTiers from '@/components/listings/detail/PriceTable'
 import DateRangePicker from '@/components/search/DateRangePicker'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAuthSession } from '@/context/AuthContext'
 import { useListingQuote } from '@/hooks/listings'
 import { useMediaQuery } from '@/hooks/search'
 import { isRangeAvailable } from '@/lib/availability'
-import { formatRating, pluralizeRatings } from '@/lib/listings'
+import { listingEditPath, formatRating } from '@/lib/listings'
+import { requestThreadPath } from '@/lib/messages'
 import { formatDate, formatPriceMinor, formatPricePerDay } from '@/lib/search'
 import { cn } from '@/lib/utils'
 import type { ListingDetail } from '@/types/listing-detail'
@@ -28,7 +31,14 @@ export interface BookingCardProps {
   from: string | null
   to: string | null
   onDatesChange: (from: string | null, to: string | null) => void
-  /** Set on the mobile sheet, where the card is already inside a modal. */
+  onStartRequest: () => void
+  existingConversationId?: string | null
+  contactActionsPending?: boolean
+  /**
+   * `plain` on the copies inside a dialog, which must not carry the test hooks
+   * - two elements answering to `contact-owner-button` is an ambiguous
+   * selector, not a redundant one.
+   */
   variant?: 'sticky' | 'plain'
 }
 
@@ -36,7 +46,7 @@ export interface BookingCardProps {
  * Price, dates and the request button (doc 04 §13).
  *
  * Every figure here comes from the server. The card holds the two dates and
- * nothing else — it never multiplies a price by a day count locally, because a
+ * nothing else - it never multiplies a price by a day count locally, because a
  * total the browser computed is a total the browser can change, and the number
  * shown has to be the number charged (doc 04 §13.2).
  */
@@ -45,36 +55,35 @@ export default function BookingCard({
   from,
   to,
   onDatesChange,
+  onStartRequest,
+  existingConversationId = null,
+  contactActionsPending = false,
   variant = 'sticky',
 }: BookingCardProps) {
   const router = useRouter()
   const { user } = useAuthSession()
   const [calendarOpen, setCalendarOpen] = useState(false)
   const isDesktop = useMediaQuery('(min-width: 768px)')
+  const showTestIds = variant === 'sticky'
 
   const quote = useListingQuote(listing.id, from, to)
   const rating = formatRating(listing.rating_avg)
 
   // Doc 04 §13.1, "Sopstveni oglas": the whole card is replaced rather than
-  // disabled — the owner's business here is managing, not renting.
+  // disabled - the owner's business here is managing, not renting.
   if (listing.is_own_listing) {
     return (
-      <aside
-        className={cn(
-          'rounded-xl border border-border bg-card p-5',
-          variant === 'sticky' && 'lg:sticky lg:top-24'
-        )}
-      >
+      <aside className="rounded-xl border border-border bg-card p-5">
         <p className="m-0 text-base font-semibold text-card-foreground">Ovo je tvoj oglas</p>
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Vidiš ga onako kako ga vide drugi.
         </p>
         <div className="flex flex-col gap-2">
           <Button asChild>
-            <Link href={`/listings/new/${listing.id}`}>Izmeni oglas</Link>
+            <Link href={listingEditPath(listing.id)}>Izmeni oglas</Link>
           </Button>
           <Button variant="secondary" asChild>
-            <Link href="/bookings?role=owner">Vidi zahteve</Link>
+            <Link href="/profile/requests">Vidi zahteve</Link>
           </Button>
         </div>
       </aside>
@@ -83,12 +92,7 @@ export default function BookingCard({
 
   if (listing.status !== 'published') {
     return (
-      <aside
-        className={cn(
-          'rounded-xl border border-border bg-muted p-5',
-          variant === 'sticky' && 'lg:sticky lg:top-24'
-        )}
-      >
+      <aside className="rounded-xl border border-border bg-muted p-5">
         <p className="m-0 text-sm font-medium text-foreground">Ovaj oglas trenutno nije aktivan.</p>
       </aside>
     )
@@ -101,33 +105,31 @@ export default function BookingCard({
       ? { start: quote.data.suggested_start, end: quote.data.suggested_end }
       : null
 
-  const handleSubmit = () => {
-    const next = `/listings/${listing.slug}${from && to ? `?from=${from}&to=${to}` : ''}`
+  const loginNext = `/listings/${listing.slug}${from && to ? `?from=${from}&to=${to}` : ''}`
 
-    // A guest keeps their dates through the round trip (doc 04 §16).
+  const handleContact = () => {
+    if (contactActionsPending) return
     if (!user) {
-      router.push(`/auth/login?next=${encodeURIComponent(next)}`)
+      router.push(`/auth/login?next=${encodeURIComponent(loginNext)}`)
       return
     }
-
-    if (!hasDates) {
-      setCalendarOpen(true)
+    if (existingConversationId) {
+      router.push(requestThreadPath(existingConversationId))
       return
     }
-
-    router.push(`/bookings/new?listing=${listing.id}&from=${from}&to=${to}`)
+    onStartRequest()
   }
 
   return (
     <>
-      <aside
-        className={cn(
-          'rounded-xl border border-border bg-card p-5 shadow-sm',
-          variant === 'sticky' && 'lg:sticky lg:top-24'
-        )}
-      >
+      {/* The one surface on the page that reads as raised: everything else is a
+          document, this is the control. Sticky positioning belongs to whoever
+          places the card, not to the card - `variant` only decides whether the
+          test hooks are on, so the same component can appear in a dialog
+          without colliding with the copy in the page. */}
+      <aside className="rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(24,24,27,0.04),0_14px_32px_-20px_rgba(24,24,27,0.35)]">
         <div className="flex items-baseline justify-between gap-3">
-          <p className="m-0 text-xl font-semibold text-card-foreground">
+          <p className="m-0 text-2xl font-semibold tracking-tight text-card-foreground">
             {formatPricePerDay(listing.price_1_day_minor)}
           </p>
           {rating && listing.rating_count > 0 ? (
@@ -140,6 +142,10 @@ export default function BookingCard({
             </p>
           ) : null}
         </div>
+
+        {/* The package ladder argues for longer rentals, so it belongs before
+            the dates are picked - after that the quote below is the truth. */}
+        {hasDates ? null : <PriceTiers listing={listing} />}
 
         <button
           type="button"
@@ -216,7 +222,7 @@ export default function BookingCard({
                 onClick={() => onDatesChange(suggestion.start, suggestion.end)}
                 className="mt-2 cursor-pointer border-none bg-transparent p-0 text-[13px] font-semibold text-brand-700 underline underline-offset-2"
               >
-                Najbliži slobodan termin: {formatDate(suggestion.start)} –{' '}
+                Najbliži slobodan termin: {formatDate(suggestion.start)} -{' '}
                 {formatDate(suggestion.end)}
               </button>
             ) : null}
@@ -224,12 +230,34 @@ export default function BookingCard({
         ) : null}
 
         <div className="mt-4 flex flex-col gap-2">
-          <Button onClick={handleSubmit} disabled={Boolean(hasDates && unavailable)}>
-            {hasDates ? 'Pošalji zahtev' : 'Proveri dostupnost'}
-          </Button>
-          <Button variant="secondary" asChild>
-            <Link href={`/messages/new?listing=${listing.id}`}>Pošalji poruku</Link>
-          </Button>
+          {contactActionsPending ? (
+            <div data-testid={showTestIds ? 'contact-actions-skeleton' : undefined} className="flex flex-col gap-2">
+              <Skeleton className="h-11 w-full rounded-md" />
+              <Skeleton className="h-11 w-full rounded-md" />
+            </div>
+          ) : existingConversationId ? (
+            <Button className="bg-brand-500 hover:bg-brand-600" asChild>
+              <Link
+                href={requestThreadPath(existingConversationId)}
+                data-testid={showTestIds ? 'open-conversation-button' : undefined}
+              >
+                Otvori razgovor
+              </Link>
+            </Button>
+          ) : (
+            <>
+              <Button
+                onClick={handleContact}
+                disabled={Boolean(hasDates && unavailable)}
+                data-testid={showTestIds ? 'contact-owner-button' : undefined}
+              >
+                Pošalji zahtev
+              </Button>
+              <Button variant="secondary" onClick={handleContact} data-testid={showTestIds ? 'send-message-button' : undefined}>
+                Pošalji poruku
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Doc 04 §13: the sentence that makes the request feel safe to send. */}

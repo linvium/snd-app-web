@@ -109,7 +109,11 @@ export default function PickupMap({
           ? `Mapa sa tačnom lokacijom preuzimanja: ${label}`
           : `Mapa sa približnom zonom preuzimanja: ${label}`
       }
-      className="h-64 w-full overflow-hidden rounded-xl border border-border md:h-72"
+      // `isolate` is load-bearing: Leaflet stacks its own panes at z-index 400
+      // and its controls higher still. Without a stacking context of its own
+      // those compete at the root, and the map paints straight through anything
+      // laid over the page - the gallery overlay included.
+      className="isolate h-64 w-full overflow-hidden rounded-xl border border-border md:h-72"
     />
   )
 }

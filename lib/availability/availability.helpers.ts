@@ -4,7 +4,7 @@ import { AVAILABILITY_MONTHS_AHEAD } from '@/lib/pricing'
  * Availability arithmetic (doc 00 §6.4).
  *
  * The set of taken days arrives from `blocked_dates`, which a trigger keeps in
- * step with accepted, paid and running bookings — so everything here is set
+ * step with accepted, booked and picked-up bookings — so everything here is set
  * membership over plain `YYYY-MM-DD` strings. Dates are handled as strings and
  * as UTC throughout: a `new Date('2026-08-20')` compared against a local
  * midnight is how off-by-one-day bugs get in.

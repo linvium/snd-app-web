@@ -6,6 +6,7 @@ import { Loader2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { StatusConfirmDialog } from '@/components/listings/StatusConfirmDialog'
+import { MobileBackLink } from '@/components/layout/MobileBackLink'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -460,9 +461,12 @@ export function PublishListingForm({
     <div className="mx-auto grid max-w-[1120px] gap-6 px-4 py-6 lg:grid-cols-[minmax(0,68%)_minmax(0,32%)] lg:py-10">
       <div>
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h1 className="m-0 text-2xl font-semibold text-card-foreground">
-            {isCreate || status === 'draft' ? 'Objavi stvar' : 'Izmeni stvar'}
-          </h1>
+          <div className="flex min-w-0 items-center gap-1">
+            <MobileBackLink href={PROFILE_LISTINGS_PATH} />
+            <h1 className="m-0 text-2xl font-semibold text-card-foreground">
+              {isCreate || status === 'draft' ? 'Objavi stvar' : 'Izmeni stvar'}
+            </h1>
+          </div>
           {isDraft ? (
             <p className="m-0 text-[13px] text-muted-foreground" data-testid="autosave-indicator">
               {saveStatus === 'saving'

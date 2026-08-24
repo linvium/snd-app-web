@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { utcTodayIso } from '@/lib/bookings/bookings.helpers'
-import { validateCreateRequestInput, validateMessageBody } from '@/lib/bookings/bookings.validation'
+import {
+  validateCreateRequestInput,
+  validateMessageBody,
+  validateProposedDates,
+} from '@/lib/bookings/bookings.validation'
 import { MESSAGE_MAX, MESSAGE_TYPES } from '@/types'
 
 const listingId = '11111111-1111-4111-8111-111111111111'
@@ -73,6 +77,20 @@ describe('validateCreateRequestInput', () => {
         endDate: '2020-01-03',
       }).startDate
     ).toBe('Datum ne može biti u prošlosti.')
+  })
+})
+
+describe('validateProposedDates', () => {
+  it('requires both dates', () => {
+    expect(validateProposedDates(null, tomorrowIso())).toBe('Izaberi oba datuma.')
+  })
+
+  it('accepts a valid range', () => {
+    expect(validateProposedDates(tomorrowIso(), dayAfterTomorrowIso())).toBeNull()
+  })
+
+  it('rejects a date in the past', () => {
+    expect(validateProposedDates('2020-01-01', '2020-01-03')).toBe('Datum ne može biti u prošlosti.')
   })
 })
 

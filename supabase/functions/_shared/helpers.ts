@@ -53,17 +53,4 @@ export function shouldApplyMappedStatus(
   return true
 }
 
-export function jsonResponse(body: unknown, status = 200, extraHeaders?: HeadersInit): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      ...extraHeaders,
-    },
-  })
-}
-
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+export { corsHeaders, jsonResponse } from './http.ts'

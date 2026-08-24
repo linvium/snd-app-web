@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import Logo from '@/components/ui/Logo'
 import HeaderSearch from '@/components/search/HeaderSearch'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { AccountMenuAvatar } from '@/components/layout/AccountMenuAvatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,19 +26,21 @@ import { cn } from '@/lib/utils'
 import { useAuthSession } from '@/context/AuthContext'
 import { useSignOut } from '@/hooks/auth'
 import { useUnreadMessageCount } from '@/hooks/messages'
+import {
+  MANAGER_FAVORITES,
+  MANAGER_LISTINGS,
+  MANAGER_REQUESTS,
+  MANAGER_ROOT,
+  MANAGER_SETTINGS,
+} from '@/lib/profiles'
 
 const ACCOUNT_MENU_ITEMS = [
-  { href: '/profile', label: 'Moj profil' },
-  { href: '/profile/listings', label: 'Moji oglasi' },
-  { href: '/bookings', label: 'Moje rezervacije' },
-  { href: '/profile/requests', label: 'Zahtevi' },
-  { href: '/omiljeni', label: 'Omiljeni' },
+  { href: MANAGER_ROOT, label: 'Pregled' },
+  { href: MANAGER_LISTINGS, label: 'Moji oglasi' },
+  { href: MANAGER_REQUESTS, label: 'Zahtevi' },
+  { href: MANAGER_FAVORITES, label: 'Omiljeni' },
+  { href: MANAGER_SETTINGS, label: 'Opcije' },
 ] as const
-
-function getInitials(email?: string | null) {
-  if (!email) return '?'
-  return email.charAt(0).toUpperCase()
-}
 
 export default function Header() {
   const { user, loading } = useAuthSession()
@@ -67,7 +69,13 @@ export default function Header() {
 
   return (
     <>
-      <div className="relative z-30">
+      {/* The utility row is part of the same surface as the toolbar under it:
+          left on the page background it read as a separate strip with a seam
+          across the top of the header. Only the homepage keeps it transparent,
+          where the whole header sits on the hero. */}
+      <div
+        className={cn('relative z-30', overlaysHero ? null : 'bg-card/80 backdrop-blur-md')}
+      >
         <div className={innerClass}>
           <nav
             aria-label="Korisni linkovi"
@@ -94,6 +102,10 @@ export default function Header() {
         className={cn(
           'sticky top-0 z-30 transition-[background-color,box-shadow,color,backdrop-filter] duration-200 ease-in-out',
           overlaysHero && !hasShadow ? 'bg-transparent' : 'bg-card/80 backdrop-blur-md',
+          // A hairline closes the header off from the page under it. The
+          // homepage is left out on purpose: its header has no edge to draw
+          // over the hero, and the 1px would throw off HEADER_HERO_OVERLAP_CLASS.
+          overlaysHero ? null : 'border-b border-border',
           hasShadow && 'shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
         )}
       >
@@ -137,7 +149,7 @@ export default function Header() {
 
               {user ? (
                 <Link
-                  href="/profile/requests"
+                  href={MANAGER_REQUESTS}
                   aria-label={unread > 0 ? `Zahtevi, ${unread} nepročitanih` : 'Zahtevi'}
                   data-testid="header-messages"
                   className={cn(
@@ -167,11 +179,7 @@ export default function Header() {
                       aria-label="Meni naloga"
                       className="cursor-pointer rounded-full border-none bg-transparent p-0 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
-                      <Avatar className="size-9 after:border-transparent">
-                        <AvatarFallback className="bg-brand-500 text-sm font-semibold text-white">
-                          {getInitials(user.email)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <AccountMenuAvatar />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" sideOffset={8} className="w-[220px] p-2">

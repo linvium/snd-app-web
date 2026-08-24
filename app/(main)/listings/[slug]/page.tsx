@@ -11,6 +11,7 @@ import {
   listingMetaDescription,
   listingPageTitle,
 } from '@/lib/listings'
+import { findListingConversationId } from '@/lib/messages/messages.server'
 import { loadReviews, loadReviewSummary } from '@/lib/reviews/reviews.server'
 import { createClient } from '@/lib/supabase/server'
 import { REVIEW_PAGE_SIZE } from '@/types/listing-detail'
@@ -94,7 +95,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
 
   const { listing } = result
 
-  const [summary, listingReviews, otherReviews] = await Promise.all([
+  const [summary, listingReviews, otherReviews, initialConversationId] = await Promise.all([
     loadReviewSummary(supabase, listing.id),
     loadReviews(supabase, {
       listingId: listing.id,
@@ -111,6 +112,9 @@ export default async function ListingDetailPage({ params }: PageProps) {
       limit: 1,
       offset: 0,
     }),
+    user && !listing.is_own_listing
+      ? findListingConversationId(supabase, listing.id, user.id)
+      : Promise.resolve(null),
   ])
 
   return (
@@ -133,6 +137,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
           summary={summary}
           reviews={listingReviews.reviews}
           ownerOtherCount={otherReviews.total}
+          initialConversationId={initialConversationId}
         />
       </Suspense>
     </>
