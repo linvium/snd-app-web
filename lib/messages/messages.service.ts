@@ -42,6 +42,25 @@ export const messagesService = {
     return payload.data
   },
 
+  editMessage: async (conversationId: string, messageId: string, body: string): Promise<Message> => {
+    const response = await fetch(`/api/v1/conversations/${conversationId}/messages/${messageId}`, {
+      method: 'PATCH',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body }),
+    })
+    const payload = await parseJson<{ data: Message }>(response)
+    return payload.data
+  },
+
+  deleteMessage: async (conversationId: string, messageId: string): Promise<Message> => {
+    const response = await fetch(`/api/v1/conversations/${conversationId}/messages/${messageId}`, {
+      method: 'DELETE',
+      headers: { Accept: 'application/json' },
+    })
+    const payload = await parseJson<{ data: Message }>(response)
+    return payload.data
+  },
+
   markRead: async (id: string): Promise<void> => {
     const response = await fetch(`/api/v1/conversations/${id}/read`, {
       method: 'POST',

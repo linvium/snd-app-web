@@ -5,8 +5,13 @@ export { bookingSteps, bookingStageIndex, formatTicketDate } from './booking-ste
 export type { BookingStep, BookingStepState } from './booking-steps'
 export {
   CONVERSATION_TABS,
+  DELETED_MESSAGE_LABEL,
+  MESSAGE_MUTATION_WINDOW_EXPIRED,
+  MESSAGE_MUTATION_WINDOW_MS,
   QUICK_REPLIES,
   bookingStatusPill,
+  canMutateTextMessage,
+  isOwnTextMessage,
   ticketStatusPill,
   conversationMatchesQuery,
   conversationPartyLabel,
@@ -23,9 +28,13 @@ export {
   messageDayKey,
   messagePresentation,
   requestCardDatesLabel,
+  shouldShowQuickReplies,
   shouldSubmitComposerOnEnter,
   sortConversationsForInbox,
   unreadMessageTotal,
+  visibleMessageBody,
+  withDeletedMessage,
+  withEditedBody,
 } from './messages.helpers'
 export {
   bookingDurationLabel,

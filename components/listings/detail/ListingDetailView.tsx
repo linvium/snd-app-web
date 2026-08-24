@@ -18,11 +18,12 @@ import SimilarListings from '@/components/listings/detail/SimilarListings'
 import { useAuthSession } from '@/context/AuthContext'
 import { useRecordListingView } from '@/hooks/listings'
 import { useListingConversations } from '@/hooks/messages'
+import { parseListingDates } from '@/lib/listings'
 import {
   listingContactActionsPending,
   resolveListingConversationId,
 } from '@/lib/messages'
-import type { ListingDetail, ListingReview, ReviewSummary } from '@/types/listing-detail'
+import type { ListingDetail, ListingQuote, ListingReview, ReviewSummary } from '@/types/listing-detail'
 
 interface ListingDetailViewProps {
   listing: ListingDetail
@@ -30,6 +31,7 @@ interface ListingDetailViewProps {
   reviews: ListingReview[]
   ownerOtherCount: number
   initialConversationId: string | null
+  initialQuote?: ListingQuote | null
 }
 
 /**
@@ -50,6 +52,7 @@ export default function ListingDetailView({
   reviews,
   ownerOtherCount,
   initialConversationId,
+  initialQuote = null,
 }: ListingDetailViewProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -70,10 +73,7 @@ export default function ListingDetailView({
   })
 
   const [requestOpen, setRequestOpen] = useState(false)
-  const [dates, setDates] = useState<{ from: string | null; to: string | null }>({
-    from: searchParams.get('from'),
-    to: searchParams.get('to'),
-  })
+  const [dates, setDates] = useState(() => parseListingDates(searchParams))
 
   useRecordListingView(listing.id)
 
@@ -146,6 +146,7 @@ export default function ListingDetailView({
                 onStartRequest={() => setRequestOpen(true)}
                 existingConversationId={existingConversationId}
                 contactActionsPending={contactActionsPending}
+                initialQuote={initialQuote}
               />
 
               <GuaranteeCard
@@ -183,7 +184,7 @@ export default function ListingDetailView({
           </div>
         </div>
 
-        <SimilarListings listingId={listing.id} />
+        <SimilarListings listingId={listing.id} dates={dates} />
       </article>
 
       <MobileBookingBar
@@ -194,6 +195,7 @@ export default function ListingDetailView({
         onStartRequest={() => setRequestOpen(true)}
         existingConversationId={existingConversationId}
         contactActionsPending={contactActionsPending}
+        initialQuote={initialQuote}
       />
 
       {listing.is_own_listing ||

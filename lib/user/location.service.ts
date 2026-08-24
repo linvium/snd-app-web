@@ -1,5 +1,14 @@
+import { toSerbianLatin } from '@/lib/geo/script.helpers'
 import { createClient } from '@/lib/supabase/client'
 import type { SndLocation, AddLocationInput } from '@/types'
+
+function latinizeLocation(location: SndLocation): SndLocation {
+  return {
+    ...location,
+    street: toSerbianLatin(location.street),
+    city: toSerbianLatin(location.city),
+  }
+}
 
 const getClient = () => createClient()
 
@@ -31,7 +40,7 @@ export const locationService = {
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return data as SndLocation[]
+    return (data as SndLocation[]).map(latinizeLocation)
   },
 
   addLocation: async (input: AddLocationInput): Promise<SndLocation> => {
@@ -64,8 +73,8 @@ export const locationService = {
       .insert({
         user_id: user.id,
         label: input.label,
-        street: input.street,
-        city: input.city,
+        street: toSerbianLatin(input.street),
+        city: toSerbianLatin(input.city),
         postal_code: input.postal_code ?? null,
         country_code: 'RS',
         latitude: input.latitude,
@@ -78,7 +87,7 @@ export const locationService = {
       .single()
 
     if (error) throw error
-    return data as SndLocation
+    return latinizeLocation(data as SndLocation)
   },
 
   deleteLocation: async (locationId: string): Promise<void> => {

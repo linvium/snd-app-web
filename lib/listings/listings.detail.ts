@@ -1,5 +1,14 @@
-import type { ListingPrices } from '@/lib/pricing'
-import type { CategoryNode, DetailImage, ListingPriceTier, OwnerSummary } from '@/types/listing-detail'
+import { isRangeAvailable, suggestNearestRange, todayIso } from '@/lib/availability'
+import { toSerbianLatin } from '@/lib/geo/script.helpers'
+import { quoteForRange, type ListingPrices } from '@/lib/pricing'
+import type { ListingStatus } from '@/types/listing'
+import type {
+  CategoryNode,
+  DetailImage,
+  ListingPriceTier,
+  ListingQuote,
+  OwnerSummary,
+} from '@/types/listing-detail'
 
 /**
  * Display rules for the item page (doc 04 §4, §5, §7, §10).
@@ -169,7 +178,7 @@ export function formatMonthYear(iso: string | null | undefined): string | null {
 }
 
 /**
- * "Zvezdara, Beograd" — but just "Beograd" when the municipality is the city
+ * "Zvezdara, Beograd" - but just "Beograd" when the municipality is the city
  * (doc 04 §4).
  *
  * City-level locations store the same name in both fields, and printing it
@@ -182,9 +191,11 @@ export function placeLabel(
   const parts = [municipality, city]
     .map((part) => part?.trim())
     .filter((part): part is string => Boolean(part))
+    .map((part) => toSerbianLatin(part))
 
   const unique = parts.filter(
-    (part, index) => parts.findIndex((other) => other.localeCompare(part, 'sr') === 0) === index
+    (part, index) =>
+      parts.findIndex((other) => other.localeCompare(part, 'sr-Latn') === 0) === index
   )
 
   return unique.join(', ')
@@ -213,4 +224,126 @@ export function toDetailImages(
     large_url: image.large_url as string,
     sort_order: Number(image.sort_order),
   }))
+}
+
+export type BookingQuotePanel = 'tiers' | 'skeleton' | 'quote'
+
+/**
+ * What the booking card shows under the headline while a quote is in flight.
+ *
+ * A skeleton only appears after the delay (or on a date change that already
+ * had a quote) so a fast response never flashes a loader, and a slow one does
+ * not let the total pop the layout (doc 10 §8.7).
+ */
+export function bookingQuotePanel(input: {
+  hasDates: boolean
+  hasQuote: boolean
+  isPending: boolean
+  delayedPending: boolean
+  quoteUiReady: boolean
+}): BookingQuotePanel {
+  if (input.hasQuote) return 'quote'
+  if (input.hasDates && input.isPending && (input.quoteUiReady || input.delayedPending)) {
+    return 'skeleton'
+  }
+  return 'tiers'
+}
+
+/**
+ * The booking-card payload (doc 04 §13.2). Shared by the quote API and the
+ * item-page SSR path so a link that already has dates does not wait on a
+ * second round trip for numbers the page already loaded.
+ */
+export function toListingQuote(
+  startDate: string,
+  endDate: string,
+  prices: ListingPrices,
+  unavailableDates: readonly string[],
+  today: string = todayIso()
+): ListingQuote {
+  const unavailable = new Set(unavailableDates)
+  const available = isRangeAvailable(startDate, endDate, unavailable)
+  const suggestion = available
+    ? null
+    : suggestNearestRange(startDate, endDate, unavailable, { today })
+  const quote = quoteForRange(startDate, endDate, prices)
+
+  return {
+    days_count: quote.days_count,
+    rental_price_minor: quote.rental_price_minor,
+    service_fee_minor: quote.service_fee_minor,
+    total_minor: quote.total_minor,
+    price_breakdown: quote.price_breakdown,
+    is_available: available,
+    suggested_start: suggestion?.start ?? null,
+    suggested_end: suggestion?.end ?? null,
+  }
+}
+
+type QuoteListing = {
+  status: ListingStatus
+  price_1_day_minor: number
+  price_3_days_minor: number | null
+  price_7_days_minor: number | null
+  unavailable_dates: readonly string[]
+}
+
+/**
+ * Quote for dates already on the item URL. Returns null when the range would
+ * be rejected by the quote API, so the client does not paint a total the
+ * server would 422.
+ */
+export function listingQuoteFromDetail(
+  listing: QuoteListing,
+  from: string | null,
+  to: string | null,
+  today: string = todayIso()
+): ListingQuote | null {
+  if (!from || !to) return null
+  if (listing.status !== 'published') return null
+  if (from < today || to < from) return null
+  if (!Number.isFinite(listing.price_1_day_minor)) return null
+
+  return toListingQuote(
+    from,
+    to,
+    {
+      price_1_day_minor: listing.price_1_day_minor,
+      price_3_days_minor: listing.price_3_days_minor,
+      price_7_days_minor: listing.price_7_days_minor,
+    },
+    listing.unavailable_dates,
+    today
+  )
+}
+
+export type ListingQuoteSeed = {
+  from: string
+  to: string
+  quote: ListingQuote
+}
+
+/**
+ * Keep the SSR quote keyed to the dates it was computed for. A later date
+ * change must not recapture it, or the old total would stick on the card.
+ */
+export function captureListingQuoteSeed(
+  current: ListingQuoteSeed | null,
+  initialQuote: ListingQuote | null | undefined,
+  from: string | null,
+  to: string | null
+): ListingQuoteSeed | null {
+  if (current) return current
+  if (!initialQuote || !from || !to) return null
+  return { from, to, quote: initialQuote }
+}
+
+/** `undefined` means fetch: the seed only applies while the range still matches. */
+export function listingQuoteSeedForDates(
+  seed: ListingQuoteSeed | null,
+  from: string | null,
+  to: string | null
+): ListingQuote | undefined {
+  if (!seed || seed.from !== from || seed.to !== to) return undefined
+  return seed.quote
 }

@@ -5,16 +5,17 @@ import { useState } from 'react'
 import BookingCard from '@/components/listings/detail/BookingCard'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { useListingQuote } from '@/hooks/listings'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useListingQuoteView } from '@/hooks/listings'
 import { formatDateRange, formatPriceMinor, formatPricePerDay } from '@/lib/search'
-import type { ListingDetail } from '@/types/listing-detail'
+import type { ListingDetail, ListingQuote } from '@/types/listing-detail'
 
 /**
  * The fixed bar on phones (doc 04 §2.2).
  *
  * Sits above the bottom navigation rather than replacing it, so the page's own
  * action never covers the way out of the page. It summarises what is already
- * chosen — dates and total — and opens the full card for anything more.
+ * chosen - dates and total - and opens the full card for anything more.
  */
 export default function MobileBookingBar({
   listing,
@@ -24,6 +25,7 @@ export default function MobileBookingBar({
   onStartRequest,
   existingConversationId,
   contactActionsPending,
+  initialQuote = null,
 }: {
   listing: ListingDetail
   from: string | null
@@ -32,9 +34,10 @@ export default function MobileBookingBar({
   onStartRequest: () => void
   existingConversationId?: string | null
   contactActionsPending?: boolean
+  initialQuote?: ListingQuote | null
 }) {
   const [open, setOpen] = useState(false)
-  const quote = useListingQuote(listing.id, from, to)
+  const { quote, panel } = useListingQuoteView(listing.id, from, to, initialQuote)
 
   // The owner has no bar: their actions live in the card itself (doc 04 §13.1).
   if (listing.is_own_listing || listing.status !== 'published') return null
@@ -49,9 +52,10 @@ export default function MobileBookingBar({
             {formatPricePerDay(listing.price_1_day_minor)}
           </p>
           {dateLabel ? (
-            <p className="m-0 truncate text-[13px] text-muted-foreground">
-              {dateLabel}
-              {quote.data ? ` · ${formatPriceMinor(quote.data.total_minor)}` : ''}
+            <p className="m-0 flex items-center gap-1.5 truncate text-[13px] text-muted-foreground">
+              <span className="truncate">{dateLabel}</span>
+              {quote.data ? ` · ${formatPriceMinor(quote.data.total_minor)}` : null}
+              {panel === 'skeleton' ? <Skeleton className="h-3 w-14" /> : null}
             </p>
           ) : (
             <p className="m-0 text-[13px] text-muted-foreground">Izaberi datume</p>
@@ -80,6 +84,7 @@ export default function MobileBookingBar({
             }}
             existingConversationId={existingConversationId}
             contactActionsPending={contactActionsPending}
+            initialQuote={initialQuote}
             variant="plain"
           />
         </DialogContent>
