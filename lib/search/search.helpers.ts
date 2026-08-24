@@ -1,4 +1,5 @@
 import { findCity, SERBIA_CENTER, type SerbianCity } from '@/lib/geo/serbia-cities'
+import { toSerbianLatin } from '@/lib/geo/script.helpers'
 import type { SearchCenterSource, SearchParams, SearchSort } from '@/types/search'
 
 export interface Coordinates {
@@ -243,7 +244,8 @@ const CITY_LOCATIVE: Record<string, string> = {
 }
 
 export function locativeCity(name: string): string {
-  return CITY_LOCATIVE[name] ?? name
+  const latin = toSerbianLatin(name)
+  return CITY_LOCATIVE[latin] ?? latin
 }
 
 /**

@@ -19,6 +19,7 @@ import { BookingTicket } from '@/components/messages/BookingTicket'
 import { LeaveReviewDialog } from '@/components/messages/LeaveReviewDialog'
 import { PaymentLinkCard } from '@/components/messages/PaymentLinkCard'
 import { PendingRequestBanner, RequestReviewDialog } from '@/components/messages/RequestReviewDialog'
+import { TextMessageBubble } from '@/components/messages/TextMessageBubble'
 import { ThreadDetailPanel } from '@/components/messages/ThreadDetailPanel'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -31,11 +32,11 @@ import { formatRating, pluralizeRatings, responseTimeText } from '@/lib/listings
 import {
   QUICK_REPLIES,
   REQUESTS_PATH,
-  formatMessageClock,
   formatMessageDayLabel,
   messageDayKey,
   messagePresentation,
   requestExpiryCaption,
+  shouldShowQuickReplies,
   shouldSubmitComposerOnEnter,
 } from '@/lib/messages'
 import { ApiError } from '@/lib/search'
@@ -283,7 +284,6 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
               !previous || messageDayKey(previous.created_at) !== messageDayKey(message.created_at)
             const presentation = messagePresentation(message)
             const mine = Boolean(user?.id && message.sender_id === user.id)
-            const clock = formatMessageClock(message.created_at)
 
             return (
               <li key={message.id} className="mx-auto flex w-full max-w-[720px] flex-col gap-3">
@@ -323,33 +323,12 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
                     {message.body}
                   </p>
                 ) : (
-                  <div
-                    data-testid="text-message"
-                    className={mine ? 'flex justify-end' : 'flex justify-start'}
-                  >
-                    <div
-                      className={cn(
-                        'max-w-[80%] rounded-2xl px-3.5 py-2 text-sm',
-                        mine
-                          ? 'rounded-br-sm bg-brand-500 text-white'
-                          : 'rounded-bl-sm border border-border bg-card text-card-foreground shadow-sm'
-                      )}
-                    >
-                      <p className="m-0 break-words whitespace-pre-wrap">{message.body}</p>
-                      {clock ? (
-                        <time
-                          dateTime={message.created_at}
-                          data-testid="message-time"
-                          className={cn(
-                            'mt-1 mb-0 block text-right text-[10px] leading-4',
-                            mine ? 'text-white/75' : 'text-muted-foreground'
-                          )}
-                        >
-                          {clock}
-                        </time>
-                      ) : null}
-                    </div>
-                  </div>
+                  <TextMessageBubble
+                    conversationId={conversationId}
+                    message={message}
+                    mine={mine}
+                    userId={user?.id}
+                  />
                 )}
               </li>
             )
@@ -361,7 +340,7 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
           className="shrink-0 border-t border-border bg-card px-3 pt-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-4 lg:pb-3"
         >
           <div className="mx-auto w-full max-w-[720px]">
-            {body.trim().length === 0 ? (
+            {shouldShowQuickReplies(conversation.viewer_role) && body.trim().length === 0 ? (
               <div className="snd-thin-scroll mb-2 flex gap-2 overflow-x-auto pb-1">
                 {QUICK_REPLIES.map((reply) => (
                   <button

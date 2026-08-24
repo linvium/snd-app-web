@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { addDaysIso, todayIso } from '@/lib/availability'
+import { toSerbianLatin } from '@/lib/geo/script.helpers'
 import { buildBreadcrumb, guaranteeCapMinor, inheritedGuaranteeCap, toDetailImages } from '@/lib/listings/listings.detail'
 import { AVAILABILITY_MONTHS_AHEAD } from '@/lib/pricing'
 import type {
@@ -135,8 +136,10 @@ export async function loadListingDetail(
   let pickup_locations: PickupLocation[] = (pickupRows ?? []).map((location) => ({
     id: location.location_id as string,
     label: location.label as string,
-    municipality: (location.municipality as string) ?? (location.city as string),
-    city: location.city as string,
+    municipality: toSerbianLatin(
+      ((location.municipality as string) ?? (location.city as string)) || ''
+    ),
+    city: toSerbianLatin((location.city as string) ?? ''),
     approx_latitude: Number(location.approx_latitude),
     approx_longitude: Number(location.approx_longitude),
   }))
@@ -160,7 +163,7 @@ export async function loadListingDetail(
       if (!match) return location
       return {
         ...location,
-        street: match.street as string,
+        street: toSerbianLatin((match.street as string) ?? ''),
         postal_code: (match.postal_code as string | null) ?? null,
         latitude: Number(match.latitude),
         longitude: Number(match.longitude),

@@ -1,3 +1,4 @@
+import { toSerbianLatinOrNull } from '@/lib/geo/script.helpers'
 import { maskContactDetails } from '@/lib/listings/listings.description'
 import type { ListingDetail } from '@/types/listing-detail'
 
@@ -10,9 +11,10 @@ export function listingCanonicalUrl(slug: string, baseUrl?: string): string {
   return `${base}/listings/${slug}`
 }
 
-/** "<naslov> – iznajmi u <grad> | SND" (doc 04 §15). */
+/** "<naslov> - iznajmi u <grad> | SND" (doc 04 §15). */
 export function listingPageTitle(title: string, city: string | null): string {
-  return city ? `${title} – iznajmi u ${city} | SND` : `${title} | SND`
+  const latinCity = toSerbianLatinOrNull(city)
+  return latinCity ? `${title} - iznajmi u ${latinCity} | SND` : `${title} | SND`
 }
 
 /**
@@ -37,7 +39,7 @@ export function listingMetaDescription(description: string): string {
  * ignored rather than just that field.
  */
 export function listingJsonLd(listing: ListingDetail): Record<string, unknown> {
-  const city = listing.pickup_locations[0]?.city ?? null
+  const city = toSerbianLatinOrNull(listing.pickup_locations[0]?.city)
 
   return {
     '@context': 'https://schema.org',
