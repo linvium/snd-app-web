@@ -1,3 +1,4 @@
+import { toSerbianLatinOrNull } from '@/lib/geo/script.helpers'
 import type { OwnedListingSummary, ListingStatus } from '@/types/listing'
 import type { SearchResultListing } from '@/types/search'
 
@@ -37,7 +38,7 @@ export function toListingCardItem(
       title: listing.title,
       thumbnail_url: listing.thumbnail_url,
       price_1_day_minor: listing.price_1_day_minor,
-      locationLabel: listing.municipality,
+      locationLabel: toSerbianLatinOrNull(listing.municipality),
       distance_m: listing.distance_m,
       rating_avg: listing.rating_avg,
       rating_count: listing.rating_count,
@@ -54,7 +55,7 @@ export function toListingCardItem(
     title: listing.title,
     thumbnail_url: listing.thumbnail_url,
     price_1_day_minor: listing.price_1_day_minor,
-    locationLabel: listing.city,
+    locationLabel: toSerbianLatinOrNull(listing.city),
     distance_m: null,
     rating_avg: null,
     rating_count: 0,

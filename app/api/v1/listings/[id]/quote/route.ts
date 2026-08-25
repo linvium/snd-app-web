@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server'
 
-import { isRangeAvailable, suggestNearestRange, todayIso } from '@/lib/availability'
+import { addDaysIso, todayIso } from '@/lib/availability'
 import { apiError, ERROR_CODES } from '@/lib/api/response'
-import { AVAILABILITY_MONTHS_AHEAD, quoteForRange } from '@/lib/pricing'
+import { toListingQuote } from '@/lib/listings/listings.detail'
+import { AVAILABILITY_MONTHS_AHEAD } from '@/lib/pricing'
 import { createClient } from '@/lib/supabase/server'
-import { addDaysIso } from '@/lib/availability'
 import type { ListingQuote } from '@/types/listing-detail'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -55,12 +55,21 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   }
 
   const supabase = await createClient()
+  const horizon = addDaysIso(today, Math.round(AVAILABILITY_MONTHS_AHEAD * 30.5))
 
-  const { data: listing, error } = await supabase
-    .from('listings')
-    .select('id, status, price_1_day_minor, price_3_days_minor, price_7_days_minor')
-    .eq('id', id)
-    .maybeSingle()
+  const [{ data: listing, error }, { data: blocked }] = await Promise.all([
+    supabase
+      .from('listings')
+      .select('id, status, price_1_day_minor, price_3_days_minor, price_7_days_minor')
+      .eq('id', id)
+      .maybeSingle(),
+    supabase
+      .from('blocked_dates')
+      .select('date')
+      .eq('listing_id', id)
+      .gte('date', today)
+      .lte('date', horizon),
+  ])
 
   if (error) {
     console.error('[quote] listing load failed', error)
@@ -75,39 +84,17 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return apiError(409, ERROR_CODES.CONFLICT, 'Ovaj oglas trenutno nije aktivan.')
   }
 
-  const horizon = addDaysIso(today, Math.round(AVAILABILITY_MONTHS_AHEAD * 30.5))
-  const { data: blocked } = await supabase
-    .from('blocked_dates')
-    .select('date')
-    .eq('listing_id', id)
-    .gte('date', today)
-    .lte('date', horizon)
-
-  const unavailable = new Set((blocked ?? []).map((row) => row.date as string))
-  const available = isRangeAvailable(startDate, endDate, unavailable)
-  const suggestion = available
-    ? null
-    : suggestNearestRange(startDate, endDate, unavailable, { today })
-
-  const quote = quoteForRange(startDate, endDate, {
-    price_1_day_minor: Number(listing.price_1_day_minor),
-    price_3_days_minor: (listing.price_3_days_minor as number | null) ?? null,
-    price_7_days_minor: (listing.price_7_days_minor as number | null) ?? null,
-  })
-
-  // Priced even when unavailable: the card still shows what those days would
-  // have cost alongside the nearest free window, so the alternative can be
-  // judged against a number rather than against nothing.
-  const payload: ListingQuote = {
-    days_count: quote.days_count,
-    rental_price_minor: quote.rental_price_minor,
-    service_fee_minor: quote.service_fee_minor,
-    total_minor: quote.total_minor,
-    price_breakdown: quote.price_breakdown,
-    is_available: available,
-    suggested_start: suggestion?.start ?? null,
-    suggested_end: suggestion?.end ?? null,
-  }
+  const payload: ListingQuote = toListingQuote(
+    startDate,
+    endDate,
+    {
+      price_1_day_minor: Number(listing.price_1_day_minor),
+      price_3_days_minor: (listing.price_3_days_minor as number | null) ?? null,
+      price_7_days_minor: (listing.price_7_days_minor as number | null) ?? null,
+    },
+    (blocked ?? []).map((row) => row.date as string),
+    today
+  )
 
   return Response.json(payload)
 }

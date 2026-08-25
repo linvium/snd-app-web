@@ -5,6 +5,9 @@ import {
   conversationsForListing,
   listingContactActionsPending,
   resolveListingConversationId,
+  DELETED_MESSAGE_LABEL,
+  canMutateTextMessage,
+  isOwnTextMessage,
   formatConversationTime,
   formatMessageClock,
   formatMessageDayLabel,
@@ -12,9 +15,13 @@ import {
   messageDayKey,
   messagePresentation,
   requestCardDatesLabel,
+  shouldShowQuickReplies,
   shouldSubmitComposerOnEnter,
   sortConversationsForInbox,
   unreadMessageTotal,
+  visibleMessageBody,
+  withDeletedMessage,
+  withEditedBody,
 } from '@/lib/messages/messages.helpers'
 import { MESSAGE_TYPES } from '@/types/message'
 
@@ -300,5 +307,142 @@ describe('shouldSubmitComposerOnEnter', () => {
         nativeEvent: { isComposing: true },
       })
     ).toBe(false)
+  })
+})
+
+describe('canMutateTextMessage', () => {
+  const userId = '11111111-1111-4111-8111-111111111111'
+  const now = new Date('2026-08-24T12:00:00.000Z')
+
+  function textMessage(
+    overrides: Partial<{
+      type: 'text' | 'booking_accepted'
+      sender_id: string | null
+      deleted_at: string | null
+      created_at: string
+    }> = {}
+  ) {
+    return {
+      type: 'text' as const,
+      sender_id: userId,
+      deleted_at: null,
+      created_at: '2026-08-24T11:50:00.000Z',
+      ...overrides,
+    }
+  }
+
+  it('allows the sender to change their own recent text', () => {
+    expect(canMutateTextMessage({ message: textMessage(), userId, now })).toBe(true)
+  })
+
+  it('allows a change at the 15 minute mark', () => {
+    expect(
+      canMutateTextMessage({
+        message: textMessage({ created_at: '2026-08-24T11:45:00.000Z' }),
+        userId,
+        now,
+      })
+    ).toBe(true)
+  })
+
+  it('blocks a change after 15 minutes', () => {
+    expect(
+      canMutateTextMessage({
+        message: textMessage({ created_at: '2026-08-24T11:44:59.000Z' }),
+        userId,
+        now,
+      })
+    ).toBe(false)
+  })
+
+  it('blocks another person, system rows, and deleted text', () => {
+    expect(
+      canMutateTextMessage({
+        message: textMessage({ sender_id: '22222222-2222-4222-8222-222222222222' }),
+        userId,
+        now,
+      })
+    ).toBe(false)
+    expect(
+      canMutateTextMessage({
+        message: textMessage({ type: 'booking_accepted' }),
+        userId,
+        now,
+      })
+    ).toBe(false)
+    expect(
+      canMutateTextMessage({
+        message: textMessage({ deleted_at: '2026-08-24T11:51:00.000Z' }),
+        userId,
+        now,
+      })
+    ).toBe(false)
+    expect(canMutateTextMessage({ message: textMessage(), userId: null, now })).toBe(false)
+  })
+
+  it('still recognizes own text after the window closes', () => {
+    expect(
+      isOwnTextMessage({
+        message: textMessage({ created_at: '2026-08-24T11:44:59.000Z' }),
+        userId,
+      })
+    ).toBe(true)
+    expect(
+      isOwnTextMessage({
+        message: textMessage({ sender_id: '22222222-2222-4222-8222-222222222222' }),
+        userId,
+      })
+    ).toBe(false)
+  })
+})
+
+describe('visibleMessageBody', () => {
+  it('returns the placeholder for a deleted message', () => {
+    expect(
+      visibleMessageBody({ body: 'Tajna', deleted_at: '2026-08-24T12:00:00.000Z' })
+    ).toBe(DELETED_MESSAGE_LABEL)
+  })
+
+  it('returns the live body otherwise', () => {
+    expect(visibleMessageBody({ body: 'Zdravo', deleted_at: null })).toBe('Zdravo')
+    expect(visibleMessageBody({ body: null, deleted_at: null })).toBe('')
+  })
+})
+
+describe('optimistic message patches', () => {
+  const message = {
+    id: '11111111-1111-4111-8111-111111111111',
+    conversation_id: '22222222-2222-4222-8222-222222222222',
+    sender_id: '33333333-3333-4333-8333-333333333333',
+    type: 'text' as const,
+    body: 'Stari tekst',
+    metadata: null,
+    created_at: '2026-08-24T11:50:00.000Z',
+    edited_at: null,
+    deleted_at: null,
+  }
+  const now = new Date('2026-08-24T11:51:00.000Z')
+
+  it('applies the new body and edited timestamp immediately', () => {
+    expect(withEditedBody(message, '  Novi tekst  ', now)).toEqual({
+      ...message,
+      body: 'Novi tekst',
+      edited_at: now.toISOString(),
+    })
+  })
+
+  it('clears the body and stamps deleted_at', () => {
+    expect(withDeletedMessage(message, now)).toEqual({
+      ...message,
+      body: null,
+      deleted_at: now.toISOString(),
+    })
+  })
+})
+
+describe('shouldShowQuickReplies', () => {
+  it('shows chips only to the owner who received the request', () => {
+    expect(shouldShowQuickReplies('owner')).toBe(true)
+    expect(shouldShowQuickReplies('renter')).toBe(false)
   })
 })

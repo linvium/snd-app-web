@@ -138,6 +138,7 @@ export default function SearchResults() {
       pins={pinsQuery.data?.data ?? []}
       truncated={pinsQuery.data?.meta.truncated ?? false}
       listings={listings}
+      dates={{ from: params.from, to: params.to }}
       center={hasCenter ? { lat: params.lat!, lng: params.lng! } : null}
       userCoords={centerSource === 'user_gps' && hasCenter ? { lat: params.lat!, lng: params.lng! } : profileCoords}
       highlightedId={highlightedId}
@@ -245,6 +246,7 @@ export default function SearchResults() {
                         <ListingCard
                           key={listing.id}
                           listing={listing}
+                          dates={{ from: params.from, to: params.to }}
                           priority={index < 4}
                           highlighted={highlightedId === listing.id}
                           onHoverChange={setHighlightedId}

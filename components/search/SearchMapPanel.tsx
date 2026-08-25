@@ -7,6 +7,7 @@ import { XIcon } from 'lucide-react'
 
 import ListingCard from '@/components/listings/ListingCard'
 import { Skeleton } from '@/components/ui/skeleton'
+import { listingPublicPath, type ListingDateRange } from '@/lib/listings'
 import { formatPricePerDay, type Coordinates } from '@/lib/search'
 import { cn } from '@/lib/utils'
 import type { MapPin, SearchResultListing } from '@/types/search'
@@ -24,6 +25,7 @@ interface SearchMapPanelProps {
   center: Coordinates | null
   userCoords: Coordinates | null
   highlightedId: string | null
+  dates?: ListingDateRange | null
   onHoverChange: (listingId: string | null) => void
   onSearchThisArea: (center: Coordinates, radiusKm: number) => void
 }
@@ -45,6 +47,7 @@ export default function SearchMapPanel({
   center,
   userCoords,
   highlightedId,
+  dates,
   onHoverChange,
   onSearchThisArea,
 }: SearchMapPanelProps) {
@@ -105,9 +108,9 @@ export default function SearchMapPanel({
                 <XIcon className="size-3.5" aria-hidden />
               </button>
               {selectedListing ? (
-                <ListingCard listing={selectedListing} priority />
+                <ListingCard listing={selectedListing} dates={dates} priority />
               ) : (
-                <CompactPinCard pin={selection.pin} />
+                <CompactPinCard pin={selection.pin} dates={dates} />
               )}
             </div>
           </div>
@@ -131,7 +134,11 @@ export default function SearchMapPanel({
                   pin.id === selection.pin.id && 'ring-2 ring-brand-500 rounded-lg'
                 )}
               >
-                {listing ? <ListingCard listing={listing} /> : <CompactPinCard pin={pin} />}
+                {listing ? (
+                  <ListingCard listing={listing} dates={dates} />
+                ) : (
+                  <CompactPinCard pin={pin} dates={dates} />
+                )}
               </div>
             )
           })}
@@ -146,10 +153,10 @@ export default function SearchMapPanel({
  * page four has no full card to render. Title, price and a link are enough to
  * get the user where they were going.
  */
-function CompactPinCard({ pin }: { pin: MapPin }) {
+function CompactPinCard({ pin, dates }: { pin: MapPin; dates?: ListingDateRange | null }) {
   return (
     <Link
-      href={`/listings/${pin.slug}`}
+      href={listingPublicPath(pin.slug, dates)}
       className="block rounded-lg bg-card p-3 no-underline shadow-md"
     >
       <p className="line-clamp-2 text-sm font-semibold text-card-foreground">{pin.title}</p>

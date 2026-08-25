@@ -11,14 +11,13 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuthSession } from '@/context/AuthContext'
-import { useListingQuote } from '@/hooks/listings'
+import { useListingQuoteView } from '@/hooks/listings'
 import { useMediaQuery } from '@/hooks/search'
 import { isRangeAvailable } from '@/lib/availability'
-import { listingEditPath, formatRating } from '@/lib/listings'
+import { listingEditPath, listingPublicPath, formatRating } from '@/lib/listings'
 import { requestThreadPath } from '@/lib/messages'
 import { formatDate, formatPriceMinor, formatPricePerDay } from '@/lib/search'
-import { cn } from '@/lib/utils'
-import type { ListingDetail } from '@/types/listing-detail'
+import type { ListingDetail, ListingQuote } from '@/types/listing-detail'
 
 const PACKAGE_LABELS: Record<string, string> = {
   '1_day': 'Dnevna cena',
@@ -34,6 +33,7 @@ export interface BookingCardProps {
   onStartRequest: () => void
   existingConversationId?: string | null
   contactActionsPending?: boolean
+  initialQuote?: ListingQuote | null
   /**
    * `plain` on the copies inside a dialog, which must not carry the test hooks
    * - two elements answering to `contact-owner-button` is an ambiguous
@@ -58,6 +58,7 @@ export default function BookingCard({
   onStartRequest,
   existingConversationId = null,
   contactActionsPending = false,
+  initialQuote = null,
   variant = 'sticky',
 }: BookingCardProps) {
   const router = useRouter()
@@ -66,7 +67,9 @@ export default function BookingCard({
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const showTestIds = variant === 'sticky'
 
-  const quote = useListingQuote(listing.id, from, to)
+  const quoteView = useListingQuoteView(listing.id, from, to, initialQuote)
+  const quote = quoteView.quote
+  const panel = quoteView.panel
   const rating = formatRating(listing.rating_avg)
 
   // Doc 04 §13.1, "Sopstveni oglas": the whole card is replaced rather than
@@ -105,7 +108,7 @@ export default function BookingCard({
       ? { start: quote.data.suggested_start, end: quote.data.suggested_end }
       : null
 
-  const loginNext = `/listings/${listing.slug}${from && to ? `?from=${from}&to=${to}` : ''}`
+  const loginNext = listingPublicPath(listing.slug, { from, to })
 
   const handleContact = () => {
     if (contactActionsPending) return
@@ -145,7 +148,7 @@ export default function BookingCard({
 
         {/* The package ladder argues for longer rentals, so it belongs before
             the dates are picked - after that the quote below is the truth. */}
-        {hasDates ? null : <PriceTiers listing={listing} />}
+        {panel === 'tiers' ? <PriceTiers listing={listing} /> : null}
 
         <button
           type="button"
@@ -170,13 +173,9 @@ export default function BookingCard({
           </span>
         </button>
 
-        {/* No dates, no sum: an itemised total for days nobody picked is noise
-            (doc 04 §13.1). */}
-        {hasDates && quote.isPending ? (
-          <p className="mt-4 mb-0 text-sm text-muted-foreground">Računam cenu…</p>
-        ) : null}
+        {panel === 'skeleton' ? <QuoteSkeleton showTestId={showTestIds} /> : null}
 
-        {hasDates && quote.data ? (
+        {panel === 'quote' && quote.data ? (
           <div className="mt-4">
             <p className="m-0 text-sm font-medium text-card-foreground">
               {quote.data.days_count} {quote.data.days_count === 1 ? 'dan' : 'dana'}
@@ -293,5 +292,36 @@ export default function BookingCard({
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+function QuoteSkeleton({ showTestId }: { showTestId: boolean }) {
+  return (
+    <div
+      className="mt-4"
+      data-testid={showTestId ? 'quote-skeleton' : undefined}
+      aria-busy="true"
+    >
+      <span className="sr-only">Računam cenu</span>
+      <Skeleton className="h-5 w-16" />
+      <div className="mt-3 space-y-2">
+        <div className="flex justify-between gap-4">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <div className="flex justify-between gap-4">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <div className="flex justify-between gap-4">
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="h-4 w-14" />
+        </div>
+        <div className="flex justify-between gap-4 border-t border-border pt-2">
+          <Skeleton className="h-5 w-16" />
+          <Skeleton className="h-5 w-20" />
+        </div>
+      </div>
+    </div>
   )
 }

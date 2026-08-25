@@ -2,6 +2,7 @@
 
 import ListingCard, { ListingCardSkeleton } from '@/components/listings/ListingCard'
 import { useSimilarListings } from '@/hooks/listings'
+import type { ListingDateRange } from '@/lib/listings'
 
 /**
  * "Slični predmeti" (doc 04 §12).
@@ -13,7 +14,13 @@ import { useSimilarListings } from '@/hooks/listings'
  * The section removes itself when there is nothing to show — an empty strip
  * reads as a dead platform (doc 04 §12).
  */
-export default function SimilarListings({ listingId }: { listingId: string }) {
+export default function SimilarListings({
+  listingId,
+  dates,
+}: {
+  listingId: string
+  dates?: ListingDateRange | null
+}) {
   const { data, isPending, isError } = useSimilarListings(listingId)
 
   if (isError) return null
@@ -38,7 +45,7 @@ export default function SimilarListings({ listingId }: { listingId: string }) {
                 key={listing.id}
                 className="w-[70vw] flex-none snap-start sm:w-[45vw] md:w-auto"
               >
-                <ListingCard listing={listing} />
+                <ListingCard listing={listing} dates={dates} />
               </div>
             ))}
       </div>

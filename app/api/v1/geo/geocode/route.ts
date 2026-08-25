@@ -2,25 +2,7 @@ import { NextRequest } from 'next/server'
 
 import { requireUser } from '@/lib/api/auth'
 import { apiError, apiList, ERROR_CODES } from '@/lib/api/response'
-import type { GeocodeResult } from '@/types/listing'
-
-interface NominatimAddress {
-  road?: string
-  pedestrian?: string
-  house_number?: string
-  city?: string
-  town?: string
-  village?: string
-  municipality?: string
-  postcode?: string
-}
-
-interface NominatimHit {
-  display_name: string
-  lat: string
-  lon: string
-  address?: NominatimAddress
-}
+import { mapNominatimHit, NOMINATIM_ACCEPT_LANGUAGE, type NominatimHit } from '@/lib/geo'
 
 export async function GET(request: NextRequest) {
   const auth = await requireUser()
@@ -37,11 +19,12 @@ export async function GET(request: NextRequest) {
   url.searchParams.set('format', 'jsonv2')
   url.searchParams.set('addressdetails', '1')
   url.searchParams.set('limit', '5')
+  url.searchParams.set('accept-language', NOMINATIM_ACCEPT_LANGUAGE)
 
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json',
-      'Accept-Language': 'sr,en',
+      'Accept-Language': NOMINATIM_ACCEPT_LANGUAGE,
       'User-Agent': 'SND-StvarNaDan/1.0 (listings geocode)',
     },
     next: { revalidate: 3600 },
@@ -53,19 +36,7 @@ export async function GET(request: NextRequest) {
   }
 
   const hits = (await response.json()) as NominatimHit[]
-  const results: GeocodeResult[] = hits.map((hit) => {
-    const address = hit.address ?? {}
-    const road = address.road ?? address.pedestrian ?? ''
-    const street = [road, address.house_number].filter(Boolean).join(' ')
-    return {
-      label: hit.display_name,
-      street: street || (hit.display_name.split(',')[0] ?? ''),
-      city: address.city ?? address.town ?? address.village ?? address.municipality ?? '',
-      postal_code: address.postcode ?? null,
-      latitude: Number(hit.lat),
-      longitude: Number(hit.lon),
-    }
-  })
+  const results = hits.map(mapNominatimHit)
 
   return apiList(results, { total: results.length })
 }

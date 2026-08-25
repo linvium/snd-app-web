@@ -2,8 +2,23 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { conversationKeys, conversationsForListing, messagesService, unreadMessageTotal } from '@/lib/messages'
-import type { ConversationThread } from '@/types/message'
+import {
+  conversationKeys,
+  conversationsForListing,
+  messagesService,
+  unreadMessageTotal,
+  withDeletedMessage,
+  withEditedBody,
+} from '@/lib/messages'
+import type { ConversationThread, Message } from '@/types/message'
+
+function replaceThreadMessage(previous: ConversationThread | undefined, message: Message) {
+  if (!previous) return previous
+  return {
+    ...previous,
+    messages: previous.messages.map((row) => (row.id === message.id ? message : row)),
+  }
+}
 
 export function useConversations(enabled = true) {
   return useQuery({
@@ -35,6 +50,71 @@ export function useSendMessage(conversationId: string) {
         if (!previous) return previous
         return { ...previous, messages: [...previous.messages, message] }
       })
+      queryClient.invalidateQueries({ queryKey: conversationKeys.list() })
+    },
+  })
+}
+
+export function useEditMessage(conversationId: string) {
+  const queryClient = useQueryClient()
+  const threadKey = conversationKeys.thread(conversationId)
+  return useMutation({
+    mutationFn: ({ messageId, body }: { messageId: string; body: string }) =>
+      messagesService.editMessage(conversationId, messageId, body),
+    onMutate: async ({ messageId, body }) => {
+      const previous = queryClient.getQueryData<ConversationThread>(threadKey)
+      const current = previous?.messages.find((row) => row.id === messageId)
+      const optimistic = current ? withEditedBody(current, body) : null
+      if (previous && optimistic) {
+        queryClient.setQueryData<ConversationThread>(threadKey, replaceThreadMessage(previous, optimistic))
+      }
+      await queryClient.cancelQueries({ queryKey: threadKey })
+      if (optimistic) {
+        queryClient.setQueryData<ConversationThread>(threadKey, (latest) =>
+          replaceThreadMessage(latest, optimistic)
+        )
+      }
+      return { previous }
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(threadKey, context.previous)
+    },
+    onSuccess: (message) => {
+      queryClient.setQueryData<ConversationThread>(threadKey, (previous) =>
+        replaceThreadMessage(previous, message)
+      )
+      queryClient.invalidateQueries({ queryKey: conversationKeys.list() })
+    },
+  })
+}
+
+export function useDeleteMessage(conversationId: string) {
+  const queryClient = useQueryClient()
+  const threadKey = conversationKeys.thread(conversationId)
+  return useMutation({
+    mutationFn: (messageId: string) => messagesService.deleteMessage(conversationId, messageId),
+    onMutate: async (messageId) => {
+      const previous = queryClient.getQueryData<ConversationThread>(threadKey)
+      const current = previous?.messages.find((row) => row.id === messageId)
+      const optimistic = current ? withDeletedMessage(current) : null
+      if (previous && optimistic) {
+        queryClient.setQueryData<ConversationThread>(threadKey, replaceThreadMessage(previous, optimistic))
+      }
+      await queryClient.cancelQueries({ queryKey: threadKey })
+      if (optimistic) {
+        queryClient.setQueryData<ConversationThread>(threadKey, (latest) =>
+          replaceThreadMessage(latest, optimistic)
+        )
+      }
+      return { previous }
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(threadKey, context.previous)
+    },
+    onSuccess: (message) => {
+      queryClient.setQueryData<ConversationThread>(threadKey, (previous) =>
+        replaceThreadMessage(previous, message)
+      )
       queryClient.invalidateQueries({ queryKey: conversationKeys.list() })
     },
   })
