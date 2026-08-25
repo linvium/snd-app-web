@@ -1,0 +1,190 @@
+[
+  {
+    "key": "marko",
+    "email": "demo.marko@snd.rs",
+    "first_name": "Marko",
+    "last_name": "Petrović",
+    "display_name": "Marko P.",
+    "about": "Iznajmljujem alat i opremu koju koristim na gradilištu. Preuzimanje na Vračaru ili Zvezdari.",
+    "locations": [
+      {
+        "label": "Vračar",
+        "street": "Njegoševa 42",
+        "city": "Beograd",
+        "municipality": "Vračar",
+        "postal_code": "11000",
+        "lat": 44.799,
+        "lng": 20.47
+      },
+      {
+        "label": "Zvezdara",
+        "street": "Bulevar kralja Aleksandra 250",
+        "city": "Beograd",
+        "municipality": "Zvezdara",
+        "postal_code": "11000",
+        "lat": 44.8005,
+        "lng": 20.49
+      }
+    ]
+  },
+  {
+    "key": "jelena",
+    "email": "demo.jelena@snd.rs",
+    "first_name": "Jelena",
+    "last_name": "Ilić",
+    "display_name": "Jelena I.",
+    "about": "Foto i video oprema iz mog studija. Sve je servisirano i spremno za snimanje.",
+    "locations": [
+      {
+        "label": "Stari grad",
+        "street": "Zmaj Jovina 5",
+        "city": "Novi Sad",
+        "municipality": "Stari grad",
+        "postal_code": "21000",
+        "lat": 45.2671,
+        "lng": 19.8335
+      },
+      {
+        "label": "Liman",
+        "street": "Bulevar cara Lazara 78",
+        "city": "Novi Sad",
+        "municipality": "Liman",
+        "postal_code": "21000",
+        "lat": 45.2447,
+        "lng": 19.8369
+      }
+    ]
+  },
+  {
+    "key": "nikola",
+    "email": "demo.nikola@snd.rs",
+    "first_name": "Nikola",
+    "last_name": "Jovanović",
+    "display_name": "Nikola J.",
+    "about": "Bašta, dvorište i sve za roštilj. Javite se dan ranije da pripremim opremu.",
+    "locations": [
+      {
+        "label": "Medijana",
+        "street": "Obrenovićeva 12",
+        "city": "Niš",
+        "municipality": "Medijana",
+        "postal_code": "18000",
+        "lat": 43.3209,
+        "lng": 21.8958
+      }
+    ]
+  },
+  {
+    "key": "ana",
+    "email": "demo.ana@snd.rs",
+    "first_name": "Ana",
+    "last_name": "Marković",
+    "display_name": "Ana M.",
+    "about": "Dečija oprema i kućni aparati. Sve redovno čistim i proveravam pre izdavanja.",
+    "locations": [
+      {
+        "label": "Centar",
+        "street": "Kralja Petra I 22",
+        "city": "Kragujevac",
+        "municipality": "Stari grad",
+        "postal_code": "34000",
+        "lat": 44.0128,
+        "lng": 20.9114
+      }
+    ]
+  },
+  {
+    "key": "stefan",
+    "email": "demo.stefan@snd.rs",
+    "first_name": "Stefan",
+    "last_name": "Nikolić",
+    "display_name": "Stefan N.",
+    "about": "Oprema za kampovanje i planinarenje. Vikendom sam dostupan i za rano preuzimanje.",
+    "locations": [
+      {
+        "label": "Centar",
+        "street": "Korzo 8",
+        "city": "Subotica",
+        "municipality": "Centar",
+        "postal_code": "24000",
+        "lat": 46.1005,
+        "lng": 19.6651
+      }
+    ]
+  },
+  {
+    "key": "milica",
+    "email": "demo.milica@snd.rs",
+    "first_name": "Milica",
+    "last_name": "Pavlović",
+    "display_name": "Milica P.",
+    "about": "Muzička i studijska oprema. Rado objasnim kako se sve povezuje pre preuzimanja.",
+    "locations": [
+      {
+        "label": "Centar",
+        "street": "Gradsko šetalište 14",
+        "city": "Čačak",
+        "municipality": "Centar",
+        "postal_code": "32000",
+        "lat": 43.8914,
+        "lng": 20.3497
+      }
+    ]
+  },
+  {
+    "key": "dusan",
+    "email": "demo.dusan@snd.rs",
+    "first_name": "Dušan",
+    "last_name": "Stanković",
+    "display_name": "Dušan S.",
+    "about": "Prikolice, krovni nosači i građevinska mehanizacija. Moguć dogovor i za duži period.",
+    "locations": [
+      {
+        "label": "Centar",
+        "street": "Vojvode Radomira Putnika 5",
+        "city": "Pančevo",
+        "municipality": "Centar",
+        "postal_code": "26000",
+        "lat": 44.8708,
+        "lng": 20.6403
+      },
+      {
+        "label": "Novi Beograd",
+        "street": "Bulevar Mihajla Pupina 10",
+        "city": "Beograd",
+        "municipality": "Novi Beograd",
+        "postal_code": "11070",
+        "lat": 44.82,
+        "lng": 20.41
+      }
+    ]
+  },
+  {
+    "key": "ivana",
+    "email": "demo.ivana@snd.rs",
+    "first_name": "Ivana",
+    "last_name": "Ristić",
+    "display_name": "Ivana R.",
+    "about": "Oprema za proslave i svečane prilike. Dogovor oko dostave je uvek moguć.",
+    "locations": [
+      {
+        "label": "Centar",
+        "street": "Kralja Aleksandra I 18",
+        "city": "Zrenjanin",
+        "municipality": "Centar",
+        "postal_code": "23000",
+        "lat": 45.3814,
+        "lng": 20.3897
+      },
+      {
+        "label": "Centar",
+        "street": "Trg srpskih ratnika 9",
+        "city": "Kraljevo",
+        "municipality": "Centar",
+        "postal_code": "36000",
+        "lat": 43.7256,
+        "lng": 20.6892
+      }
+    ]
+  }
+]
