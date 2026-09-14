@@ -62,6 +62,7 @@ export default defineConfig({
         '**/home/listings.spec.ts',
         '**/listings/quote.spec.ts',
         '**/billing/pricing.spec.ts',
+        '**/security/users-lockdown.spec.ts',
       ],
     },
   ],
