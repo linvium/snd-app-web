@@ -1,5 +1,3 @@
-import { OWNER_COMMISSION_RATE, RENTER_SERVICE_FEE_RATE } from '@/lib/pricing/pricing.config'
-
 export type PackageKey = '1_day' | '3_days' | '7_days'
 
 export interface PriceBreakdownEntry {
@@ -15,9 +13,6 @@ export interface RentalPrice {
 
 export interface Quote extends RentalPrice {
   days_count: number
-  service_fee_minor: number
-  total_minor: number
-  owner_payout_minor: number
 }
 
 export interface ListingPrices {
@@ -35,9 +30,9 @@ export function roundHalfUp(value: number): number {
  * The cheapest combination of packages that covers `days` (doc 00 §6.1).
  *
  * The rule that shapes this: a package may overshoot the number of days when
- * that costs less. Two days on an 1000/1800 listing are charged as the
- * three-day package, because 1800 is less than 2000 — the platform never bills
- * more than it has to, even when the person asked for more.
+ * that costs less. Two days on an 1000/1800 listing are priced as the
+ * three-day package, because 1800 is less than 2000 — the renter never owes
+ * more than they have to, even when they asked for more.
  *
  * Undefined tiers do not disable the packages, they fall back to a synthetic
  * price, so the algorithm has a value for every step and a listing priced only
@@ -109,10 +104,12 @@ export function daysBetweenInclusive(startIso: string, endIso: string): number {
 }
 
 /**
- * The full sum the booking card shows (doc 04 §13.2).
+ * The sum the booking card shows (doc 04 §13.2).
  *
- * Computed on the server and never in the browser: the price displayed has to
- * be the price charged, and a number the client can edit is neither.
+ * Computed on the server and never in the browser: the figure on the card has
+ * to be the figure the database prices the request with, and a number the
+ * client can edit is neither. Nothing is added to the rental price - renting
+ * is not charged through the platform.
  */
 export function quoteForRange(
   startIso: string,
@@ -122,16 +119,9 @@ export function quoteForRange(
   const days_count = daysBetweenInclusive(startIso, endIso)
   const { rental_price_minor, price_breakdown } = calculateRentalPrice(days_count, prices)
 
-  const service_fee_minor = roundHalfUp(rental_price_minor * RENTER_SERVICE_FEE_RATE)
-  const owner_payout_minor =
-    rental_price_minor - roundHalfUp(rental_price_minor * OWNER_COMMISSION_RATE)
-
   return {
     days_count,
     rental_price_minor,
     price_breakdown,
-    service_fee_minor,
-    total_minor: rental_price_minor + service_fee_minor,
-    owner_payout_minor,
   }
 }

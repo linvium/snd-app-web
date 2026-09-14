@@ -58,7 +58,7 @@ const SOCIAL_ICONS = {
  *
  * It is the second place every help and legal page is reachable from, which is
  * the part that matters beyond decoration: the header's utility row is hidden
- * below lg, so on a phone this is the only standing link to the guarantee or
+ * below lg, so on a phone this is the only standing link to the price list or
  * the terms. The links themselves are ordinary hrefs, so they open in the
  * support sheet on click and stay crawlable addresses for everything else.
  */
@@ -74,8 +74,8 @@ export default function Footer() {
               <Logo variant="horizontal" size="md" />
             </Link>
             <p className="mt-4 mb-0 max-w-[320px] text-sm leading-6 text-muted-foreground">
-              Iznajmi alat, opremu i stvari od ljudi iz svog kraja. Svaka rezervacija je pokrivena
-              garancijom.
+              Iznajmi alat, opremu i stvari od ljudi iz svog kraja. Bez provizije na
+              iznajmljivanje.
             </p>
 
             <ul className="mt-5 flex list-none gap-2">

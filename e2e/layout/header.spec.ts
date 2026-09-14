@@ -29,7 +29,7 @@ test.describe('header layout', () => {
     const utility = page.getByTestId('header-utility-nav')
     await expect(utility).toBeVisible()
     await expect(utility.getByRole('link', { name: 'Kako funkcioniše' })).toBeVisible()
-    await expect(utility.getByRole('link', { name: 'Garancija' })).toBeVisible()
+    await expect(utility.getByRole('link', { name: 'Cenovnik' })).toBeVisible()
     await expect(utility.getByRole('link', { name: 'Česta pitanja' })).toBeVisible()
     await expect(utility.getByRole('link', { name: 'Kontakt' })).toBeVisible()
 
@@ -251,11 +251,11 @@ test.describe('header layout', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/search')
 
-    await page.getByTestId('header-utility-nav').getByRole('link', { name: 'Garancija' }).click()
+    await page.getByTestId('header-utility-nav').getByRole('link', { name: 'Cenovnik' }).click()
 
     const sheet = page.getByTestId('support-sheet')
     await expect(sheet).toBeVisible()
-    await expect(sheet.getByRole('heading', { name: 'Garancija', level: 1 })).toBeVisible()
+    await expect(sheet.getByRole('heading', { name: 'Cenovnik', level: 1 })).toBeVisible()
     await expect(page).toHaveURL(/\/search/)
 
     await page.keyboard.press('Escape')

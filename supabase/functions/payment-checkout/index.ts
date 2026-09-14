@@ -5,14 +5,14 @@ import { createAdminClient, appUrl } from '../_shared/email.ts'
 import { resolveProvider } from '../_shared/payments/index.ts'
 
 /**
- * Opens a checkout for a payment link and hands back somewhere to send the
- * renter.
+ * Opens a checkout for a billing order - a subscription plan or a credit pack -
+ * and hands back somewhere to send the owner.
  *
- * Only the renter who owes the money may start one - the token alone is enough
- * to *see* a link, because it arrives by email, but not to put a charge in
- * motion against somebody else's reservation.
+ * Only the owner who created the order may start one: the token travels
+ * through URLs and the provider, and holding it must not be enough to put a
+ * charge in motion on somebody else's account.
  *
- * The session id is recorded on the link before the URL is returned, so a
+ * The session id is recorded on the order before the URL is returned, so a
  * webhook that arrives before the browser does still has something to match.
  */
 
@@ -21,7 +21,7 @@ import { resolveProvider } from '../_shared/payments/index.ts'
  *
  * An unset key never reaches the provider; a wrong one comes back as an
  * authentication error. Both mean somebody has to fix a secret before any
- * payment on this deployment can succeed.
+ * purchase on this deployment can succeed.
  */
 function isMisconfigured(error: unknown, message: string): boolean {
   const type = (error as { type?: string } | null)?.type
@@ -35,13 +35,23 @@ function isMisconfigured(error: unknown, message: string): boolean {
   )
 }
 
-/**
- * Card networks have a floor - Stripe's is about $0.50 equivalent - and a
- * booking cheaper than that cannot be taken by card at all.
- */
+/** Card networks have a floor - Stripe's is about $0.50 equivalent. */
 function isAmountTooSmall(error: unknown, message: string): boolean {
   const code = (error as { code?: string } | null)?.code
   return code === 'amount_too_small' || message.includes('must convert to at least')
+}
+
+type OrderRow = {
+  token: string
+  user_id: string
+  kind: 'subscription' | 'credits'
+  amount_minor: number
+  currency: string
+  credits: number | null
+  status: string
+  expires_at: string
+  provider: string | null
+  billing_plans: { name: string; listing_limit: number; interval_months: number } | null
 }
 
 Deno.serve(async (req) => {
@@ -94,42 +104,26 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'unauthenticated' }, 401, corsHeaders)
   }
 
-  const { data: link, error: linkError } = await admin
-    .from('booking_payment_links')
+  const { data: order, error: orderError } = await admin
+    .from('billing_orders')
     .select(
-      'id, token, amount_minor, currency, status, expires_at, provider, provider_session_id, provider_checkout_url, bookings!inner(id, reference, renter_id, listing_id)'
+      'token, user_id, kind, amount_minor, currency, credits, status, expires_at, provider, billing_plans(name, listing_limit, interval_months)'
     )
     .eq('token', token)
     .maybeSingle()
 
-  if (linkError) {
-    console.error('payment-checkout: link lookup', linkError)
+  if (orderError) {
+    console.error('payment-checkout: order lookup', orderError)
     return jsonResponse({ error: 'lookup failed' }, 500, corsHeaders)
   }
 
-  const row = link as unknown as
-    | {
-        token: string
-        amount_minor: number
-        currency: string
-        status: string
-        expires_at: string
-        provider: string | null
-        provider_checkout_url: string | null
-        bookings: {
-          id: string
-          reference: string | null
-          renter_id: string
-          listing_id: string
-        }
-      }
-    | null
+  const row = order as unknown as OrderRow | null
 
   if (!row) {
     return jsonResponse({ error: 'NOT_FOUND' }, 404, corsHeaders)
   }
 
-  if (row.bookings.renter_id !== user.id) {
+  if (row.user_id !== user.id) {
     return jsonResponse({ error: 'FORBIDDEN' }, 403, corsHeaders)
   }
 
@@ -141,46 +135,45 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'EXPIRED' }, 410, corsHeaders)
   }
 
-  const { data: listing } = await admin
-    .from('listings')
-    .select('title')
-    .eq('id', row.bookings.listing_id)
-    .maybeSingle()
-
   const base = appUrl()
   const provider = resolveProvider(row.provider)
+  const plan = row.billing_plans
+  const isSubscription = row.kind === 'subscription'
 
   let session
   try {
     session = await provider.createCheckout({
       token: row.token,
+      mode: isSubscription ? 'subscription' : 'payment',
       amountMinor: row.amount_minor,
       currency: row.currency,
-      listingTitle: (listing?.title as string | undefined) ?? 'Rezervacija',
-      bookingReference: row.bookings.reference,
-      renterEmail: user.email ?? null,
-      successUrl: `${base}/pay/${row.token}?status=success`,
-      cancelUrl: `${base}/pay/${row.token}?status=cancelled`,
+      productName: isSubscription
+        ? `SND pretplata ${plan?.name ?? ''}`.trim()
+        : `${row.credits ?? 0} kredita za oglase`,
+      productDescription: isSubscription
+        ? `Do ${plan?.listing_limit ?? 0} objavljenih oglasa u isto vreme`
+        : 'Jedan kredit je jedan objavljen oglas',
+      customerEmail: user.email ?? null,
+      intervalMonths: plan?.interval_months ?? 1,
+      successUrl: `${base}/profile/billing?order=${row.token}&status=success`,
+      cancelUrl: `${base}/profile/billing?order=${row.token}&status=cancelled`,
       expiresAt: new Date(row.expires_at),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'checkout failed'
 
-    // Too little of the link's life left for the provider's minimum session.
-    if (message.includes('LINK_EXPIRING')) {
+    // Too little of the order's life left for the provider's minimum session.
+    if (message.includes('ORDER_EXPIRING')) {
       return jsonResponse({ error: 'EXPIRED' }, 410, corsHeaders)
     }
 
-    // Under the provider's floor for a card charge. A property of this booking's
-    // total, not a bad moment - the renter retrying changes nothing.
     if (isAmountTooSmall(error, message)) {
       console.error('payment-checkout: amount below provider minimum -', message)
       return jsonResponse({ error: 'AMOUNT_TOO_SMALL' }, 422, corsHeaders)
     }
 
-    // A missing key and a rejected key are the same fact to the renter:
-    // payments are not configured. Neither is worth a retry, so neither gets
-    // the "try again" of a 502. The log line names which one it was.
+    // A missing key and a rejected key are the same fact to the owner:
+    // payments are not configured. Neither is worth a retry.
     if (isMisconfigured(error, message)) {
       console.error('payment-checkout: provider not configured -', message)
       return jsonResponse({ error: 'PAYMENTS_UNAVAILABLE' }, 503, corsHeaders)
@@ -190,7 +183,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'PROVIDER_ERROR', detail: message }, 502, corsHeaders)
   }
 
-  const { error: recordError } = await admin.rpc('snd_start_payment_checkout', {
+  const { error: recordError } = await admin.rpc('snd_start_billing_checkout', {
     p_token: row.token,
     p_provider: provider.name,
     p_session_id: session.sessionId,
@@ -199,7 +192,7 @@ Deno.serve(async (req) => {
 
   if (recordError) {
     // The session exists at the provider but we could not write it down. Better
-    // to fail loudly than to send the renter to a charge we cannot reconcile.
+    // to fail loudly than to send the owner to a charge we cannot reconcile.
     console.error('payment-checkout: could not record session', recordError)
     return jsonResponse({ error: 'INTERNAL' }, 500, corsHeaders)
   }

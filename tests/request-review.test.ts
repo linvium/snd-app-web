@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest'
 
-import { OWNER_COMMISSION_RATE } from '@/lib/pricing/pricing.config'
-import { roundHalfUp } from '@/lib/pricing/pricing.helpers'
 import {
   bookingDurationLabel,
   compactBookingRange,
@@ -72,35 +70,18 @@ describe('bookingDurationLabel', () => {
 })
 
 describe('ownerReviewMoney', () => {
-  it('does not invent a payout when the snapshot is empty', () => {
+  it('shows nothing when the request has no priced term yet', () => {
     expect(
-      ownerReviewMoney(
-        { days_count: null, rental_price_minor: 0 },
-        { price_1_day_minor: 80000, item_value_minor: 400000 }
-      )
+      ownerReviewMoney({ days_count: null, rental_price_minor: 0 }, { price_1_day_minor: 80000 })
     ).toBeNull()
   })
 
-  it('deducts the owner commission from the rental snapshot', () => {
-    const rentalMinor = 240000
-    const money = ownerReviewMoney(
-      { days_count: 2, rental_price_minor: rentalMinor },
-      { price_1_day_minor: 120000, item_value_minor: 400000 }
-    )
-    const feeMinor = roundHalfUp(rentalMinor * OWNER_COMMISSION_RATE)
-    expect(money?.rentalMinor).toBe(rentalMinor)
-    expect(money?.depositMinor).toBe(400000)
-    expect(money?.feeMinor).toBe(feeMinor)
-    expect(money?.payoutMinor).toBe(rentalMinor - feeMinor)
-    expect(money?.feePercent).toBe(Math.round(OWNER_COMMISSION_RATE * 100))
-  })
-
-  it('omits a deposit when the listing has no item value', () => {
+  it('gives the owner the whole rental price - no commission, no deposit', () => {
     const money = ownerReviewMoney(
       { days_count: 2, rental_price_minor: 240000 },
-      { price_1_day_minor: 120000, item_value_minor: null }
+      { price_1_day_minor: 120000 }
     )
-    expect(money?.depositMinor).toBeNull()
+    expect(money).toEqual({ dailyMinor: 120000, days: 2, rentalMinor: 240000 })
   })
 })
 

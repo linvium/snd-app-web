@@ -17,7 +17,6 @@ import {
 import { BookingStageActions } from '@/components/messages/BookingStageActions'
 import { BookingTicket } from '@/components/messages/BookingTicket'
 import { LeaveReviewDialog } from '@/components/messages/LeaveReviewDialog'
-import { PaymentLinkCard } from '@/components/messages/PaymentLinkCard'
 import { PendingRequestBanner, RequestReviewDialog } from '@/components/messages/RequestReviewDialog'
 import { TextMessageBubble } from '@/components/messages/TextMessageBubble'
 import { ThreadDetailPanel } from '@/components/messages/ThreadDetailPanel'
@@ -309,12 +308,6 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
                       onPropose={awaitingOwner ? () => openReview('propose') : undefined}
                     />
                   ) : null
-                ) : presentation === 'payment_card' ? (
-                  <PaymentLinkCard
-                    message={message}
-                    booking={booking}
-                    role={conversation.viewer_role}
-                  />
                 ) : presentation === 'system' ? (
                   <p
                     data-testid="system-message"

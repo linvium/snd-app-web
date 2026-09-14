@@ -12,7 +12,7 @@ interface PageProps {
 }
 
 /**
- * One route for every help page: /support/faq, /support/guarantee, and whatever
+ * One route for every help page: /support/faq, /support/plans-and-credits, and whatever
  * the next one is called. Adding a page is an insert, not a file.
  */
 export const revalidate = 300

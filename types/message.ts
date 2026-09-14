@@ -1,5 +1,3 @@
-import type { BookingPaymentLink } from '@/types/booking'
-
 export const MESSAGE_TYPES = [
   'text',
   'system',
@@ -7,8 +5,6 @@ export const MESSAGE_TYPES = [
   'booking_request',
   'booking_accepted',
   'booking_declined',
-  'booking_payment_link',
-  'booking_paid',
   'booking_booked',
   'booking_picked_up',
   'booking_returned',
@@ -19,7 +15,7 @@ export const MESSAGE_TYPES = [
 
 export type MessageType = (typeof MESSAGE_TYPES)[number]
 
-export type MessagePresentation = 'request_card' | 'payment_card' | 'text_bubble' | 'system'
+export type MessagePresentation = 'request_card' | 'text_bubble' | 'system'
 
 export interface Message {
   id: string
@@ -63,16 +59,14 @@ export interface ConversationBookingSummary {
   end_date: string | null
   days_count: number | null
   status: string
+  /** What the renter pays the owner directly for the agreed days. */
   rental_price_minor: number | null
-  total_minor: number | null
   requested_at: string | null
   accepted_at: string | null
   booked_at: string | null
   picked_up_at: string | null
   returned_at: string | null
   rated_at: string | null
-  /** The live link, if the reservation is waiting to be paid. */
-  payment_link: BookingPaymentLink | null
   /** Whether the signed-in viewer has already written their review. */
   viewer_has_reviewed: boolean
 }

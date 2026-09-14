@@ -9,69 +9,105 @@ and do not need setting.
 
 | Secret | Used by | What happens without it |
 | --- | --- | --- |
-| `STRIPE_SECRET_KEY` | `payment-checkout` | The pay page answers 503 "Plaćanje trenutno nije dostupno". Nothing is charged and no link is consumed. |
-| `STRIPE_WEBHOOK_SECRET` | `stripe-webhook` | Every delivery is rejected 400, so payments are taken and never settled. Set this before taking a single live payment. |
-| `PAYMENT_PROVIDER` | both | Defaults to `stripe`. Only affects links created from now on — an existing link settles through the provider it was created with. |
+| `STRIPE_SECRET_KEY` | `payment-checkout`, `subscription-cancel`, `stripe-webhook` | Buying a plan or credits answers 503 "Plaćanje trenutno nije dostupno". Nothing is charged and no order is consumed. Cancelling a Stripe-billed plan also answers 503 and marks nothing. |
+| `STRIPE_WEBHOOK_SECRET` | `stripe-webhook` | Every delivery is rejected 400, so orders are paid and never delivered. Set this before taking a single live payment. |
+| `PAYMENT_PROVIDER` | all three | Defaults to `stripe`. Only affects orders created from now on - an existing order or plan settles, renews and cancels through the provider it was created with. |
 | `RESEND_API_KEY` | `send-email` | Mail stays queued in `email_messages` with `last_error = 'RESEND_API_KEY is not set'`. Nothing is lost, nothing is delivered. |
 | `EMAIL_FROM` | `send-email` | Falls back to `Stvar na dan <noreply@stvarnadan.rs>`. Must be a domain verified with Resend. |
-| `APP_URL` | `send-email`, `payment-checkout` | Falls back to `https://stvarnadan.rs`. Every `{{thread_url}}` in a mail and both Stripe return URLs are built from it, so a staging project must set its own or its renters land on production. |
+| `APP_URL` | `send-email`, `payment-checkout` | Falls back to `https://stvarnadan.rs`. Every `{{thread_url}}` and `{{billing_url}}` in a mail and both Stripe return URLs are built from it, so a staging project must set its own or its owners land on production. |
 | `PSP_WEBHOOK_SECRET` | `payment-confirm` | The generic webhook path is closed. Only needed for a PSP that has no adapter yet; send it in `x-psp-signature`. |
-| `PAYMENT_MANUAL_CONFIRM` | `payment-confirm` | The sandbox "mark as paid" path is closed, which is the correct state anywhere Stripe is configured. Setting it to `true` lets a signed-in renter settle their own link without paying — pair it with `NEXT_PUBLIC_PAYMENT_MANUAL_CONFIRM=true` on the web app to show the button. |
+| `PAYMENT_MANUAL_CONFIRM` | `payment-confirm` | The sandbox "mark as paid" path is closed, which is the correct state anywhere Stripe is configured. Setting it to `true` lets a signed-in owner settle their own order without paying - pair it with `NEXT_PUBLIC_PAYMENT_MANUAL_CONFIRM=true` on the web app, which skips Stripe and shows the button on `/profile/billing`. |
 
-## Payments
+## Billing
 
-The core is provider-neutral. A payment link is a row with a token and an
-amount; `snd_confirm_booking_payment` is the only way a booking becomes
-`booked`, and it knows nothing about who collected the money. A provider is an
-adapter in `_shared/payments/` implementing two methods — open a checkout,
-interpret a webhook — plus an entry in the registry in `_shared/payments/index.ts`.
+SND does not charge for renting: the renter pays the owner directly, and there
+is no payment link, fee or payout anywhere in a booking. What the platform
+charges for is listing, in one of two ways:
+
+- **a subscription** - a monthly plan (`billing_plans`) with a cap on how many
+  listings may be published at the same time;
+- **listing credits** - one credit publishes one listing, bought in packs
+  (`credit_packs`) where a bigger pack is cheaper per credit. A trigger on
+  `credit_packs` refuses any price edit that breaks that ladder.
+
+The core is provider-neutral. An order (`billing_orders`) is a row with a token
+and an amount; `snd_settle_billing_order` is the only way it turns into credits
+or a current plan, and it knows nothing about who collected the money. A
+provider is an adapter in `_shared/payments/` implementing three methods - open
+a checkout, interpret a webhook, stop a subscription - plus an entry in the
+registry in `_shared/payments/index.ts`.
 
 ```
-renter presses Plati
-  → POST /api/v1/payments/[token]/checkout   (Next, requires a session)
-  → payment-checkout                          (checks the caller is the renter)
+owner picks a plan or a credit pack on /pricing or /profile/billing
+  → POST /api/v1/billing/orders              (Next, requires a session)
+  → snd_create_billing_order                  (order row + token)
+  → payment-checkout                          (checks the caller owns the order)
   → adapter.createCheckout                    → provider-hosted page
-  → renter pays, returns to /pay/[token]?status=success
+  → owner pays, returns to /profile/billing?order=<token>&status=success
   → provider calls stripe-webhook             (signature verified)
-  → snd_confirm_booking_payment               → booked + 2 emails + thread message
+  → snd_settle_billing_order                  → credits on the ledger, or a current plan + mail
 ```
 
-The return from the provider is treated as a hint, never as proof: the pay page
-shows "Potvrđujemo plaćanje" and polls the link until the webhook has settled
-it. Nothing but a verified webhook moves a booking to `booked`.
+The return from the provider is treated as a hint, never as proof: the billing
+page shows "Potvrđujemo uplatu" and polls the order until the webhook has
+settled it.
+
+Later periods of a plan arrive as `invoice.paid` → `snd_renew_subscription`,
+which moves the period end forward. Cancelling from the billing page goes
+through `subscription-cancel`, which tells the provider to stop at the end of
+the period and only then marks the plan; when the provider finally ends it,
+`customer.subscription.deleted` → `snd_end_subscription` expires the plan and
+pauses whatever no longer fits.
+
+### Listing limits
+
+Publishing is metered in the database, not the API: owners can update their
+own `listings` row under RLS, so a check in a route would be skippable. The
+trigger `snd_enforce_listing_entitlement` lets a listing become `published` if
+it is already unlocked, or if the current plan has a free slot, or by spending
+one credit (which unlocks it for good). Otherwise the update fails with
+`LISTING_LIMIT_REACHED`, which the API returns as 402. The service role and
+SQL run without a request JWT (migrations, seed scripts) are not metered.
+
+Plans without a provider subscription (the sandbox path) only end by the clock.
+Schedule the sweep that expires them and pauses listings above the limit:
+
+```sql
+select cron.schedule('snd-enforce-listing-limits', '7 * * * *',
+  'select public.snd_enforce_listing_limits()');
+```
 
 ### Stripe setup
 
 1. Set `STRIPE_SECRET_KEY` (start with the test key).
 2. Add an endpoint at `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`
    subscribed to `checkout.session.completed`, `checkout.session.expired`,
-   `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`
-   and `payment_intent.payment_failed`. Put its signing secret in
+   `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
+   `payment_intent.payment_failed`, `invoice.paid` and
+   `customer.subscription.deleted`. Put its signing secret in
    `STRIPE_WEBHOOK_SECRET`.
 3. Leave `PAYMENT_MANUAL_CONFIRM` unset.
 
 Checkout is hosted and card-only, so no card data and no publishable key ever
-reach an SND page. Sessions are clamped to the payment link's own deadline,
-which is why the link must have at least 30 minutes left for a checkout to open.
+reach an SND page. Plans use an inline recurring price, so nothing has to be
+created in the Stripe dashboard. Sessions are clamped to the order's own
+two-hour deadline.
 
 RSD works: Stripe treats it as a two-decimal currency, so `amount_minor` (para)
-passes straight through — `176000` is charged as РСД1.760,00. Still confirm
-Stripe supports your billing entity before going live.
+passes straight through - `49000` is charged as РСД490,00. Still confirm Stripe
+supports your billing entity before going live. The cheapest item on the price
+list (one credit, 150 RSD) is above Stripe's card minimum of roughly $0.50.
 
-**Card charges have a floor of roughly $0.50 equivalent**, about 55-60 RSD. A
-booking under it comes back as `AMOUNT_TOO_SMALL` (422) and cannot be paid by
-card at all — worth remembering when testing against cheap seed listings.
-
-A refused card does not end the reservation: `snd_record_payment_failure`
-records the attempt, clears the session so a retry opens a fresh one, and leaves
-the link `pending` and the booking `accepted`.
+A refused card does not end the order: `snd_record_billing_failure` records the
+attempt, clears the session so a retry opens a fresh one, and leaves the order
+`pending`.
 
 ## send-email
 
 Drains the `email_messages` outbox: claims a row, renders its
 `email_templates` row (`{{variable}}` substitution), hands it to Resend, and
-records the outcome. The queue is the only input — a caller cannot choose a
-recipient or a body — so it is safe to call from anywhere with a valid JWT.
+records the outcome. The queue is the only input - a caller cannot choose a
+recipient or a body - so it is safe to call from anywhere with a valid JWT.
 
 The web app calls it after every lifecycle mutation for immediate delivery. A
 failed send goes back to `queued` and is retried on the next drain, up to five

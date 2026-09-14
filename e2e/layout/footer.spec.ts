@@ -35,12 +35,12 @@ test.describe('footer', () => {
     await page.goto('/categories')
     await page
       .getByRole('contentinfo')
-      .getByRole('link', { name: 'Garancija', exact: true })
+      .getByRole('link', { name: 'Cenovnik', exact: true })
       .click()
 
     const sheet = page.getByTestId('support-sheet')
     await expect(sheet).toBeVisible()
-    await expect(sheet.getByRole('heading', { name: 'Garancija', level: 1 })).toBeVisible()
+    await expect(sheet.getByRole('heading', { name: 'Cenovnik', level: 1 })).toBeVisible()
     await expect(page).toHaveURL(/\/categories/)
   })
 

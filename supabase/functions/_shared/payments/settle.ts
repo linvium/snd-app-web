@@ -1,11 +1,12 @@
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import type { PaymentEvent } from './types.ts'
 
 /**
- * The one way a payment becomes a reservation.
+ * The one way a payment becomes something an owner bought.
  *
  * Every caller - the Stripe webhook, another PSP's webhook, the sandbox confirm
- * button - lands here, so the rules about double payment, expiry and which
- * booking states may be settled are stated once, in the database.
+ * button - lands here, so the rules about double payment, replaced plans and
+ * renewals are stated once, in the database.
  */
 
 const ERROR_STATUS: Record<string, number> = {
@@ -29,45 +30,72 @@ export function mapRpcError(message: string): { status: number; code: string } {
   return { status: 500, code: 'INTERNAL' }
 }
 
-export async function settlePayment(
+async function callRpc(
   admin: SupabaseClient,
-  token: string,
-  providerReference: string | null
+  fn: string,
+  args: Record<string, unknown>
 ): Promise<SettleOutcome> {
-  const { data, error } = await admin.rpc('snd_confirm_booking_payment', {
-    p_token: token,
-    p_provider_reference: providerReference,
-  })
+  const { data, error } = await admin.rpc(fn, args)
 
   if (error) {
     const mapped = mapRpcError(error.message ?? '')
-    if (mapped.status === 500) console.error('settlePayment: rpc failed', error)
+    if (mapped.status === 500) console.error(`${fn}: rpc failed`, error)
     return { ok: false, status: mapped.status, code: mapped.code, data: null }
   }
 
-  await drainOutbox()
   return { ok: true, status: 200, code: 'OK', data }
 }
 
-export async function failPayment(
+/** Delivers what an order bought: credits on the ledger, or a current plan. */
+export async function settleOrder(
+  admin: SupabaseClient,
+  event: Pick<PaymentEvent, 'token' | 'providerReference' | 'subscriptionId' | 'periodEnd'>
+): Promise<SettleOutcome> {
+  const outcome = await callRpc(admin, 'snd_settle_billing_order', {
+    p_token: event.token,
+    p_provider_reference: event.providerReference,
+    p_provider_subscription_id: event.subscriptionId,
+    p_period_end: event.periodEnd ? event.periodEnd.toISOString() : null,
+  })
+
+  if (outcome.ok) await drainOutbox()
+  return outcome
+}
+
+export function failOrder(
   admin: SupabaseClient,
   token: string,
   reason: string | null,
   providerReference: string | null
 ): Promise<SettleOutcome> {
-  const { data, error } = await admin.rpc('snd_record_payment_failure', {
+  return callRpc(admin, 'snd_record_billing_failure', {
     p_token: token,
     p_reason: reason,
     p_provider_reference: providerReference,
   })
+}
 
-  if (error) {
-    const mapped = mapRpcError(error.message ?? '')
-    if (mapped.status === 500) console.error('failPayment: rpc failed', error)
-    return { ok: false, status: mapped.status, code: mapped.code, data: null }
-  }
+/** A later period was paid: move the plan's end date forward. */
+export function renewSubscription(
+  admin: SupabaseClient,
+  event: Pick<PaymentEvent, 'subscriptionId' | 'periodEnd' | 'providerReference' | 'amountMinor'>
+): Promise<SettleOutcome> {
+  return callRpc(admin, 'snd_renew_subscription', {
+    p_provider_subscription_id: event.subscriptionId,
+    p_period_end: event.periodEnd ? event.periodEnd.toISOString() : null,
+    p_provider_reference: event.providerReference,
+    p_amount_minor: event.amountMinor,
+  })
+}
 
-  return { ok: true, status: 200, code: 'OK', data }
+/** The provider stopped the subscription: end the plan and pause what no longer fits. */
+export function endSubscription(
+  admin: SupabaseClient,
+  subscriptionId: string
+): Promise<SettleOutcome> {
+  return callRpc(admin, 'snd_end_subscription', {
+    p_provider_subscription_id: subscriptionId,
+  })
 }
 
 /**

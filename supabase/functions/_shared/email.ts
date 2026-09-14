@@ -53,7 +53,7 @@ export function withDerivedVariables(
 
   for (const [name, path] of [
     ['thread_url', out.thread_path],
-    ['payment_url', out.payment_path],
+    ['billing_url', out.billing_path],
   ] as const) {
     if (path) out[name] = path.startsWith('http') ? path : `${base}${path}`
   }

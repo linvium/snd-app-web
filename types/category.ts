@@ -12,7 +12,6 @@ export interface SndCategory {
 
 export interface SndCategoryCatalog extends SndCategory {
   is_enabled: boolean
-  guarantee_cap_minor: number | null
   suggested_price_1_day_minor: number | null
   suggested_price_3_days_minor: number | null
   suggested_price_7_days_minor: number | null

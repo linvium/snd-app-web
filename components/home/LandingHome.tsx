@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { DoorOpenIcon, MapPinIcon, ShieldCheckIcon, WalletIcon } from 'lucide-react'
+import { BadgeCheckIcon, DoorOpenIcon, MapPinIcon, WalletIcon } from 'lucide-react'
 import Logo from '@/components/ui/Logo'
 import WaitlistForm from '@/components/home/WaitlistForm'
 import { LAUNCH_DAY, LAUNCH_MONTH_LABEL, LAUNCH_YEAR } from '@/lib/home/launch.helpers'
@@ -25,10 +25,10 @@ const BENEFITS = [
     index: '02',
   },
   {
-    title: 'Pokriveno garancijom',
+    title: 'Bez provizije na najam',
     description:
-      'Proveren identitet i zaštita na svaku transakciju. Iznajmljuješ i izdaješ bez stresa.',
-    icon: ShieldCheckIcon,
+      'Proveren identitet i dogovor u porukama. Cenu najma dogovaraš direktno, a platforma ne uzima ništa od nje.',
+    icon: BadgeCheckIcon,
     iconClass: 'bg-[#fde6dc] text-[#c85a28]',
     indexClass: 'text-[#e8703a]/20',
     index: '03',

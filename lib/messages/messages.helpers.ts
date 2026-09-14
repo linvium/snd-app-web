@@ -61,9 +61,6 @@ export function messagePresentation(
   message: Pick<Message, 'type' | 'sender_id'>
 ): MessagePresentation {
   if (isBookingRequestType(message.type)) return 'request_card'
-  // The payment link is the one system row with something to press, so it gets
-  // a card of its own instead of the centred grey line.
-  if (message.type === 'booking_payment_link') return 'payment_card'
   if (message.sender_id) return 'text_bubble'
   if (message.type === 'text') return 'text_bubble'
   return 'system'
@@ -233,8 +230,6 @@ export function bookingStatusPill(status: string | null | undefined): BookingPil
   switch (status) {
     case 'requested':
       return { label: 'Zahtev čeka odgovor', tone: 'wait' }
-    case 'accepted':
-      return { label: 'Čeka plaćanje', tone: 'wait' }
     case 'booked':
       return { label: 'Rezervisano', tone: 'ok' }
     case 'picked_up':
@@ -250,8 +245,6 @@ export function bookingStatusPill(status: string | null | undefined): BookingPil
     case 'cancelled_by_renter':
     case 'cancelled_by_owner':
       return { label: 'Otkazano', tone: 'late' }
-    case 'payment_failed':
-      return { label: 'Plaćanje nije prošlo', tone: 'late' }
     default:
       return null
   }
@@ -261,9 +254,8 @@ export function bookingStatusPill(status: string | null | undefined): BookingPil
  * Status on the request card inside the thread. Inbox rows keep
  * bookingStatusPill.
  *
- * The two waiting states read differently depending on who is waiting: the
- * label should name the move the reader has to make, not the state in the
- * abstract.
+ * A request that is still open reads differently depending on who is waiting:
+ * the owner is the one who has to answer, so their label names that move.
  */
 export function ticketStatusPill(
   status: string | null | undefined,
@@ -272,22 +264,17 @@ export function ticketStatusPill(
   if (status === 'requested' && role === 'owner') {
     return { label: 'Čeka potvrdu', tone: 'wait' }
   }
-  if (status === 'accepted') {
-    return role === 'owner'
-      ? { label: 'Čeka uplatu', tone: 'wait' }
-      : { label: 'Plati da rezervišeš', tone: 'wait' }
-  }
   return bookingStatusPill(status)
 }
 
 /**
  * Bookings still waiting on somebody - used for the "Zahtevi" tab.
  *
- * `accepted` counts too: the owner has answered but the renter has not paid,
- * so the reservation is still somebody's move rather than settled.
+ * Only an unanswered request: once the owner accepts, the term is booked and
+ * nothing is left to settle through the platform.
  */
 export function isOpenRequestStatus(status: string | null | undefined): boolean {
-  return status === 'requested' || status === 'accepted'
+  return status === 'requested'
 }
 
 type FilterableConversation = {

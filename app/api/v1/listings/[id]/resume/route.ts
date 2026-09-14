@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 
 import { requireUser } from '@/lib/api/auth'
 import { apiError, apiOk, ERROR_CODES } from '@/lib/api/response'
+import { isListingLimitDbError, LISTING_LIMIT_MESSAGE } from '@/lib/billing/billing.helpers'
 import { loadOwnedListing } from '@/lib/listings/listings.server'
 
 const UUID_RE =
@@ -32,6 +33,13 @@ export async function POST(
     .eq('id', id)
     .select('status')
     .maybeSingle()
+
+  // Resuming is publishing again: a listing paused because a plan ran out
+  // needs a free slot or a credit to come back, unless a credit already
+  // unlocked it.
+  if (isListingLimitDbError(error)) {
+    return apiError(402, ERROR_CODES.LISTING_LIMIT_REACHED, LISTING_LIMIT_MESSAGE)
+  }
 
   if (error || data?.status !== 'published') {
     console.error('[listings] resume failed', error)

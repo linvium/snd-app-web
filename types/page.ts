@@ -1,5 +1,5 @@
 /**
- * Editorial pages (`public.pages`): help, guarantee, legal copy.
+ * Editorial pages (`public.pages`): help, pricing, legal copy.
  *
  * The same row is rendered twice — as a full SSR document at /{category}/{slug}
  * for search engines and direct links, and inside the support sheet for someone

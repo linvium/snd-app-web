@@ -6,19 +6,16 @@ import type {
   Booking,
   BookingResponseAction,
   BookingStatus,
-  ConfirmPaymentResponse,
   CreateBookingRequestInput,
   CreateBookingRequestResponse,
-  PaymentLinkSummary,
   RespondToBookingInput,
-  StartCheckoutResponse,
   RespondToBookingResponse,
   SubmitBookingReviewInput,
   SubmitBookingReviewResponse,
 } from '@/types/booking'
 
 const BOOKING_COLUMNS =
-  'id, reference, listing_id, renter_id, owner_id, pickup_location_id, start_date, end_date, days_count, status, rental_price_minor, service_fee_minor, total_minor, owner_payout_minor, cancellation_policy, item_value_minor, requested_at, created_at'
+  'id, reference, listing_id, renter_id, owner_id, pickup_location_id, start_date, end_date, days_count, status, rental_price_minor, cancellation_policy, item_value_minor, requested_at, created_at'
 
 type RpcError = { message?: string; code?: string }
 
@@ -165,7 +162,6 @@ export async function respondToRentalRequest(
     booking_id: string
     status: string
     conversation_id: string
-    payment_token?: string | null
   }
 
   dispatchQueuedEmails(supabase)
@@ -174,7 +170,6 @@ export async function respondToRentalRequest(
     bookingId: payload.booking_id,
     status: payload.status as BookingStatus,
     conversationId: payload.conversation_id,
-    paymentToken: payload.payment_token ?? null,
   }
 }
 
@@ -234,141 +229,5 @@ export async function submitBookingReview(
     status: payload.status as BookingStatus,
     published: payload.published,
     conversationId: payload.conversation_id,
-  }
-}
-
-/**
- * The pay page's data, by token.
- *
- * No session is required: the renter may open the link from the email on a
- * device they never signed in on, and the token is the credential.
- */
-export async function getPaymentLinkSummary(
-  supabase: SupabaseClient,
-  token: string
-): Promise<PaymentLinkSummary | null> {
-  const { data, error } = await supabase.rpc('snd_payment_link_summary', { p_token: token })
-
-  if (error) {
-    console.error('[bookings] payment link lookup failed', error)
-    return null
-  }
-
-  return (data as PaymentLinkSummary | null) ?? null
-}
-
-/**
- * Opens a provider checkout for a link and returns where to send the renter.
- *
- * The provider's secret keys live on the edge function alongside the webhook
- * secret, the same arrangement the KYC integration uses, so nothing about the
- * payment provider is deployed with the web app.
- */
-export async function startPaymentCheckout(
-  supabase: SupabaseClient,
-  token: string
-): Promise<StartCheckoutResponse | { response: ReturnType<typeof apiError> }> {
-  const { data, error } = await supabase.functions.invoke('payment-checkout', {
-    body: { token },
-  })
-
-  if (error) {
-    const status = (error as { context?: { status?: number } }).context?.status
-    if (status === 401) {
-      return { response: apiError(401, ERROR_CODES.UNAUTHENTICATED, 'Prijavi se da nastaviš.') }
-    }
-    if (status === 403) {
-      return { response: apiError(403, ERROR_CODES.FORBIDDEN, 'Ovaj link nije tvoj.') }
-    }
-    if (status === 404) {
-      return { response: apiError(404, ERROR_CODES.NOT_FOUND, 'Link za plaćanje ne postoji.') }
-    }
-    if (status === 409) {
-      return { response: apiError(409, ERROR_CODES.CONFLICT, 'Ova rezervacija je već plaćena.') }
-    }
-    if (status === 410) {
-      return {
-        response: apiError(
-          409,
-          ERROR_CODES.CONFLICT,
-          'Link za plaćanje je istekao. Dogovori novi termin sa vlasnikom.'
-        ),
-      }
-    }
-    if (status === 422) {
-      return {
-        response: apiError(
-          422,
-          ERROR_CODES.VALIDATION_FAILED,
-          'Iznos je premali za plaćanje karticom. Javi se vlasniku da dogovorite duži termin.'
-        ),
-      }
-    }
-    if (status === 503) {
-      return {
-        response: apiError(503, ERROR_CODES.INTERNAL, 'Plaćanje trenutno nije dostupno. Javi se podršci.'),
-      }
-    }
-    console.error('[bookings] checkout failed', error)
-    return {
-      response: apiError(502, ERROR_CODES.INTERNAL, 'Plaćanje nije moglo da se otvori. Pokušaj ponovo.'),
-    }
-  }
-
-  const payload = (data as { data?: StartCheckoutResponse })?.data
-  if (!payload?.url) {
-    return {
-      response: apiError(502, ERROR_CODES.INTERNAL, 'Plaćanje nije moglo da se otvori. Pokušaj ponovo.'),
-    }
-  }
-
-  return payload
-}
-
-export async function confirmPayment(
-  supabase: SupabaseClient,
-  token: string
-): Promise<ConfirmPaymentResponse | { response: ReturnType<typeof apiError> }> {
-  const { data, error } = await supabase.functions.invoke('payment-confirm', {
-    body: { token },
-  })
-
-  if (error) {
-    const status = (error as { context?: { status?: number } }).context?.status
-    if (status === 401) {
-      return { response: apiError(401, ERROR_CODES.UNAUTHENTICATED, 'Prijavi se da nastaviš.') }
-    }
-    if (status === 403) {
-      return { response: apiError(403, ERROR_CODES.FORBIDDEN, 'Ovaj link nije tvoj.') }
-    }
-    if (status === 503) {
-      return {
-        response: apiError(503, ERROR_CODES.INTERNAL, 'Plaćanje trenutno nije dostupno. Javi se podršci.'),
-      }
-    }
-    if (status === 404) {
-      return { response: apiError(404, ERROR_CODES.NOT_FOUND, 'Link za plaćanje ne postoji.') }
-    }
-    if (status === 410) {
-      return { response: apiError(409, ERROR_CODES.CONFLICT, 'Link za plaćanje je istekao.') }
-    }
-    if (status === 409) {
-      return { response: apiError(409, ERROR_CODES.CONFLICT, 'Ova rezervacija je već plaćena ili otkazana.') }
-    }
-    console.error('[bookings] payment confirm failed', error)
-    return { response: apiError(500, ERROR_CODES.INTERNAL, 'Plaćanje nije potvrđeno. Pokušaj ponovo.') }
-  }
-
-  const payload = (data as { data?: { booking_id: string; status: string; already_paid: boolean } })
-    ?.data
-
-  if (!payload) {
-    return { response: apiError(500, ERROR_CODES.INTERNAL, 'Plaćanje nije potvrđeno. Pokušaj ponovo.') }
-  }
-
-  return {
-    bookingId: payload.booking_id,
-    status: payload.status as BookingStatus,
-    alreadyPaid: payload.already_paid,
   }
 }

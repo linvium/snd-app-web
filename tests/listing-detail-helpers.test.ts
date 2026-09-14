@@ -4,8 +4,6 @@ import {
   buildBreadcrumb,
   buildPriceTiers,
   captureListingQuoteSeed,
-  guaranteeCapMinor,
-  inheritedGuaranteeCap,
   listingQuoteFromDetail,
   listingQuoteSeedForDates,
   placeLabel,
@@ -101,25 +99,11 @@ describe('buildPriceTiers', () => {
   })
 })
 
-describe('guaranteeCapMinor', () => {
-  // doc 04 §10: capped at the item's own value when the item is worth less.
-  it('takes the lower of the category cap and the item value', () => {
-    expect(guaranteeCapMinor(20_000_000, 2_500_000)).toBe(2_500_000)
-    expect(guaranteeCapMinor(20_000_000, 50_000_000)).toBe(20_000_000)
-  })
-
-  it('falls back to whichever number exists', () => {
-    expect(guaranteeCapMinor(null, 2_500_000)).toBe(2_500_000)
-    expect(guaranteeCapMinor(20_000_000, null)).toBe(20_000_000)
-    expect(guaranteeCapMinor(null, null)).toBeNull()
-  })
-})
-
 describe('buildBreadcrumb', () => {
   const nodes: CategoryNode[] = [
-    { id: 'a', parent_id: null, name: 'Alati', slug: 'alati', level: 0, guarantee_cap_minor: 20_000_000 },
-    { id: 'b', parent_id: 'a', name: 'Električni alat', slug: 'elektricni-alat', level: 1, guarantee_cap_minor: null },
-    { id: 'c', parent_id: 'b', name: 'Bušilice', slug: 'busilice', level: 2, guarantee_cap_minor: null },
+    { id: 'a', parent_id: null, name: 'Alati', slug: 'alati', level: 0 },
+    { id: 'b', parent_id: 'a', name: 'Električni alat', slug: 'elektricni-alat', level: 1 },
+    { id: 'c', parent_id: 'b', name: 'Bušilice', slug: 'busilice', level: 2 },
   ]
   const byId = new Map(nodes.map((node) => [node.id, node]))
 
@@ -135,15 +119,11 @@ describe('buildBreadcrumb', () => {
     expect(buildBreadcrumb(null, byId)).toEqual([])
   })
 
-  it('inherits the cap from the nearest ancestor that sets one', () => {
-    expect(inheritedGuaranteeCap(buildBreadcrumb('c', byId))).toBe(20_000_000)
-  })
-
   it('terminates on a cycle instead of looping forever', () => {
     // A bad parent_id must not hang the page that renders the breadcrumb.
     const cyclic = new Map<string, CategoryNode>([
-      ['x', { id: 'x', parent_id: 'y', name: 'X', slug: 'x', level: 1, guarantee_cap_minor: null }],
-      ['y', { id: 'y', parent_id: 'x', name: 'Y', slug: 'y', level: 0, guarantee_cap_minor: null }],
+      ['x', { id: 'x', parent_id: 'y', name: 'X', slug: 'x', level: 1 }],
+      ['y', { id: 'y', parent_id: 'x', name: 'Y', slug: 'y', level: 0 }],
     ])
     expect(buildBreadcrumb('x', cyclic).map((node) => node.slug)).toEqual(['y', 'x'])
   })
@@ -281,6 +261,12 @@ describe('toListingQuote', () => {
     expect(quote.suggested_start).toBeNull()
   })
 
+  it('carries no platform fee - the rental price is the whole sum', () => {
+    const quote = toListingQuote('2026-08-29', '2026-08-30', prices, [], '2026-08-24')
+    expect(Object.keys(quote)).not.toContain('service_fee_minor')
+    expect(Object.keys(quote)).not.toContain('total_minor')
+  })
+
   it('still prices a blocked window and suggests the next free one', () => {
     const quote = toListingQuote(
       '2026-08-29',
@@ -290,7 +276,7 @@ describe('toListingQuote', () => {
       '2026-08-24'
     )
     expect(quote.is_available).toBe(false)
-    expect(quote.total_minor).toBeGreaterThan(0)
+    expect(quote.rental_price_minor).toBeGreaterThan(0)
     expect(quote.suggested_start).toBe('2026-08-30')
   })
 })
@@ -341,7 +327,7 @@ describe('listing quote seed', () => {
 
   it('does not recapture after the first range, so a later initialQuote cannot stick', () => {
     const first = captureListingQuoteSeed(null, quote, '2026-08-29', '2026-08-30')
-    const other = { ...quote, days_count: 1, total_minor: 11000 }
+    const other = { ...quote, days_count: 1, rental_price_minor: 11000 }
     const next = captureListingQuoteSeed(first, other, '2026-08-24', '2026-08-24')
     expect(next).toEqual(first)
     expect(listingQuoteSeedForDates(next, '2026-08-24', '2026-08-24')).toBeUndefined()

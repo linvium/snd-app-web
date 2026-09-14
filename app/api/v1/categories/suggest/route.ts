@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from('categories')
     .select(
-      'id, parent_id, name, slug, full_path, level, icon_name, sort_order, listing_count, is_enabled, guarantee_cap_minor, suggested_price_1_day_minor, suggested_price_3_days_minor, suggested_price_7_days_minor'
+      'id, parent_id, name, slug, full_path, level, icon_name, sort_order, listing_count, is_enabled, suggested_price_1_day_minor, suggested_price_3_days_minor, suggested_price_7_days_minor'
     )
     .eq('is_enabled', true)
 

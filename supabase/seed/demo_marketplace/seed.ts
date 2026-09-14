@@ -7,6 +7,7 @@
  *
  *   npx tsx supabase/seed/demo_marketplace/seed.ts
  *   npx tsx supabase/seed/demo_marketplace/seed.ts --photos-only
+ *   npx tsx supabase/seed/demo_marketplace/seed.ts --refresh-photos
  *
  * Photos come from Openverse (openly licensed, no API key). Each listing gets up
  * to three, resized into the same six storage objects the upload route writes.
@@ -23,6 +24,7 @@ const BUCKET = 'listing-images'
 const DEMO_PASSWORD = 'SeedDemo2026!'
 const PHOTOS_PER_LISTING = 3
 const PHOTOS_ONLY = process.argv.includes('--photos-only')
+const REFRESH_PHOTOS = process.argv.includes('--refresh-photos')
 
 interface OwnerLocation {
   label: string
@@ -218,11 +220,24 @@ async function uploadPhoto(
   return true
 }
 
-/** "cordless screwdriver drill" -> that, then "cordless screwdriver", then "drill". */
+/** "cordless screwdriver drill" -> that, then "cordless screwdriver", then "cordless". */
 function queryVariants(query: string): string[] {
   const words = query.split(/\s+/).filter(Boolean)
-  const variants = [query, words.slice(0, 2).join(' '), words[words.length - 1]]
-  return [...new Set(variants.filter((variant) => variant.length > 2))]
+  const variants = [query, words.slice(0, 2).join(' '), words[0]]
+  return [...new Set(variants.filter((variant) => variant.length >= 4))]
+}
+
+/**
+ * A search for "angle grinder tool" happily returns a portrait of somebody who
+ * once held one. Keep only results that name part of the query - Commons puts
+ * the subject in the file name, Openverse in the title - and fall back to the
+ * rest only if a listing would otherwise end up with no photo at all.
+ */
+function namesTheSubject(candidate: Candidate, query: string): boolean {
+  const words = query.toLowerCase().split(/\s+/).filter((word) => word.length >= 4)
+  if (!words.length) return true
+  const haystack = candidate.title.toLowerCase()
+  return words.some((word) => haystack.includes(word))
 }
 
 /**
@@ -233,8 +248,9 @@ function queryVariants(query: string): string[] {
 async function attachPhotos(supabase: SupabaseClient, listingId: string, item: Item, have: number) {
   let sortOrder = have
   const tried = new Set<string>()
+  const setAside: Candidate[] = []
   const variants = queryVariants(item.photo)
-  // Commons first: its search matches file descriptions, so an "angle grinder"
+  // Commons first: it searches file names and descriptions, so an "angle grinder"
   // query really does return angle grinders, and its thumbnails rarely 404.
   const rounds: (() => Promise<Candidate[]>)[] = [
     ...variants.map((variant) => () => commonsCandidates(variant)),
@@ -242,18 +258,9 @@ async function attachPhotos(supabase: SupabaseClient, listingId: string, item: I
     ...variants.map((variant) => () => openverseCandidates(variant, false)),
   ]
 
-  for (const round of rounds) {
-    if (sortOrder >= PHOTOS_PER_LISTING) break
-
-    let candidates: Candidate[] = []
-    try {
-      candidates = await round()
-    } catch {
-      continue
-    }
-
+  const tryCandidates = async (candidates: Candidate[]) => {
     for (const candidate of candidates) {
-      if (sortOrder >= PHOTOS_PER_LISTING) break
+      if (sortOrder >= PHOTOS_PER_LISTING) return
       if (tried.has(candidate.url)) continue
       tried.add(candidate.url)
 
@@ -267,7 +274,41 @@ async function attachPhotos(supabase: SupabaseClient, listingId: string, item: I
       }
     }
   }
+
+  for (const round of rounds) {
+    if (sortOrder >= PHOTOS_PER_LISTING) break
+
+    let candidates: Candidate[] = []
+    try {
+      candidates = await round()
+    } catch {
+      continue
+    }
+
+    setAside.push(...candidates.filter((candidate) => !namesTheSubject(candidate, item.photo)))
+    await tryCandidates(candidates.filter((candidate) => namesTheSubject(candidate, item.photo)))
+  }
+
+  if (sortOrder < PHOTOS_PER_LISTING) await tryCandidates(setAside)
   return sortOrder - have
+}
+
+/** Drops every photo on a listing, storage objects included, so it can refill. */
+async function clearPhotos(supabase: SupabaseClient, listingId: string) {
+  const { data: existing } = await supabase
+    .from('listing_images')
+    .select('id')
+    .eq('listing_id', listingId)
+  if (!existing?.length) return
+
+  const paths = existing.flatMap((image) =>
+    ['thumbnail', 'medium', 'large'].flatMap((size) => [
+      `${listingId}/${image.id}/${size}.webp`,
+      `${listingId}/${image.id}/${size}.jpg`,
+    ])
+  )
+  await supabase.storage.from(BUCKET).remove(paths)
+  await supabase.from('listing_images').delete().eq('listing_id', listingId)
 }
 
 async function main() {
@@ -392,6 +433,8 @@ async function main() {
           .insert({ listing_id: listingId, location_id: locationIds[item.loc] })
         if (locationError) throw locationError
       }
+
+      if (REFRESH_PHOTOS) await clearPhotos(supabase, listingId)
 
       const { count } = await supabase
         .from('listing_images')

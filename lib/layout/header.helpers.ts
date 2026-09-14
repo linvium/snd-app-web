@@ -7,7 +7,7 @@ import { isListingDetailPath } from '@/lib/listings/listings.paths'
  */
 export const HEADER_UTILITY_LINKS = [
   { href: '/support/how-it-works', label: 'Kako funkcioniše' },
-  { href: '/support/guarantee', label: 'Garancija' },
+  { href: '/support/plans-and-credits', label: 'Cenovnik' },
   { href: '/support/faq', label: 'Česta pitanja' },
   { href: '/support/contact', label: 'Kontakt' },
 ] as const

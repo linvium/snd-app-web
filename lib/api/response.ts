@@ -13,6 +13,8 @@ export const ERROR_CODES = {
   RATE_LIMITED: 'RATE_LIMITED',
   UPLOAD_TOO_LARGE: 'UPLOAD_TOO_LARGE',
   CONFLICT: 'CONFLICT',
+  /** The owner has no free subscription slot and no credit left to publish with. */
+  LISTING_LIMIT_REACHED: 'LISTING_LIMIT_REACHED',
   INTERNAL: 'INTERNAL',
 } as const
 
