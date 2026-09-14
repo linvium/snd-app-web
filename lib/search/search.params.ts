@@ -71,7 +71,8 @@ function toPositiveInt(raw: string | null): number | null {
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
-function toIsoDate(raw: string | null): string | null {
+/** Real calendar day as `YYYY-MM-DD`, or null. Shared with listing detail URLs. */
+export function toIsoDate(raw: string | null): string | null {
   if (!raw || !ISO_DATE.test(raw)) return null
   // Reject things like 2026-02-31 that match the shape but are not real days.
   const parsed = new Date(`${raw}T00:00:00Z`)

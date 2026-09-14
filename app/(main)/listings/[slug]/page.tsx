@@ -10,6 +10,8 @@ import {
   listingJsonLd,
   listingMetaDescription,
   listingPageTitle,
+  listingQuoteFromDetail,
+  parseListingDates,
 } from '@/lib/listings'
 import { findListingConversationId } from '@/lib/messages/messages.server'
 import { loadReviews, loadReviewSummary } from '@/lib/reviews/reviews.server'
@@ -18,6 +20,7 @@ import { REVIEW_PAGE_SIZE } from '@/types/listing-detail'
 
 interface PageProps {
   params: Promise<{ slug: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -64,10 +67,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * A server component: the listing, its reviews and the first render of the
  * booking card all come back with the HTML, which is what a page that has to be
  * indexed and has to load on a phone needs. Everything interactive below is a
- * client island. Dates in the URL (`from`/`to`) are read by the client view.
+ * client island. Dates in the URL (`from`/`to`) seed the booking card, and when
+ * both are present the quote is computed here so the total is in the first HTML.
  */
-export default async function ListingDetailPage({ params }: PageProps) {
+export default async function ListingDetailPage({ params, searchParams }: PageProps) {
   const { slug } = await params
+  const rawSearch = await searchParams
   const supabase = await createClient()
 
   const {
@@ -94,6 +99,8 @@ export default async function ListingDetailPage({ params }: PageProps) {
   if (result.kind === 'not_found') notFound()
 
   const { listing } = result
+  const dates = parseListingDates(rawSearch)
+  const initialQuote = listingQuoteFromDetail(listing, dates.from, dates.to)
 
   const [summary, listingReviews, otherReviews, initialConversationId] = await Promise.all([
     loadReviewSummary(supabase, listing.id),
@@ -138,6 +145,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
           reviews={listingReviews.reviews}
           ownerOtherCount={otherReviews.total}
           initialConversationId={initialConversationId}
+          initialQuote={initialQuote}
         />
       </Suspense>
     </>

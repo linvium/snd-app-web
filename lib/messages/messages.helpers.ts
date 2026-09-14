@@ -5,6 +5,58 @@ export function isBookingRequestType(type: MessageType | string): boolean {
   return type === 'system_booking_requested' || type === 'booking_request'
 }
 
+export const MESSAGE_MUTATION_WINDOW_MS = 15 * 60 * 1000
+
+export const DELETED_MESSAGE_LABEL = 'Poruka je obrisana'
+
+export const MESSAGE_MUTATION_WINDOW_EXPIRED =
+  'Poruku možeš izmeniti ili obrisati samo u prvih 15 minuta.'
+
+export function isOwnTextMessage(input: {
+  message: Pick<Message, 'type' | 'sender_id' | 'deleted_at'>
+  userId: string | null | undefined
+}): boolean {
+  const { message, userId } = input
+  if (!userId) return false
+  if (message.type !== 'text') return false
+  if (message.sender_id !== userId) return false
+  if (message.deleted_at) return false
+  return true
+}
+
+export function canMutateTextMessage(input: {
+  message: Pick<Message, 'type' | 'sender_id' | 'deleted_at' | 'created_at'>
+  userId: string | null | undefined
+  now?: Date
+}): boolean {
+  const { message, userId, now = new Date() } = input
+  if (!isOwnTextMessage({ message, userId })) return false
+  const created = Date.parse(message.created_at)
+  if (Number.isNaN(created)) return false
+  return now.getTime() - created <= MESSAGE_MUTATION_WINDOW_MS
+}
+
+export function visibleMessageBody(message: Pick<Message, 'body' | 'deleted_at'>): string {
+  if (message.deleted_at) return DELETED_MESSAGE_LABEL
+  return message.body ?? ''
+}
+
+export function withEditedBody(message: Message, body: string, now = new Date()): Message {
+  return {
+    ...message,
+    body: body.trim(),
+    edited_at: now.toISOString(),
+  }
+}
+
+export function withDeletedMessage(message: Message, now = new Date()): Message {
+  return {
+    ...message,
+    body: null,
+    deleted_at: now.toISOString(),
+  }
+}
+
 export function messagePresentation(
   message: Pick<Message, 'type' | 'sender_id'>
 ): MessagePresentation {
@@ -290,3 +342,8 @@ export const QUICK_REPLIES: readonly string[] = [
   'Nažalost, zauzeto je u tom terminu.',
   'Javi se kad krećeš, pa da se nađemo.',
 ] as const
+
+/** Owner received the request; the renter who sent it does not need these chips. */
+export function shouldShowQuickReplies(role: ConversationRole): boolean {
+  return role === 'owner'
+}

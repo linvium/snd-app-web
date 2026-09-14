@@ -1,9 +1,16 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
-import { listingKeys } from '@/lib/listings'
+import { useDelayedPending } from '@/hooks/ui/pending.hooks'
+import {
+  bookingQuotePanel,
+  captureListingQuoteSeed,
+  listingKeys,
+  listingQuoteSeedForDates,
+  type ListingQuoteSeed,
+} from '@/lib/listings'
 import { ApiError } from '@/lib/search'
 import type { ListingQuote } from '@/types/listing-detail'
 import type { ApiErrorBody, SearchResultListing } from '@/types/search'
@@ -39,7 +46,22 @@ export const listingDetailKeys = {
  * Runs only once both dates are set, and the server is the only place the
  * numbers come from — nothing here recomputes a total locally while waiting.
  */
-export function useListingQuote(listingId: string, from: string | null, to: string | null) {
+export function useListingQuote(
+  listingId: string,
+  from: string | null,
+  to: string | null,
+  initialQuote?: ListingQuote | null
+) {
+  const seed = useRef<ListingQuoteSeed | null>(null)
+  const seedUpdatedAt = useRef<number | undefined>(undefined)
+  seed.current = captureListingQuoteSeed(seed.current, initialQuote, from, to)
+  const seeded = listingQuoteSeedForDates(seed.current, from, to)
+  if (seeded) {
+    seedUpdatedAt.current ??= Date.now()
+  } else {
+    seedUpdatedAt.current = undefined
+  }
+
   return useQuery({
     queryKey: listingDetailKeys.quote(listingId, from, to),
     enabled: Boolean(from && to),
@@ -49,6 +71,9 @@ export function useListingQuote(listingId: string, from: string | null, to: stri
         { start_date: from, end_date: to },
         signal
       ),
+    ...(seeded
+      ? { initialData: seeded, initialDataUpdatedAt: seedUpdatedAt.current }
+      : {}),
     // Prices do not move while somebody is looking at them, and re-quoting on
     // every window focus would make the total flicker mid-decision.
     staleTime: 5 * 60 * 1000,
@@ -57,6 +82,45 @@ export function useListingQuote(listingId: string, from: string | null, to: stri
         ? false
         : failureCount < 2,
   })
+}
+
+/**
+ * Quote query plus which booking-card panel to render while it is in flight.
+ *
+ * `quoteUiReady` remembers that this visit already showed a total, so a later
+ * date change can skeleton immediately instead of collapsing the card first.
+ */
+export function useListingQuoteView(
+  listingId: string,
+  from: string | null,
+  to: string | null,
+  initialQuote?: ListingQuote | null
+) {
+  const quote = useListingQuote(listingId, from, to, initialQuote)
+  const hasDates = Boolean(from && to)
+  const hasQuote = Boolean(quote.data)
+  const isPending = hasDates && !hasQuote && (quote.isPending || quote.isFetching)
+  const delayedPending = useDelayedPending(isPending)
+  const [quoteUiReady, setQuoteUiReady] = useState(false)
+
+  useEffect(() => {
+    if (!hasDates) {
+      setQuoteUiReady(false)
+      return
+    }
+    if (hasQuote) setQuoteUiReady(true)
+  }, [hasDates, hasQuote])
+
+  return {
+    quote,
+    panel: bookingQuotePanel({
+      hasDates,
+      hasQuote,
+      isPending,
+      delayedPending,
+      quoteUiReady,
+    }),
+  }
 }
 
 export function useSimilarListings(listingId: string, limit = 4) {

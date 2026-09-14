@@ -152,6 +152,7 @@ describe('resultsHeading', () => {
   it('uses the locative form of the city name', () => {
     expect(resultsHeading(3, 'city_center', 'Novi Sad')).toContain('u Novom Sadu')
     expect(resultsHeading(3, 'city_center', 'Niš')).toContain('u Nišu')
+    expect(resultsHeading(3, 'city_center', 'Београд')).toBe('3 predmeta u Beogradu')
   })
 
   it('names no place when there is no centre', () => {
@@ -227,6 +228,7 @@ describe('city lookup', () => {
     expect(findCity('cacak')?.name).toBe('Čačak')
     expect(findCity('NIS')?.name).toBe('Niš')
     expect(findCity('Beograd')?.name).toBe('Beograd')
+    expect(findCity('Београд')?.name).toBe('Beograd')
   })
 
   it('strips đ, which carries no combining mark', () => {

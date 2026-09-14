@@ -29,6 +29,8 @@ export interface Message {
   body: string | null
   metadata: Record<string, unknown> | null
   created_at: string
+  edited_at: string | null
+  deleted_at: string | null
 }
 
 export interface ConversationParty {

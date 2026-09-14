@@ -78,4 +78,48 @@ test.describe('favorites', () => {
     await card.getByTestId('listing-card-favorite').click()
     await expect(card).toHaveCount(0)
   })
+
+  test('kartice omiljenih ne nose datume u link', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'verified', 'Koristi nalog iznajmljivača')
+
+    await page.route('**/api/v1/favorites**', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue()
+        return
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id: 'favorite-1',
+              slug: CONTACT_LISTING.slug,
+              title: CONTACT_LISTING.title,
+              thumbnail_url: null,
+              price_1_day_minor: 80000,
+              rating_avg: null,
+              rating_count: 0,
+              distance_m: null,
+              municipality: 'Beograd',
+              approx_latitude: 44.81,
+              approx_longitude: 20.46,
+              is_favorite: true,
+              is_own: false,
+              owner: { id: 'owner-1', display_name: 'Ana', is_verified: true },
+            },
+          ],
+          meta: { total: 1 },
+        }),
+      })
+    })
+
+    await page.goto('/profile/favorites')
+    const card = page.getByTestId('favorites-list').getByTestId('listing-card')
+    await expect(card).toBeVisible()
+    await expect(card.getByRole('link').first()).toHaveAttribute(
+      'href',
+      `/listings/${CONTACT_LISTING.slug}`
+    )
+  })
 })

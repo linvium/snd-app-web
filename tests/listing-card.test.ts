@@ -56,4 +56,11 @@ describe('toListingCardItem', () => {
     expect(item.slug).toBeNull()
     expect(item.is_favorite).toBe(false)
   })
+
+  it('shows a Cyrillic city name in latinica', () => {
+    expect(toListingCardItem({ ...searchListing, municipality: 'Београд' }).locationLabel).toBe(
+      'Beograd'
+    )
+    expect(toListingCardItem({ ...ownedListing, city: 'Ниш' }).locationLabel).toBe('Niš')
+  })
 })

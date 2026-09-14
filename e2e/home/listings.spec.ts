@@ -50,6 +50,10 @@ test.describe('homepage listings', () => {
 
     const cards = latest.locator('article')
     await expect(cards).toHaveCount(20)
+    await expect(cards.nth(0).getByRole('link').first()).toHaveAttribute(
+      'href',
+      '/listings/predmet-1'
+    )
 
     const first = await cards.nth(0).boundingBox()
     const sixth = await cards.nth(5).boundingBox()

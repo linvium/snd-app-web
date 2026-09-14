@@ -3,13 +3,19 @@ import { describe, expect, it } from 'vitest'
 import {
   buildBreadcrumb,
   buildPriceTiers,
+  captureListingQuoteSeed,
   guaranteeCapMinor,
   inheritedGuaranteeCap,
+  listingQuoteFromDetail,
+  listingQuoteSeedForDates,
+  placeLabel,
   pluralizeRatings,
   pluralizeReviews,
   responseRateText,
   responseTimeText,
   toDetailImages,
+  toListingQuote,
+  bookingQuotePanel,
 } from '@/lib/listings/listings.detail'
 import type { CategoryNode } from '@/types/listing-detail'
 
@@ -184,5 +190,160 @@ describe('toDetailImages', () => {
 
   it('treats a failed query as no images, not a crash', () => {
     expect(toDetailImages(null)).toEqual([])
+  })
+})
+
+describe('placeLabel', () => {
+  it('prints municipality then city', () => {
+    expect(placeLabel('Zvezdara', 'Beograd')).toBe('Zvezdara, Beograd')
+  })
+
+  it('does not repeat the city when both fields are the same', () => {
+    expect(placeLabel('Beograd', 'Beograd')).toBe('Beograd')
+  })
+
+  it('shows Cyrillic place names in latinica', () => {
+    expect(placeLabel('Звездара', 'Београд')).toBe('Zvezdara, Beograd')
+    expect(placeLabel('Београд', 'Beograd')).toBe('Beograd')
+  })
+})
+
+describe('bookingQuotePanel', () => {
+  const idle = {
+    hasDates: false,
+    hasQuote: false,
+    isPending: false,
+    delayedPending: false,
+    quoteUiReady: false,
+  }
+
+  it('keeps the package tiers until dates are picked', () => {
+    expect(bookingQuotePanel(idle)).toBe('tiers')
+  })
+
+  it('does not flash a skeleton for a quote that returns inside 500 ms', () => {
+    expect(
+      bookingQuotePanel({
+        ...idle,
+        hasDates: true,
+        isPending: true,
+        delayedPending: false,
+      })
+    ).toBe('tiers')
+  })
+
+  it('shows a skeleton once the quote has been pending long enough', () => {
+    expect(
+      bookingQuotePanel({
+        ...idle,
+        hasDates: true,
+        isPending: true,
+        delayedPending: true,
+      })
+    ).toBe('skeleton')
+  })
+
+  it('skeletons immediately when dates change after a total was already shown', () => {
+    expect(
+      bookingQuotePanel({
+        ...idle,
+        hasDates: true,
+        isPending: true,
+        quoteUiReady: true,
+      })
+    ).toBe('skeleton')
+  })
+
+  it('shows the server quote once it arrives', () => {
+    expect(
+      bookingQuotePanel({
+        ...idle,
+        hasDates: true,
+        hasQuote: true,
+        quoteUiReady: true,
+      })
+    ).toBe('quote')
+  })
+})
+
+describe('toListingQuote', () => {
+  const prices = {
+    price_1_day_minor: 10000,
+    price_3_days_minor: null,
+    price_7_days_minor: null,
+  }
+
+  it('prices an available window and flags it as free', () => {
+    const quote = toListingQuote('2026-08-29', '2026-08-30', prices, [], '2026-08-24')
+    expect(quote.days_count).toBe(2)
+    expect(quote.rental_price_minor).toBe(20000)
+    expect(quote.is_available).toBe(true)
+    expect(quote.suggested_start).toBeNull()
+  })
+
+  it('still prices a blocked window and suggests the next free one', () => {
+    const quote = toListingQuote(
+      '2026-08-29',
+      '2026-08-30',
+      prices,
+      ['2026-08-29'],
+      '2026-08-24'
+    )
+    expect(quote.is_available).toBe(false)
+    expect(quote.total_minor).toBeGreaterThan(0)
+    expect(quote.suggested_start).toBe('2026-08-30')
+  })
+})
+
+describe('listingQuoteFromDetail', () => {
+  const listing = {
+    status: 'published' as const,
+    price_1_day_minor: 10000,
+    price_3_days_minor: null,
+    price_7_days_minor: null,
+    unavailable_dates: [] as string[],
+  }
+
+  it('returns a quote when both dates are on a published listing', () => {
+    const quote = listingQuoteFromDetail(listing, '2026-08-29', '2026-08-30', '2026-08-24')
+    expect(quote?.days_count).toBe(2)
+    expect(quote?.is_available).toBe(true)
+  })
+
+  it('returns null when dates are missing, past, or the listing is not live', () => {
+    expect(listingQuoteFromDetail(listing, null, '2026-08-30', '2026-08-24')).toBeNull()
+    expect(listingQuoteFromDetail(listing, '2026-08-20', '2026-08-30', '2026-08-24')).toBeNull()
+    expect(
+      listingQuoteFromDetail(
+        { ...listing, status: 'paused' },
+        '2026-08-29',
+        '2026-08-30',
+        '2026-08-24'
+      )
+    ).toBeNull()
+  })
+})
+
+describe('listing quote seed', () => {
+  const quote = toListingQuote(
+    '2026-08-29',
+    '2026-08-30',
+    { price_1_day_minor: 10000, price_3_days_minor: null, price_7_days_minor: null },
+    [],
+    '2026-08-24'
+  )
+
+  it('applies the SSR quote only while the card still shows those dates', () => {
+    const seed = captureListingQuoteSeed(null, quote, '2026-08-29', '2026-08-30')
+    expect(listingQuoteSeedForDates(seed, '2026-08-29', '2026-08-30')).toEqual(quote)
+    expect(listingQuoteSeedForDates(seed, '2026-08-24', '2026-08-24')).toBeUndefined()
+  })
+
+  it('does not recapture after the first range, so a later initialQuote cannot stick', () => {
+    const first = captureListingQuoteSeed(null, quote, '2026-08-29', '2026-08-30')
+    const other = { ...quote, days_count: 1, total_minor: 11000 }
+    const next = captureListingQuoteSeed(first, other, '2026-08-24', '2026-08-24')
+    expect(next).toEqual(first)
+    expect(listingQuoteSeedForDates(next, '2026-08-24', '2026-08-24')).toBeUndefined()
   })
 })

@@ -1,5 +1,6 @@
 import Supercluster from 'supercluster'
 
+import { toSerbianLatin } from '@/lib/geo/script.helpers'
 import type { MapPin } from '@/types/search'
 
 export const MAP_MIN_ZOOM = 6
@@ -82,7 +83,7 @@ export function clusterByCity(pins: MapPin[]): MapEntry[] {
   const groups = new Map<string, MapPin[]>()
 
   for (const pin of pins) {
-    const key = pin.city ?? 'Ostalo'
+    const key = toSerbianLatin(pin.city ?? 'Ostalo')
     const group = groups.get(key)
     if (group) {
       group.push(pin)

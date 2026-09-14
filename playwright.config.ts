@@ -59,6 +59,7 @@ export default defineConfig({
         '**/search/dates.spec.ts',
         '**/search/layout.spec.ts',
         '**/home/listings.spec.ts',
+        '**/listings/quote.spec.ts',
       ],
     },
   ],

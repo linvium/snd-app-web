@@ -79,6 +79,14 @@ describe('clusterByCity', () => {
     expect(counts).toContainEqual({ label: 'Novi Sad', count: 2 })
   })
 
+  it('groups Cyrillic and latinica names of the same city', () => {
+    const mixed = [pin(44.8, 20.45, 'Београд'), pin(44.81, 20.46, 'Beograd')]
+    const [cluster] = clusterByCity(mixed)
+    if (cluster.kind !== 'cluster') throw new Error('expected a cluster')
+    expect(cluster.label).toBe('Beograd')
+    expect(cluster.count).toBe(2)
+  })
+
   it('places the circle at the centre of its members', () => {
     const [cluster] = clusterByCity(noviSad)
     if (cluster.kind !== 'cluster') throw new Error('expected a cluster')

@@ -171,4 +171,80 @@ test.describe('messages', () => {
     ).toHaveClass(/justify-end/)
     await ownerContext.close()
   })
+
+  test('vlasnik menja i briše sopstvenu poruku', async ({ page, browser }, testInfo) => {
+    test.skip(true, 'Edit/delete meni je privremeno sakriven u niti.')
+    test.skip(testInfo.project.name !== 'verified', 'Koristi nalog iznajmljivača')
+    test.setTimeout(120_000)
+    await cleanupRentalRequests()
+    await page.goto(CONTACT_PATH)
+    await page.getByTestId('contact-owner-button').click()
+    await page.getByTestId('request-message').fill('Zdravo, da li je slobodno?')
+    await page.getByTestId('request-submit').click()
+    await page.waitForURL(/\/profile\/requests\/[0-9a-f-]{36}/)
+
+    const ownerContext = await browser.newContext({ storageState: OWNER_STATE })
+    const ownerPage = await ownerContext.newPage()
+    await ownerPage.goto('/profile/requests')
+    await ownerPage.getByTestId('conversation-row').click()
+    await expect(ownerPage.getByTestId('message-thread')).toBeVisible()
+    await expect(ownerPage.getByTestId('request-card').getByTestId('message-actions')).toHaveCount(0)
+
+    const input = ownerPage.getByTestId('thread-message-input')
+    await input.fill('Može, javi se u petak.')
+    await Promise.all([
+      ownerPage.waitForResponse(
+        (res) => res.url().includes('/messages') && res.request().method() === 'POST' && res.ok()
+      ),
+      input.press('Enter'),
+    ])
+
+    const ownMessage = ownerPage
+      .getByTestId('text-message')
+      .filter({ hasText: 'Može, javi se u petak.' })
+    await expect(ownMessage).toBeVisible()
+    await ownMessage.getByRole('button', { name: 'Akcije poruke' }).click()
+    await ownerPage.getByRole('menuitem', { name: 'Izmeni' }).click({ force: true })
+    await ownerPage.getByTestId('message-edit-input').fill('Može, javi se u subotu.')
+    await Promise.all([
+      ownerPage.waitForResponse(
+        (res) =>
+          res.url().includes('/messages/') && res.request().method() === 'PATCH' && res.ok()
+      ),
+      ownerPage.getByTestId('message-edit-save').click(),
+    ])
+    const edited = ownerPage
+      .getByTestId('text-message')
+      .filter({ hasText: 'Može, javi se u subotu.' })
+    await expect(edited).toBeVisible()
+    await expect(edited.getByTestId('message-edited')).toHaveText(/izmenjeno/)
+
+    await edited.getByRole('button', { name: 'Akcije poruke' }).click()
+    await ownerPage.getByRole('menuitem', { name: 'Obriši' }).click({ force: true })
+    await expect(ownerPage.getByTestId('message-delete-confirm')).toBeVisible()
+    await Promise.all([
+      ownerPage.waitForResponse(
+        (res) =>
+          res.url().includes('/messages/') && res.request().method() === 'DELETE' && res.ok()
+      ),
+      ownerPage.getByTestId('message-delete-confirm').click(),
+    ])
+    await expect(ownerPage.getByTestId('deleted-message')).toHaveText('Poruka je obrisana')
+    await expect(
+      ownerPage
+        .getByTestId('text-message')
+        .filter({ has: ownerPage.getByTestId('deleted-message') })
+        .getByTestId('message-actions')
+    ).toHaveCount(0)
+    await ownerContext.close()
+
+    await page.reload()
+    const deleted = page.getByTestId('text-message').filter({ hasText: 'Poruka je obrisana' })
+    await expect(deleted.getByTestId('deleted-message')).toBeVisible()
+    await expect(deleted.getByTestId('message-actions')).toHaveCount(0)
+    await expect(page.getByText('Može, javi se u subotu.')).toHaveCount(0)
+    await expect(
+      page.getByTestId('text-message').filter({ hasText: 'Zdravo, da li je slobodno?' }).getByTestId('message-actions')
+    ).toBeVisible()
+  })
 })

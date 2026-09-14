@@ -1,3 +1,5 @@
+import { toSerbianLatin } from './script.helpers'
+
 /**
  * Serbian cities the search can centre on.
  *
@@ -58,7 +60,7 @@ export const SERBIA_CITIES: SerbianCity[] = [
 
 /** Diacritics-insensitive match, so "cacak" finds "Čačak" the way search does. */
 export function normalizeForCompare(value: string): string {
-  return value
+  return toSerbianLatin(value)
     .normalize('NFD')
     // Strip the combining marks NFD just separated out (č → c + ˇ).
     .replace(/[\u0300-\u036f]/g, '')

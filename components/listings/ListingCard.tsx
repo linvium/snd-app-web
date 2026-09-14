@@ -9,7 +9,7 @@ import ListingOwnerMenu from '@/components/listings/ListingOwnerMenu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuthSession } from '@/context/AuthContext'
 import { useToggleFavorite } from '@/hooks/favorites'
-import { listingEditPath, toListingCardItem } from '@/lib/listings'
+import { listingEditPath, listingPublicPath, toListingCardItem, type ListingDateRange } from '@/lib/listings'
 import { LISTING_STATUS_LABELS, type ListingUiStatus } from '@/lib/listings/listings.status'
 import { formatDistance, formatPricePerDay } from '@/lib/search'
 import { cn } from '@/lib/utils'
@@ -22,14 +22,22 @@ interface ListingCardProps {
   priority?: boolean
   /** Set while the matching map pin is hovered (doc 03 §8). */
   highlighted?: boolean
+  /** Search / detail date window forwarded onto the public item URL. */
+  dates?: ListingDateRange | null
   onHoverChange?: (listingId: string | null) => void
   onOwnerStatusChange?: (status: ListingStatus) => void
   onOwnerDeleted?: () => void
 }
 
-function cardHref(slug: string | null, id: string, isOwn: boolean, status: ListingStatus | null): string {
+function cardHref(
+  slug: string | null,
+  id: string,
+  isOwn: boolean,
+  status: ListingStatus | null,
+  dates?: ListingDateRange | null
+): string {
   if (isOwn && status && status !== 'published') return listingEditPath(id)
-  if (slug) return `/listings/${slug}`
+  if (slug) return listingPublicPath(slug, dates)
   return listingEditPath(id)
 }
 
@@ -50,6 +58,7 @@ export default function ListingCard({
   listing,
   priority = false,
   highlighted = false,
+  dates,
   onHoverChange,
   onOwnerStatusChange,
   onOwnerDeleted,
@@ -62,7 +71,7 @@ export default function ListingCard({
   const distance = formatDistance(item.distance_m)
   const hasRating = item.rating_count > 0
   const statusLabel = item.is_own ? ownerStatusLabel(item.status) : null
-  const href = cardHref(item.slug, item.id, item.is_own, item.status)
+  const href = cardHref(item.slug, item.id, item.is_own, item.status, dates)
   const location = [item.locationLabel, distance].filter(Boolean).join(' · ')
   const priceLabel =
     item.price_1_day_minor > 0 ? formatPricePerDay(item.price_1_day_minor) : '—'

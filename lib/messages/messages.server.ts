@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { apiError, ERROR_CODES } from '@/lib/api/response'
 import { validateMessageBody } from '@/lib/bookings/bookings.validation'
-import { conversationPartyLabel, sortConversationsForInbox } from '@/lib/messages/messages.helpers'
+import { conversationPartyLabel, MESSAGE_MUTATION_WINDOW_EXPIRED, sortConversationsForInbox } from '@/lib/messages/messages.helpers'
 import type { BookingPaymentLink } from '@/types/booking'
 import type {
   ConversationBookingSummary,
@@ -33,6 +33,57 @@ function isParticipant(row: ConversationRow, userId: string) {
 
 function unreadCount(row: ConversationRow, userId: string) {
   return row.renter_id === userId ? row.renter_unread_count : row.owner_unread_count
+}
+
+const MESSAGE_COLUMNS =
+  'id, conversation_id, sender_id, type, body, metadata, created_at, edited_at, deleted_at'
+
+type MessageRow = {
+  id: string
+  conversation_id: string
+  sender_id: string | null
+  type: string
+  body: string | null
+  metadata: Record<string, unknown> | null
+  created_at: string
+  edited_at: string | null
+  deleted_at: string | null
+}
+
+function toPublicMessage(row: MessageRow): Message {
+  const deletedAt = row.deleted_at ?? null
+  return {
+    id: row.id,
+    conversation_id: row.conversation_id,
+    sender_id: row.sender_id ?? null,
+    type: row.type as MessageType,
+    body: deletedAt ? null : (row.body ?? null),
+    metadata: row.metadata ?? null,
+    created_at: row.created_at,
+    edited_at: row.edited_at ?? null,
+    deleted_at: deletedAt,
+  }
+}
+
+function messageRpcError(
+  error: { message?: string },
+  fallback: string,
+  notFoundMessage: string
+) {
+  const message = error.message ?? ''
+  if (message.includes('UNAUTHENTICATED')) {
+    return apiError(401, ERROR_CODES.UNAUTHENTICATED, 'Prijavi se da nastaviš.')
+  }
+  if (message.includes('VALIDATION_FAILED')) {
+    return apiError(422, ERROR_CODES.VALIDATION_FAILED, 'Napiši poruku.')
+  }
+  if (message.includes('WINDOW_EXPIRED')) {
+    return apiError(403, ERROR_CODES.FORBIDDEN, MESSAGE_MUTATION_WINDOW_EXPIRED)
+  }
+  if (message.includes('NOT_FOUND')) {
+    return apiError(404, ERROR_CODES.NOT_FOUND, notFoundMessage)
+  }
+  return apiError(500, ERROR_CODES.INTERNAL, fallback)
 }
 
 async function hydrateConversations(
@@ -286,7 +337,7 @@ export async function getConversationThread(
 
   const { data: messages, error: messagesError } = await supabase
     .from('messages')
-    .select('id, conversation_id, sender_id, type, body, metadata, created_at')
+    .select(MESSAGE_COLUMNS)
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true })
 
@@ -298,15 +349,7 @@ export async function getConversationThread(
   const [summary] = await hydrateConversations(supabase, [row as ConversationRow], userId)
   return {
     conversation: summary,
-    messages: (messages ?? []).map((message) => ({
-      id: message.id as string,
-      conversation_id: message.conversation_id as string,
-      sender_id: (message.sender_id as string | null) ?? null,
-      type: message.type as MessageType,
-      body: (message.body as string | null) ?? null,
-      metadata: (message.metadata as Record<string, unknown> | null) ?? null,
-      created_at: message.created_at as string,
-    })),
+    messages: ((messages ?? []) as MessageRow[]).map(toPublicMessage),
   }
 }
 
@@ -343,39 +386,94 @@ export async function sendConversationMessage(
   })
 
   if (sendError) {
-    const message = sendError.message ?? ''
-    if (message.includes('UNAUTHENTICATED')) {
-      return { response: apiError(401, ERROR_CODES.UNAUTHENTICATED, 'Prijavi se da nastaviš.') }
-    }
-    if (message.includes('VALIDATION_FAILED')) {
-      return { response: apiError(422, ERROR_CODES.VALIDATION_FAILED, 'Napiši poruku.') }
-    }
-    if (message.includes('NOT_FOUND')) {
-      return { response: apiError(404, ERROR_CODES.NOT_FOUND, 'Razgovor nije pronađen.') }
-    }
     console.error('[messages] send rpc failed', sendError)
-    return { response: apiError(500, ERROR_CODES.INTERNAL, 'Poruka nije poslata. Pokušaj ponovo.') }
+    return { response: messageRpcError(sendError, 'Poruka nije poslata. Pokušaj ponovo.', 'Razgovor nije pronađen.') }
   }
 
-  const message = data as {
-    id: string
-    conversation_id: string
-    sender_id: string | null
-    type: MessageType
-    body: string | null
-    metadata: Record<string, unknown> | null
-    created_at: string
+  return toPublicMessage(data as MessageRow)
+}
+
+export async function editConversationMessage(
+  supabase: SupabaseClient,
+  userId: string,
+  conversationId: string,
+  messageId: string,
+  body: string
+): Promise<Message | { response: ReturnType<typeof apiError> }> {
+  const bodyError = validateMessageBody(body)
+  if (bodyError) {
+    return { response: apiError(422, ERROR_CODES.VALIDATION_FAILED, bodyError, { body: bodyError }) }
   }
 
-  return {
-    id: message.id,
-    conversation_id: message.conversation_id,
-    sender_id: message.sender_id,
-    type: message.type,
-    body: message.body,
-    metadata: message.metadata,
-    created_at: message.created_at,
+  const { data: row, error } = await supabase
+    .from('conversations')
+    .select(CONVERSATION_COLUMNS)
+    .eq('id', conversationId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('[messages] load for edit failed', error)
+    return { response: apiError(500, ERROR_CODES.INTERNAL, 'Nešto je krenulo naopako.') }
   }
+
+  if (!row || !isParticipant(row as ConversationRow, userId)) {
+    return { response: apiError(404, ERROR_CODES.NOT_FOUND, 'Razgovor nije pronađen.') }
+  }
+
+  const { data, error: editError } = await supabase.rpc('snd_edit_text_message', {
+    p_conversation_id: conversationId,
+    p_message_id: messageId,
+    p_body: body.trim(),
+  })
+
+  if (editError) {
+    console.error('[messages] edit rpc failed', editError)
+    return {
+      response: messageRpcError(editError, 'Poruka nije izmenjena. Pokušaj ponovo.', 'Poruka nije pronađena.'),
+    }
+  }
+
+  return toPublicMessage(data as MessageRow)
+}
+
+export async function deleteConversationMessage(
+  supabase: SupabaseClient,
+  userId: string,
+  conversationId: string,
+  messageId: string
+): Promise<Message | { response: ReturnType<typeof apiError> }> {
+  const { data: row, error } = await supabase
+    .from('conversations')
+    .select(CONVERSATION_COLUMNS)
+    .eq('id', conversationId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('[messages] load for delete failed', error)
+    return { response: apiError(500, ERROR_CODES.INTERNAL, 'Nešto je krenulo naopako.') }
+  }
+
+  if (!row || !isParticipant(row as ConversationRow, userId)) {
+    return { response: apiError(404, ERROR_CODES.NOT_FOUND, 'Razgovor nije pronađen.') }
+  }
+
+  const { data, error: deleteError } = await supabase.rpc('snd_delete_text_message', {
+    p_conversation_id: conversationId,
+    p_message_id: messageId,
+  })
+
+  if (deleteError) {
+    console.error('[messages] delete rpc failed', deleteError)
+    return {
+      response: messageRpcError(
+        deleteError,
+        'Poruka nije obrisana. Pokušaj ponovo.',
+        'Poruka nije pronađena.'
+      ),
+    }
+  }
+
+  return toPublicMessage(data as MessageRow)
 }
 
 export async function markConversationRead(
