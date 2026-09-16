@@ -49,8 +49,9 @@ function DateCell({
  * The rental request, rendered inside the conversation where it was made.
  *
  * For the owner while the request is still open, the card is the place to
- * accept, decline, or propose other dates. The renter sees the same facts
- * without payout figures - those belong on the owner's side.
+ * accept, decline, or propose other dates, with the rental price the renter
+ * will pay them directly. The renter sees the same facts without that sum
+ * spelled out a second time.
  */
 export function BookingTicket({
   booking,
@@ -87,8 +88,8 @@ export function BookingTicket({
   const ownerPending = role === 'owner' && booking.status === 'requested'
   const money = ownerPending ? ownerReviewMoney(booking, listing) : null
   const showActions = ownerPending && onAccept && onDecline && onPropose
-  // Accepting mints a payment link, and there is nothing to charge for a term
-  // nobody agreed on - so a dateless request offers a proposal, not a yes.
+  // Accepting books the term, and there is no term to book for dates nobody
+  // agreed on - so a dateless request offers a proposal, not a yes.
   const hasDates = Boolean(booking.start_date && booking.end_date)
 
   return (
@@ -173,34 +174,25 @@ export function BookingTicket({
           </p>
         )}
 
-            {money ? (
-              <dl className="m-0 grid gap-1.5 px-4 pt-3 text-sm text-card-foreground">
-                {money.dailyMinor && money.days ? (
-                  <div className="flex justify-between gap-3">
-                    <dt className="m-0 text-muted-foreground">
-                      {formatPriceMinor(money.dailyMinor)} × {bookingDurationLabel(money.days)}
-                    </dt>
-                    <dd className="m-0">{formatPriceMinor(money.rentalMinor)}</dd>
-                  </div>
-                ) : null}
-                {money.depositMinor ? (
-                  <div className="flex justify-between gap-3">
-                    <dt className="m-0 text-muted-foreground">Depozit (vraća se)</dt>
-                    <dd className="m-0">{formatPriceMinor(money.depositMinor)}</dd>
-                  </div>
-                ) : null}
-                <div className="flex justify-between gap-3">
-                  <dt className="m-0 text-muted-foreground">
-                    Naknada platforme ({money.feePercent}%)
-                  </dt>
-                  <dd className="m-0">{formatPriceMinor(money.feeMinor)}</dd>
-                </div>
-                <div className="mt-1 flex justify-between gap-3 border-t border-border pt-2.5 text-[15px] font-bold">
-                  <dt>Ti dobijaš</dt>
-                  <dd className="m-0">{formatPriceMinor(money.payoutMinor)}</dd>
-                </div>
-              </dl>
-            ) : !ownerPending ? (
+        {money ? (
+          <dl className="m-0 grid gap-1.5 px-4 pt-3 text-sm text-card-foreground">
+            {money.dailyMinor && money.days ? (
+              <div className="flex justify-between gap-3">
+                <dt className="m-0 text-muted-foreground">
+                  {formatPriceMinor(money.dailyMinor)} × {bookingDurationLabel(money.days)}
+                </dt>
+                <dd className="m-0">{formatPriceMinor(money.rentalMinor)}</dd>
+              </div>
+            ) : null}
+            <div className="mt-1 flex justify-between gap-3 border-t border-border pt-2.5 text-[15px] font-bold">
+              <dt>Cena najma</dt>
+              <dd className="m-0">{formatPriceMinor(money.rentalMinor)}</dd>
+            </div>
+            <p className="m-0 text-[12px] text-muted-foreground">
+              Zakupac plaća direktno tebi. SND ne uzima proviziju.
+            </p>
+          </dl>
+        ) : !ownerPending ? (
           <dl className="m-0 grid gap-1 px-4 pt-3 pb-4 text-[13px]">
             {days ? (
               <div className="flex justify-between gap-3">

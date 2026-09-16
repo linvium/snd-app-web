@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { addDaysIso, todayIso } from '@/lib/availability'
 import { toSerbianLatin } from '@/lib/geo/script.helpers'
-import { buildBreadcrumb, guaranteeCapMinor, inheritedGuaranteeCap, toDetailImages } from '@/lib/listings/listings.detail'
+import { buildBreadcrumb, toDetailImages } from '@/lib/listings/listings.detail'
 import { AVAILABILITY_MONTHS_AHEAD } from '@/lib/pricing'
 import type {
   CategoryNode,
@@ -20,7 +20,7 @@ import type { CancellationPolicy, ListingStatus } from '@/types/listing'
  * the `public_*` views, whose column lists are the enforcement of doc 04 §9:
  * `street`, `postal_code` and the exact coordinates are not selectable there at
  * all. The one path that does return them is `locations` itself, which stays
- * behind RLS and opens only to a renter with a paid or running booking.
+ * behind RLS and opens only to a renter with a booked or running reservation.
  */
 
 // One literal, not a concatenation: `.select()` infers its row type from the
@@ -90,7 +90,7 @@ export async function loadListingDetail(
       .from('public_listing_locations')
       .select('location_id, label, municipality, city, approx_latitude, approx_longitude')
       .eq('listing_id', listingId),
-    supabase.from('categories').select('id, parent_id, name, slug, level, guarantee_cap_minor'),
+    supabase.from('categories').select('id, parent_id, name, slug, level'),
     supabase
       .from('public_owner_profiles')
       .select(
@@ -98,8 +98,8 @@ export async function loadListingDetail(
       )
       .eq('user_id', ownerId)
       .maybeSingle(),
-    // Availability is one readable table: a trigger mirrors accepted, booked and
-    // picked-up bookings into `blocked_dates` (doc 00 §6.4), so the public
+    // Availability is one readable table: a trigger mirrors booked and
+    // picked-up reservations into `blocked_dates` (doc 00 §6.4), so the public
     // calendar never has to read `bookings`.
     supabase
       .from('blocked_dates')
@@ -146,7 +146,7 @@ export async function loadListingDetail(
 
   if (canSeeExact && pickup_locations.length > 0) {
     // `locations` is still RLS-guarded; this returns rows only for the owner or
-    // for a renter the paid-booking policy has unlocked. No branch here decides
+    // for a renter the booked-renter policy has unlocked. No branch here decides
     // that — the database does, and an empty result simply leaves the blurred
     // version in place.
     const { data: exact } = await supabase
@@ -180,7 +180,6 @@ export async function loadListingDetail(
         name: category.name as string,
         slug: category.slug as string,
         level: Number(category.level),
-        guarantee_cap_minor: (category.guarantee_cap_minor as number | null) ?? null,
       },
     ])
   )
@@ -224,7 +223,6 @@ export async function loadListingDetail(
       price_7_days_minor: (row.price_7_days_minor as number | null) ?? null,
       item_value_minor: itemValueMinor,
       cancellation_policy: row.cancellation_policy as CancellationPolicy,
-      guarantee_cap_minor: guaranteeCapMinor(inheritedGuaranteeCap(trail), itemValueMinor),
       rating_avg: row.rating_avg == null ? null : Number(row.rating_avg),
       rating_count: Number(row.rating_count ?? 0),
       is_favorite: Boolean(favorite),

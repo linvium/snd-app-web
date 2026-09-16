@@ -116,21 +116,17 @@ test.describe('publish listing', () => {
     await expect(page).toHaveURL(/\/profile\/listings\/?(?:\?.*)?$/)
   })
 
-  test('garancija i predaja otvaraju se u panelu bez napustanja forme', async ({ page }) => {
+  test('predaja se otvara u panelu bez napustanja forme', async ({ page }) => {
     await start(page)
     await pickFirstLeafCategory(page)
 
-    const guarantee = page.getByTestId('guarantee-link')
-    await expect(guarantee).toHaveAttribute('href', '/support/guarantee')
-    await expect(page.getByTestId('pickup-help-link')).toHaveAttribute(
-      'href',
-      '/support/pickup-and-return'
-    )
+    const pickupHelp = page.getByTestId('pickup-help-link')
+    await expect(pickupHelp).toHaveAttribute('href', '/support/pickup-and-return')
 
-    await guarantee.click()
+    await pickupHelp.click()
     const sheet = page.getByTestId('support-sheet')
     await expect(sheet).toBeVisible()
-    await expect(sheet.getByRole('heading', { name: 'Garancija', level: 1 })).toBeVisible()
+    await expect(sheet.getByRole('heading', { name: 'Gde se predaje', level: 1 })).toBeVisible()
 
     // The form is still there underneath, and the URL never moved.
     await sheet.getByRole('button', { name: 'Zatvori' }).click()

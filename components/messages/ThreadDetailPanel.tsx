@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { CheckIcon, ImageIcon, ShieldCheckIcon } from 'lucide-react'
+import { CheckIcon, HandshakeIcon, ImageIcon } from 'lucide-react'
 
 import { bookingSteps } from '@/lib/messages/booking-steps'
 import { formatPriceMinor } from '@/lib/search/search.helpers'
@@ -8,7 +8,7 @@ import type { ConversationSummary } from '@/types'
 
 /**
  * The context column: what the conversation is about, where the reservation
- * stands, and the one rule that decides whether the Guarantee applies.
+ * stands, and who settles the money - the two people, not the platform.
  */
 export function ThreadDetailPanel({ conversation }: { conversation: ConversationSummary }) {
   const { listing, booking } = conversation
@@ -102,20 +102,20 @@ export function ThreadDetailPanel({ conversation }: { conversation: Conversation
 
       <section className="p-4">
         <h3 className="mt-0 mb-3 text-[11px] font-semibold tracking-[0.09em] text-muted-foreground uppercase">
-          Zaštita
+          Plaćanje
         </h3>
-        <div className="rounded-xl bg-info-soft p-3.5 text-[12.5px] leading-relaxed text-info">
-          <p className="m-0 mb-1 flex items-center gap-1.5 text-[13px] font-semibold">
-            <ShieldCheckIcon className="size-4 shrink-0" aria-hidden />
-            SND Garancija
+        <div
+          data-testid="thread-payment-note"
+          className="rounded-xl bg-muted p-3.5 text-[12.5px] leading-relaxed text-muted-foreground"
+        >
+          <p className="m-0 mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-card-foreground">
+            <HandshakeIcon className="size-4 shrink-0" aria-hidden />
+            Direktno između vas
           </p>
           <p className="m-0">
-            Važi samo za dogovore sklopljene kroz platformu. Slikaj predmet pri predaji i pri
-            vraćanju.
+            Cenu najma i način plaćanja dogovarate u porukama - SND ne naplaćuje iznajmljivanje.
+            Slikajte predmet pri predaji i pri vraćanju.
           </p>
-          <Link href="/support/guarantee" className="mt-2 inline-block font-semibold text-info underline">
-            Kako garancija radi
-          </Link>
         </div>
       </section>
     </div>

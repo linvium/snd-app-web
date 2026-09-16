@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { EllipsisIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { isListingLimitError, notifyListingLimit } from '@/components/billing/notifyListingLimit'
 import { StatusConfirmDialog } from '@/components/listings/StatusConfirmDialog'
 import { Button } from '@/components/ui/button'
 import {
@@ -95,6 +96,15 @@ export default function ListingOwnerMenu({
       toast.error(error instanceof Error ? error.message : fallback)
     }
 
+    // No free slot and no credit is not a broken listing: point at the plans
+    // instead of repeating an error the owner cannot fix from here.
+    const limitReached = (error: unknown) => {
+      if (!isListingLimitError(error)) return false
+      onStatusChange?.(previous)
+      notifyListingLimit(error, (href) => window.location.assign(href))
+      return true
+    }
+
     if (action === 'publish') {
       publish.mutate(listingId, {
         onSuccess: () => {
@@ -102,6 +112,7 @@ export default function ListingOwnerMenu({
           toast.success('Oglas je objavljen.')
         },
         onError: (error) => {
+          if (limitReached(error)) return
           const message =
             error instanceof ApiError
               ? error.message

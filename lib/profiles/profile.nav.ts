@@ -9,6 +9,7 @@ export const MANAGER_ROOT = '/profile'
 export const MANAGER_LISTINGS = '/profile/listings'
 export const MANAGER_REQUESTS = '/profile/requests'
 export const MANAGER_FAVORITES = '/profile/favorites'
+export const MANAGER_BILLING = '/profile/billing'
 export const MANAGER_SETTINGS = '/profile/settings'
 
 export const SETTINGS_PROFILE = '/profile/settings/profile'
@@ -16,7 +17,13 @@ export const SETTINGS_EDIT = '/profile/settings/edit'
 export const SETTINGS_VERIFICATION = '/profile/settings/verification'
 export const SETTINGS_LOCATIONS = '/profile/settings/locations'
 
-export type ManagerNavKey = 'overview' | 'listings' | 'requests' | 'favorites' | 'settings'
+export type ManagerNavKey =
+  | 'overview'
+  | 'listings'
+  | 'requests'
+  | 'favorites'
+  | 'billing'
+  | 'settings'
 
 export interface ManagerNavItem {
   key: ManagerNavKey
@@ -31,12 +38,16 @@ export interface ManagerNavItem {
 /**
  * "Zahtevi" and "Poruke" are the same thing, so the rail carries one entry.
  * The label stays "Zahtevi" — it is what the rest of the product calls it.
+ *
+ * "Pretplata" is where an owner sees their plan, their credits and what each
+ * publish will cost - the one place in the manager that is about money.
  */
 export const MANAGER_NAV: readonly ManagerNavItem[] = [
   { key: 'overview', href: MANAGER_ROOT, label: 'Pregled' },
   { key: 'listings', href: MANAGER_LISTINGS, label: 'Oglasi' },
   { key: 'requests', href: MANAGER_REQUESTS, label: 'Zahtevi', counter: 'unread' },
   { key: 'favorites', href: MANAGER_FAVORITES, label: 'Omiljeni' },
+  { key: 'billing', href: MANAGER_BILLING, label: 'Pretplata' },
   { key: 'settings', href: MANAGER_SETTINGS, label: 'Opcije'},
 ] as const
 
@@ -108,6 +119,7 @@ export function managerSubpageTitle(pathname: string): string | null {
   if (pathname.startsWith(MANAGER_LISTINGS)) return 'Moji oglasi'
   if (pathname.startsWith(MANAGER_REQUESTS)) return 'Zahtevi'
   if (pathname.startsWith(MANAGER_FAVORITES)) return 'Omiljeni'
+  if (pathname.startsWith(MANAGER_BILLING)) return 'Pretplata i krediti'
   return null
 }
 

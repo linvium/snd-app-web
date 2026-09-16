@@ -192,18 +192,9 @@ export default function BookingCard({
                 </div>
               ))}
 
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Iznajmljivanje</dt>
-                <dd className="m-0">{formatPriceMinor(quote.data.rental_price_minor)}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Naknada platforme</dt>
-                <dd className="m-0">{formatPriceMinor(quote.data.service_fee_minor)}</dd>
-              </div>
-
               <div className="flex justify-between gap-4 border-t border-border pt-2 text-base font-semibold text-card-foreground">
                 <dt>Ukupno</dt>
-                <dd className="m-0">{formatPriceMinor(quote.data.total_minor)}</dd>
+                <dd className="m-0">{formatPriceMinor(quote.data.rental_price_minor)}</dd>
               </div>
             </dl>
           </div>
@@ -262,7 +253,7 @@ export default function BookingCard({
         {/* Doc 04 §13: the sentence that makes the request feel safe to send. */}
         <p className="mt-3 mb-0 flex items-start gap-2 text-center text-[13px] text-muted-foreground">
           <InfoIcon className="mt-0.5 size-4 flex-none" strokeWidth={1.8} aria-hidden />
-          Nećeš biti naplaćen dok vlasnik ne prihvati zahtev.
+          Zahtev ništa ne košta. Cenu najma plaćaš direktno vlasniku, kako se dogovorite.
         </p>
       </aside>
 

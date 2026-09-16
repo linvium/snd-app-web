@@ -112,20 +112,6 @@ export function responseRateText(
 }
 
 /**
- * Guarantee cover (doc 04 §10): the category's cap, cut down to the item's own
- * value when the item is worth less — the guarantee replaces a thing, it does
- * not pay out above it.
- */
-export function guaranteeCapMinor(
-  categoryCapMinor: number | null | undefined,
-  itemValueMinor: number | null | undefined
-): number | null {
-  if (categoryCapMinor == null) return itemValueMinor ?? null
-  if (itemValueMinor == null) return categoryCapMinor
-  return Math.min(categoryCapMinor, itemValueMinor)
-}
-
-/**
  * Walks a category up to its root to build the breadcrumb (doc 04 §4).
  *
  * Returned root-first, which is the reading order. A cycle in `parent_id` would
@@ -146,15 +132,6 @@ export function buildBreadcrumb(
   }
 
   return trail
-}
-
-/** The nearest ancestor that sets a guarantee cap, so leaves need not repeat it. */
-export function inheritedGuaranteeCap(trail: readonly CategoryNode[]): number | null {
-  for (let index = trail.length - 1; index >= 0; index -= 1) {
-    const cap = trail[index].guarantee_cap_minor
-    if (cap != null) return cap
-  }
-  return null
 }
 
 /** "mart 2025." for the owner card (doc 04 §5). */
@@ -271,8 +248,6 @@ export function toListingQuote(
   return {
     days_count: quote.days_count,
     rental_price_minor: quote.rental_price_minor,
-    service_fee_minor: quote.service_fee_minor,
-    total_minor: quote.total_minor,
     price_breakdown: quote.price_breakdown,
     is_available: available,
     suggested_start: suggestion?.start ?? null,

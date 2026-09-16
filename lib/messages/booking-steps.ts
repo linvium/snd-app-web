@@ -34,19 +34,13 @@ function formatStamp(iso: string | null | undefined): string | null {
   return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}. u ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
-const CLOSED_STATUSES = new Set([
-  'declined',
-  'expired',
-  'cancelled_by_renter',
-  'cancelled_by_owner',
-  'payment_failed',
-])
+const CLOSED_STATUSES = new Set(['declined', 'expired', 'cancelled_by_renter', 'cancelled_by_owner'])
 
 /**
  * The lifecycle in order. A booking's position in this list decides which steps
  * are behind it, which one it is on, and which are still ahead.
  */
-const LIFECYCLE = ['requested', 'accepted', 'booked', 'picked_up', 'returned', 'rated'] as const
+const LIFECYCLE = ['requested', 'booked', 'picked_up', 'returned', 'rated'] as const
 
 export function bookingStageIndex(status: string | null | undefined): number {
   return LIFECYCLE.indexOf(status as (typeof LIFECYCLE)[number])
@@ -55,11 +49,11 @@ export function bookingStageIndex(status: string | null | undefined): number {
 /**
  * Where the reservation stands, derived from the booking row alone.
  *
- * Six steps - request, accepted, booked, picked up, returned, rated - so the
- * panel says what has happened and what is next rather than stopping at the
- * owner's answer. A reservation that ended early shows only how far it got and
- * then why it stopped; drawing four pending steps under a declined request
- * would promise a rental that is not coming.
+ * Five steps - request, booked, picked up, returned, rated. There is no payment
+ * step between the owner's answer and the reservation: accepting is booking.
+ * A reservation that ended early shows only how far it got and then why it
+ * stopped; drawing pending steps under a declined request would promise a
+ * rental that is not coming.
  */
 export function bookingSteps(
   booking: ConversationBookingSummary | null,
@@ -95,79 +89,54 @@ export function bookingSteps(
     steps.push({
       key: 'closed',
       title: 'Zahtev je zatvoren',
-      detail:
-        status === 'declined'
-          ? 'Odbijen'
-          : status === 'expired'
-            ? 'Istekao'
-            : status === 'payment_failed'
-              ? 'Plaćanje nije prošlo'
-              : 'Otkazan',
+      detail: status === 'declined' ? 'Odbijen' : status === 'expired' ? 'Istekao' : 'Otkazan',
       state: 'done',
     })
     return steps
   }
 
-  const link = booking.payment_link
-  // "Expired" is only true of a link that existed. With none on the booking the
-  // reservation is simply waiting to be paid.
-  const paymentLapsed = Boolean(link) && link!.status !== 'pending'
-
   steps.push(
     {
-      key: 'accepted',
+      key: 'booked',
       // Before the answer the step is the answer being waited on; after it, it
-      // is the fact that the request was accepted.
-      title: ownerPending ? 'Tvoja potvrda' : stage >= 1 ? 'Prihvaćeno' : 'Potvrda vlasnika',
+      // is the reservation the answer made.
+      title: ownerPending ? 'Tvoja potvrda' : stage >= 1 ? 'Rezervisano' : 'Potvrda vlasnika',
       detail:
         stage >= 1
-          ? (formatStamp(booking.accepted_at) ?? 'Potvrđeno')
+          ? (formatStamp(booking.booked_at ?? booking.accepted_at) ?? 'Potvrđeno')
           : ownerPending
             ? requestExpiryCaption(booking.requested_at)
             : 'Čeka odgovor',
       state: stateAt(1),
     },
     {
-      key: 'booked',
-      title: 'Rezervisano',
-      detail:
-        stage >= 2
-          ? (formatStamp(booking.booked_at) ?? 'Plaćeno')
-          : stage === 1
-            ? paymentLapsed
-              ? 'Link za plaćanje više ne važi'
-              : 'Čeka plaćanje'
-            : null,
-      state: stateAt(2),
-    },
-    {
       key: 'picked_up',
       title: 'Preuzeto',
       detail:
-        stage >= 3
+        stage >= 2
           ? (formatStamp(booking.picked_up_at) ?? formatTicketDate(booking.start_date))
           : formatTicketDate(booking.start_date),
-      state: stateAt(3),
+      state: stateAt(2),
     },
     {
       key: 'returned',
       title: 'Vraćeno',
       detail:
-        stage >= 4
+        stage >= 3
           ? (formatStamp(booking.returned_at) ?? formatTicketDate(booking.end_date))
           : formatTicketDate(booking.end_date),
-      state: stateAt(4),
+      state: stateAt(3),
     },
     {
       key: 'rated',
       title: 'Ocenjeno',
       detail:
-        stage >= 5
+        stage >= 4
           ? formatStamp(booking.rated_at)
-          : stage === 4
+          : stage === 3
             ? 'Ostavite ocene'
             : null,
-      state: stateAt(5),
+      state: stateAt(4),
     }
   )
 

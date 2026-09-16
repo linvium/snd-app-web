@@ -5,7 +5,7 @@ import { loadPagesInCategory } from '@/lib/pages/pages.server'
 import { createPublicClient } from '@/lib/supabase/public'
 
 const INTRO =
-  'Kako SND funkcioniše, šta pokriva garancija, kako se plaća i šta da radiš kada nešto pođe naopako.'
+  'Kako SND funkcioniše, koliko košta objavljivanje oglasa i šta da radiš kada nešto pođe naopako.'
 
 export const revalidate = 300
 

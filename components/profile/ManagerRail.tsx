@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
+  CreditCardIcon,
   HeartIcon,
   LayoutGridIcon,
   MessageSquareIcon,
@@ -21,12 +22,13 @@ const RAIL_ICONS: Record<ManagerNavKey, LucideIcon> = {
   listings: PackageIcon,
   requests: MessageSquareIcon,
   favorites: HeartIcon,
+  billing: CreditCardIcon,
   settings: SettingsIcon,
 }
 
 /**
  * The manager's own navigation: a narrow icon rail on desktop, which keeps the
- * five sections one click apart without eating the width the content needs.
+ * sections one click apart without eating the width the content needs.
  *
  * Phones use the app's bottom nav instead, so the rail is desktop-only.
  */

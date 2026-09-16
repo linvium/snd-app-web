@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Loader2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { PublishEntitlementNote } from '@/components/billing/PublishEntitlementNote'
+import { isListingLimitError, notifyListingLimit } from '@/components/billing/notifyListingLimit'
 import { StatusConfirmDialog } from '@/components/listings/StatusConfirmDialog'
 import { MobileBackLink } from '@/components/layout/MobileBackLink'
 import { Button } from '@/components/ui/button'
@@ -53,7 +55,7 @@ import { StepBadge, type StepBadgeState } from './StepBadge'
 import { CancellationStep } from './steps/CancellationStep'
 import { CategoryStep } from './steps/CategoryStep'
 import { DescribeStep } from './steps/DescribeStep'
-import { coverageCopy, ItemValueStep } from './steps/ItemValueStep'
+import { ItemValueStep } from './steps/ItemValueStep'
 import { LocationsStep } from './steps/LocationsStep'
 import { PhotosStep } from './steps/PhotosStep'
 import { PriceStep } from './steps/PriceStep'
@@ -375,6 +377,12 @@ export function PublishListingForm({
   }
 
   const handleApiError = (error: unknown) => {
+    // Nothing is wrong with the form: the owner has no free slot and no credit.
+    // The draft is saved, so the way forward is a plan, not another attempt.
+    if (isListingLimitError(error)) {
+      notifyListingLimit(error, (href) => router.push(href))
+      return
+    }
     if (error instanceof ApiError && error.fields) {
       setFields(mapApiFields(error.fields))
       toast.error(error.message)
@@ -627,10 +635,6 @@ export function PublishListingForm({
                   value={itemValue}
                   error={submitted ? fields.itemValue : undefined}
                   warning={valueWarning}
-                  coverage={coverageCopy(
-                    formValues.itemValueRsd == null ? null : rsdToMinor(formValues.itemValueRsd),
-                    selectedCategory?.guarantee_cap_minor ?? null
-                  )}
                   locked={locked}
                   onChange={(value) => {
                     setItemValue(value)
@@ -792,6 +796,7 @@ export function PublishListingForm({
               Oglas će biti vidljiv u pretrazi. Možeš ga kasnije arhivirati ili izmeniti.
             </DialogDescription>
           </DialogHeader>
+          {publishOpen ? <PublishEntitlementNote /> : null}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setPublishOpen(false)}>
               Otkaži
@@ -831,8 +836,13 @@ export function PublishListingForm({
           if (action === 'resume') {
             resume.mutate(draftId, {
               onSuccess: () => toast.success('Oglas je ponovo aktivan.'),
-              onError: (error) =>
-                toast.error(error instanceof Error ? error.message : 'Nismo mogli da vratimo oglas.'),
+              onError: (error) => {
+                if (isListingLimitError(error)) {
+                  notifyListingLimit(error, (href) => router.push(href))
+                  return
+                }
+                toast.error(error instanceof Error ? error.message : 'Nismo mogli da vratimo oglas.')
+              },
             })
           }
         }}

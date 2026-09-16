@@ -34,7 +34,7 @@ describe('FOOTER_COMPANY_LINKS', () => {
     expect(FOOTER_COMPANY_LINKS).toBe(HEADER_UTILITY_LINKS)
     expect(FOOTER_COMPANY_LINKS.map((link) => link.label)).toEqual([
       'Kako funkcioniše',
-      'Garancija',
+      'Cenovnik',
       'Česta pitanja',
       'Kontakt',
     ])

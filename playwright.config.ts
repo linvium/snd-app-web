@@ -38,6 +38,7 @@ export default defineConfig({
         '**/favorites/list.spec.ts',
         '**/dashboard/actions.spec.ts',
         '**/profile/edit.spec.ts',
+        '**/billing/overview.spec.ts',
       ],
     },
     {
@@ -60,6 +61,8 @@ export default defineConfig({
         '**/search/layout.spec.ts',
         '**/home/listings.spec.ts',
         '**/listings/quote.spec.ts',
+        '**/billing/pricing.spec.ts',
+        '**/security/users-lockdown.spec.ts',
       ],
     },
   ],

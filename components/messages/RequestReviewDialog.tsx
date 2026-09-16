@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
-import { ArrowRightIcon, ClockIcon, ShieldCheckIcon, XIcon } from 'lucide-react'
+import { ArrowRightIcon, ClockIcon, HandshakeIcon, XIcon } from 'lucide-react'
 
 import DateRangePicker from '@/components/search/DateRangePicker'
 import { Button } from '@/components/ui/button'
@@ -101,7 +101,7 @@ function RequestReviewActions({
           </Button>
           {!canAccept ? (
             <p className="m-0 text-[12.5px] text-muted-foreground">
-              Prihvatanje šalje link za plaćanje, pa prvo predloži datume.
+              Prihvatanjem se rezerviše termin, pa prvo predloži datume.
             </p>
           ) : null}
           <div className="grid grid-cols-2 gap-2">
@@ -246,34 +246,21 @@ function RequestReviewPanel({
                     <dd className="m-0">{formatPriceMinor(money.rentalMinor)}</dd>
                   </div>
                 ) : null}
-                {money.depositMinor ? (
-                  <div className="flex justify-between gap-3">
-                    <dt className="m-0 text-muted-foreground">Depozit (vraća se)</dt>
-                    <dd className="m-0">{formatPriceMinor(money.depositMinor)}</dd>
-                  </div>
-                ) : null}
-                <div className="flex justify-between gap-3">
-                  <dt className="m-0 text-muted-foreground">
-                    Naknada platforme ({money.feePercent}%)
-                  </dt>
-                  <dd className="m-0">{formatPriceMinor(money.feeMinor)}</dd>
-                </div>
                 <div className="mt-1 flex justify-between gap-3 border-t border-border pt-2.5 text-base font-bold">
-                  <dt>Ti dobijaš</dt>
-                  <dd className="m-0">{formatPriceMinor(money.payoutMinor)}</dd>
+                  <dt>Cena najma</dt>
+                  <dd className="m-0">{formatPriceMinor(money.rentalMinor)}</dd>
                 </div>
               </dl>
             ) : null}
 
-            <div className="mt-4 rounded-xl bg-info-soft p-3 text-[12.5px] leading-relaxed text-info">
-              <p className="m-0 mb-1 flex items-center gap-1.5 text-[13px] font-semibold">
-                <ShieldCheckIcon className="size-4 shrink-0" aria-hidden />
-                {listing.item_value_minor
-                  ? `Garancija do ${formatPriceMinor(listing.item_value_minor)}`
-                  : 'SND Garancija'}
+            <div className="mt-4 rounded-xl bg-muted p-3 text-[12.5px] leading-relaxed text-muted-foreground">
+              <p className="m-0 mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-card-foreground">
+                <HandshakeIcon className="size-4 shrink-0" aria-hidden />
+                Plaćanje dogovarate direktno
               </p>
               <p className="m-0">
-                Važi samo za dogovore kroz platformu. Slikaj predmet pri predaji i pri vraćanju.
+                Prihvatanjem je termin rezervisan. SND ne naplaćuje iznajmljivanje - cenu najma
+                zakupac plaća tebi, kako se dogovorite. Slikajte predmet pri predaji i pri vraćanju.
               </p>
             </div>
           </>

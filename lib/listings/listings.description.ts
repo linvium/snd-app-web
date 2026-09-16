@@ -1,11 +1,10 @@
 /**
  * Description rendering rules (doc 04 §6).
  *
- * Phone numbers and email addresses are replaced with "•••". The reason doc 04
- * gives is commercial — a deal struck off-platform loses the renter the
- * guarantee and the platform its commission — but the safety half matters more:
- * a conversation that never happens on the platform is one that cannot be
- * moderated or evidenced when something goes wrong.
+ * Phone numbers and email addresses are replaced with "•••". A conversation
+ * that never happens on the platform is one that cannot be moderated or
+ * evidenced when something goes wrong, and the thread is also where the booking
+ * itself lives.
  *
  * URLs are left as inert text for the same reason, never linkified.
  */

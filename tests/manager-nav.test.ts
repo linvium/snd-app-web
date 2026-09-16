@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   LEGACY_SETTINGS_REDIRECTS,
+  MANAGER_BILLING,
   MANAGER_NAV,
   isManagerPath,
   isRequestThreadPath,
@@ -9,6 +10,21 @@ import {
   managerNavItemIsActive,
   managerSubpageTitle,
 } from '@/lib/profiles'
+
+describe('billing section', () => {
+  it('sits in the rail as its own entry under /profile/billing', () => {
+    const billing = MANAGER_NAV.find((item) => item.key === 'billing')
+    expect(billing).toEqual({ key: 'billing', href: MANAGER_BILLING, label: 'Pretplata' })
+    expect(MANAGER_BILLING).toBe('/profile/billing')
+    expect(isManagerPath(MANAGER_BILLING)).toBe(true)
+    expect(managerNavItemIsActive('/profile/billing', MANAGER_BILLING)).toBe(true)
+  })
+
+  it('names the page on the mobile back header', () => {
+    expect(managerSubpageTitle('/profile/billing')).toBe('Pretplata i krediti')
+    expect(managerBackHref('/profile/billing')).toBe('/profile')
+  })
+})
 
 describe('managerNavItemIsActive', () => {
   it('matches the dashboard only on the exact root', () => {

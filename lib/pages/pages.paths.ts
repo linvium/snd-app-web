@@ -18,7 +18,7 @@ export interface ParsedPagePath {
  * Reads a href back into the row it points at, or null if it points anywhere
  * else. This is what lets one click handler on the whole app decide whether a
  * link belongs in the support sheet or in the browser: an editor writing
- * `<a href="/support/guarantee">` in the body of a page gets the sheet for
+ * `<a href="/support/faq">` in the body of a page gets the sheet for
  * free, and `<a href="https://...">` or `mailto:` keeps its normal behaviour.
  */
 export function parsePagePath(href: string): ParsedPagePath | null {

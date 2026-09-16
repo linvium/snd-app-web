@@ -17,7 +17,7 @@ const inter = Inter({
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 const siteTitle = 'SND - Iznajmi umesto da kupuješ'
 const siteDescription =
-  'Iznajmi alat, opremu i stvari od ljudi iz svog kraja. Sve pokriveno garancijom.'
+  'Iznajmi alat, opremu i stvari od ljudi iz svog kraja. Bez provizije na iznajmljivanje.'
 const logoUrl = '/images/snd_logo_symbol.png'
 
 export const metadata: Metadata = {

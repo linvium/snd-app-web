@@ -9,7 +9,6 @@ export interface CategoryNode {
   name: string
   slug: string
   level: number
-  guarantee_cap_minor: number | null
 }
 
 export interface BreadcrumbItem {
@@ -86,12 +85,11 @@ export interface ListingDetail {
   price_7_days_minor: number | null
   item_value_minor: number | null
   cancellation_policy: CancellationPolicy
-  guarantee_cap_minor: number | null
   rating_avg: number | null
   rating_count: number
   is_favorite: boolean
   is_own_listing: boolean
-  /** True once the caller has a paid or running booking here (doc 04 §9). */
+  /** True once the caller has a booked or running reservation here (doc 04 §9). */
   can_see_exact_location: boolean
   distance_m: number | null
   pickup_locations: PickupLocation[]
@@ -101,11 +99,13 @@ export interface ListingDetail {
   created_at: string
 }
 
+/**
+ * The booking card's sum. The rental price is the whole of it: nothing is
+ * added on top, because renting is not charged through the platform.
+ */
 export interface ListingQuote {
   days_count: number
   rental_price_minor: number
-  service_fee_minor: number
-  total_minor: number
   price_breakdown: PriceBreakdownEntry[]
   is_available: boolean
   /** Nearest free window of the same length, when the pick collides (doc 04 §13.1). */

@@ -105,7 +105,7 @@ export function AddLocationModal({
         <DialogHeader>
           <DialogTitle>Dodaj lokaciju</DialogTitle>
           <DialogDescription>
-            Tačna adresa ostaje privatna dok rezervacija nije plaćena i potvrđena.
+            Tačna adresa ostaje privatna dok ne prihvatiš zahtev za rezervaciju.
           </DialogDescription>
         </DialogHeader>
 

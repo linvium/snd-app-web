@@ -42,9 +42,9 @@ describe('calculateRentalPrice', () => {
     ])
   })
 
-  it('reports the overshooting package as what was actually charged', () => {
-    // Two days billed as the cheaper three-day package: the line has to say
-    // "3 dana", because that is the package the money bought.
+  it('reports the overshooting package as what was actually priced', () => {
+    // Two days priced as the cheaper three-day package: the line has to say
+    // "3 dana", because that is the package the renter pays for.
     const result = calculateRentalPrice(2, {
       price_1_day_minor: 1000,
       price_3_days_minor: 1800,
@@ -53,7 +53,7 @@ describe('calculateRentalPrice', () => {
     expect(result.price_breakdown).toEqual([{ package: '3_days', count: 1, amount_minor: 1800 }])
   })
 
-  it('never charges more than the same days bought one at a time', () => {
+  it('never costs more than the same days bought one at a time', () => {
     const prices = { price_1_day_minor: 800, price_3_days_minor: 2100, price_7_days_minor: 4200 }
     for (let days = 1; days <= 40; days += 1) {
       const total = calculateRentalPrice(days, prices).rental_price_minor
@@ -117,21 +117,20 @@ describe('quoteForRange', () => {
       price_7_days_minor: 420000,
     })
 
-    expect(quote.days_count).toBe(3)
-    expect(quote.rental_price_minor).toBe(210000)
-    expect(quote.service_fee_minor).toBe(21000)
-    expect(quote.total_minor).toBe(231000)
+    expect(quote).toEqual({
+      days_count: 3,
+      rental_price_minor: 210000,
+      price_breakdown: [{ package: '3_days', count: 1, amount_minor: 210000 }],
+    })
   })
 
-  it('deducts the owner commission from the payout rather than the total', () => {
+  it('adds nothing on top of the rental price and deducts nothing from it', () => {
     const quote = quoteForRange('2026-08-20', '2026-08-22', {
       price_1_day_minor: 80000,
       price_3_days_minor: 210000,
       price_7_days_minor: 420000,
     })
 
-    expect(quote.owner_payout_minor).toBe(210000 - 10500)
-    // The renter's total is untouched by what the owner is charged.
-    expect(quote.total_minor).toBe(quote.rental_price_minor + quote.service_fee_minor)
+    expect(Object.keys(quote).sort()).toEqual(['days_count', 'price_breakdown', 'rental_price_minor'])
   })
 })

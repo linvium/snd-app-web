@@ -2,21 +2,18 @@
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { formatPriceMinor } from '@/lib/search/search.helpers'
 import { CircleAlertIcon } from 'lucide-react'
 
 export function ItemValueStep({
   value,
   error,
   warning,
-  coverage,
   locked,
   onChange,
 }: {
   value: string
   error?: string
   warning?: string
-  coverage?: string | null
   locked?: boolean
   onChange: (value: string) => void
 }) {
@@ -47,8 +44,6 @@ export function ItemValueStep({
         </p>
       ) : warning ? (
         <p className="m-0 text-[13px] text-warning">{warning}</p>
-      ) : coverage ? (
-        <p className="m-0 text-[13px] text-muted-foreground">{coverage}</p>
       ) : null}
       {locked ? (
         <p className="m-0 text-[13px] text-muted-foreground" data-testid="locked-field-notice">
@@ -57,10 +52,4 @@ export function ItemValueStep({
       ) : null}
     </div>
   )
-}
-
-export function coverageCopy(itemValueMinor: number | null, capMinor: number | null): string | null {
-  if (itemValueMinor == null || capMinor == null) return null
-  if (itemValueMinor <= capMinor) return `Pokriveno do ${formatPriceMinor(capMinor)}`
-  return `Pokriveno do ${formatPriceMinor(capMinor)} (granica za ovu kategoriju)`
 }

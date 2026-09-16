@@ -86,7 +86,7 @@ export default function PickupLocation({
       ) : (
         <p className="mt-3 mb-0 flex items-start gap-2 rounded-lg bg-muted px-3 py-2 text-[13px] text-muted-foreground">
           <InfoIcon className="mt-0.5 size-4 flex-none" strokeWidth={1.8} aria-hidden />
-          Tačnu adresu dobijaš kada rezervacija bude plaćena i potvrđena.
+          Tačnu adresu dobijaš kada vlasnik prihvati zahtev za rezervaciju.
         </p>
       )}
     </section>

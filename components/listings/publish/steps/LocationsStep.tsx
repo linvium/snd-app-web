@@ -24,7 +24,7 @@ export function LocationsStep({
   return (
     <div className="flex flex-col gap-3">
       <p className="m-0 text-[13px] leading-5 text-muted-foreground">
-        Tačna adresa se ne prikazuje pre nego što rezervacija bude plaćena i potvrđena.{' '}
+        Tačna adresa se ne prikazuje pre nego što prihvatiš zahtev za rezervaciju.{' '}
         {/* Opens in the support sheet over the half-filled form, rather than
             in the new tab this used to need. */}
         <a

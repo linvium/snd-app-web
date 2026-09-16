@@ -6,6 +6,7 @@ import {
   type SaveListingInput,
 } from '@/types/listing'
 import { apiError, ERROR_CODES } from '@/lib/api/response'
+import { isListingLimitDbError, LISTING_LIMIT_MESSAGE } from '@/lib/billing/billing.helpers'
 import { nextSlugCandidate, slugifyTitle } from '@/lib/listings/listings.slug'
 import {
   minorToRsd,
@@ -338,6 +339,13 @@ export async function publishListing(supabase: SupabaseClient, listing: Listing)
     .eq('id', listing.id)
 
   if (error) {
+    // The database meters publishing: without a free plan slot or a credit the
+    // status change is refused, and that is a pricing answer, not a crash.
+    if (isListingLimitDbError(error)) {
+      return {
+        response: apiError(402, ERROR_CODES.LISTING_LIMIT_REACHED, LISTING_LIMIT_MESSAGE),
+      }
+    }
     console.error('[listings] publish failed', error)
     return { response: apiError(500, ERROR_CODES.INTERNAL, 'Nešto je krenulo naopako.') }
   }

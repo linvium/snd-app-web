@@ -1,14 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import { PackageCheckIcon, StarIcon, UndoDotIcon, WalletIcon } from 'lucide-react'
+import { PackageCheckIcon, StarIcon, UndoDotIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { useRespondToBookingRequest } from '@/hooks/bookings'
 import { formatTicketDate } from '@/lib/messages/booking-steps'
 import { ApiError } from '@/lib/search'
-import { formatPriceMinor } from '@/lib/search/search.helpers'
 import type { ConversationBookingSummary, ConversationRole } from '@/types'
 
 /**
@@ -47,41 +45,14 @@ export function BookingStageActions({
   }
 
   const status = booking.status
-  const link = booking.payment_link
-  const linkLive = link?.status === 'pending' && new Date(link.expires_at) > new Date()
-  // A booking with no link at all is not the same as one whose link ran out.
-  const linkLapsed = Boolean(link) && !linkLive
 
   let content: React.ReactNode = null
 
-  if (status === 'accepted' && role === 'renter') {
-    content = linkLive ? (
-      <>
-        <Note icon={<WalletIcon className="size-4" aria-hidden />}>
-          Rezerviši termin uplatom od {formatPriceMinor(link!.amount_minor)}.
-        </Note>
-        <Button asChild size="sm" data-testid="stage-pay" className="bg-brand-500 hover:bg-brand-600">
-          <Link href={`/pay/${link!.token}`}>Plati i rezerviši</Link>
-        </Button>
-      </>
-    ) : (
-      <Note icon={<WalletIcon className="size-4" aria-hidden />}>
-        {linkLapsed
-          ? 'Link za plaćanje je istekao - dogovorite novi termin u razgovoru.'
-          : 'Zahtev je prihvaćen. Link za plaćanje stiže u razgovor i na email.'}
-      </Note>
-    )
-  } else if (status === 'accepted' && role === 'owner') {
-    content = (
-      <Note icon={<WalletIcon className="size-4" aria-hidden />}>
-        Poslat je link za plaćanje. Termin je rezervisan kada uplata prođe.
-      </Note>
-    )
-  } else if (status === 'booked' && role === 'owner') {
+  if (status === 'booked' && role === 'owner') {
     content = (
       <>
         <Note icon={<PackageCheckIcon className="size-4" aria-hidden />}>
-          Plaćeno. Označi preuzimanje kada predaš predmet.
+          Rezervisano. Označi preuzimanje kada predaš predmet.
         </Note>
         <Button
           size="sm"
@@ -98,7 +69,8 @@ export function BookingStageActions({
     content = (
       <Note icon={<PackageCheckIcon className="size-4" aria-hidden />}>
         Rezervisano. Dogovorite preuzimanje
-        {booking.start_date ? ` (${formatTicketDate(booking.start_date)})` : ''}.
+        {booking.start_date ? ` (${formatTicketDate(booking.start_date)})` : ''} i plaćanje direktno
+        sa vlasnikom.
       </Note>
     )
   } else if (status === 'picked_up' && role === 'owner') {

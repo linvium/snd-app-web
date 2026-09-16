@@ -7,10 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { categoryPathLabel, isLeafCategory } from '@/lib/categories'
 import { cn } from '@/lib/utils'
-import { formatPriceMinor } from '@/lib/search/search.helpers'
 import type { SndCategoryCatalog } from '@/types/category'
 import { useCategorySuggest } from '@/hooks/categories'
-import { Button } from '@/components/ui/button'
 
 export function CategoryStep({
   title,
@@ -179,24 +177,6 @@ export function CategoryStep({
               </button>
             ))}
           </div>
-        </div>
-      ) : null}
-
-      {selected ? (
-        <div className="rounded-lg bg-muted px-3 py-2.5 text-[13px] leading-5 text-muted-foreground">
-          <p className="m-0 font-medium text-card-foreground">Garancija za {selected.name}:</p>
-          <p className="mt-1 mb-1">
-            {selected.guarantee_cap_minor
-              ? `Šteta je pokrivena do ${formatPriceMinor(selected.guarantee_cap_minor)}, bez učešća.`
-              : 'Pokriće zavisi od kategorije.'}
-          </p>
-          <Button variant="link" className="h-auto p-0 text-[13px]" asChild>
-            {/* No target="_blank" any more: the support sheet opens over the
-                form, which is what the new tab was working around. */}
-            <a href="/support/guarantee" data-testid="guarantee-link">
-              Više o garanciji →
-            </a>
-          </Button>
         </div>
       ) : null}
 

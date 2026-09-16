@@ -184,26 +184,31 @@ svojstvo šeme, a ne koda koji je čita.
 Tačna adresa se otključava **RLS politikom**, ne granom u interfejsu:
 
 ```sql
--- locations: select for paid renter
+-- locations: select for booked renter
 exists (select 1 from bookings b
         where b.pickup_location_id = locations.id
           and b.renter_id = auth.uid()
-          and b.status in ('paid', 'in_progress'))
+          and b.status in ('booked', 'picked_up'))
 ```
 
-„Tačnu adresu dobijaš kada rezervacija bude plaćena" je tvrdnja o redu, pa
+„Tačnu adresu dobijaš kada vlasnik prihvati zahtev" je tvrdnja o redu, pa
 pripada RLS-u. Iznajmljivač običnim `select`-om dobija ulicu i tačne
 koordinate, svi ostali ne dobijaju ništa.
 
 **Dostupnost** se čita iz jedne tabele — `blocked_dates`. Okidač na
-`bookings` upisuje dane za statuse `accepted`, `paid` i `in_progress`
-(dokument 00 §6.4), pa javni kalendar ne mora da čita `bookings`, koji je
-vidljiv samo dvema stranama rezervacije.
+`bookings` upisuje dane za statuse `booked` i `picked_up` (dokument 00 §6.4),
+pa javni kalendar ne mora da čita `bookings`, koji je vidljiv samo dvema
+stranama rezervacije.
 
-**Obračun cene je na serveru** (`lib/pricing`), jer cena koja se prikazuje mora
-biti ona koja se naplaćuje. Provizije se čitaju iz okruženja
-(`NEXT_PUBLIC_RENTER_FEE_PERCENT`, `NEXT_PUBLIC_OWNER_FEE_PERCENT`), pošto
-dokument 00 §6.2 traži da budu podesive.
+**Iznajmljivanje se ne naplaćuje kroz platformu.** Nema linka za plaćanje,
+naknade ni provizije: vlasnikovo prihvatanje zahteva je rezervacija, a cenu
+najma zakupac plaća direktno vlasniku. Obračun cene najma je i dalje na serveru
+(`lib/pricing`), da bi broj na kartici bio isti kao onaj u zahtevu.
+
+**Naplaćuje se objavljivanje oglasa** — mesečnom pretplatom (`billing_plans`,
+ograničen broj objavljenih oglasa) ili kreditima (`credit_packs`, jedan kredit
+je jedan oglas, veći paket je jeftiniji po kreditu). Limit se proverava okidačem
+na `listings`, ne u API-ju. Detalji su u `supabase/functions/README.md`.
 
 Noćni posao za metrike vlasnika (dokument 04 §5) treba zakazati kroz pg_cron:
 

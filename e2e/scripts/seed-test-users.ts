@@ -193,7 +193,7 @@ async function ensureOwnerListing(
     .from('bookings')
     .select('id')
     .eq('listing_id', listingId)
-    .eq('status', 'paid')
+    .eq('status', 'booked')
     .limit(1)
     .maybeSingle()
 
@@ -210,15 +210,13 @@ async function ensureOwnerListing(
       start_date: start.toISOString().slice(0, 10),
       end_date: end.toISOString().slice(0, 10),
       days_count: 3,
-      status: 'paid',
+      status: 'booked',
       rental_price_minor: 240000,
-      service_fee_minor: 0,
-      total_minor: 240000,
-      owner_payout_minor: 240000,
       cancellation_policy: 'flexible',
       item_value_minor: 1500000,
       reference: `E2E${Date.now().toString(36).toUpperCase()}`,
-      paid_at: new Date().toISOString(),
+      accepted_at: new Date().toISOString(),
+      booked_at: new Date().toISOString(),
     })
     if (error) throw error
   }
@@ -243,7 +241,43 @@ async function main() {
   await ensureLocation(admin, verifiedId)
   const ownerLocationId = await ensureLocation(admin, ownerId)
   await ensureOwnerListing(admin, ownerId, unverifiedId, ownerLocationId)
+  await ensureListingPlan(admin, verifiedId)
+  await ensureListingPlan(admin, ownerId)
   console.log('E2E test users are ready.')
+}
+
+/**
+ * The suite publishes listings, and the database meters every publish against
+ * a plan or a credit. A long Pro plan keeps those runs independent of billing.
+ */
+async function ensureListingPlan(admin: ReturnType<typeof createClient>, userId: string) {
+  const { data: current } = await admin
+    .from('user_subscriptions')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .gt('current_period_end', new Date().toISOString())
+    .limit(1)
+    .maybeSingle()
+  if (current) return
+
+  // Only one plan may be active; a lapsed one would block the insert.
+  await admin
+    .from('user_subscriptions')
+    .update({ status: 'expired' })
+    .eq('user_id', userId)
+    .eq('status', 'active')
+
+  const periodEnd = new Date()
+  periodEnd.setFullYear(periodEnd.getFullYear() + 10)
+  const { error } = await admin.from('user_subscriptions').insert({
+    user_id: userId,
+    plan_key: 'pro',
+    status: 'active',
+    current_period_end: periodEnd.toISOString(),
+    provider: 'manual',
+  })
+  if (error) throw error
 }
 
 main().catch((error) => {

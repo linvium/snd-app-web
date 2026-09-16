@@ -7,7 +7,6 @@ import { ContactOwnerDialog } from '@/components/listings/ContactOwnerCard'
 import { ListingOwnerRequests } from '@/components/listings/ListingOwnerRequests'
 import BookingCard from '@/components/listings/detail/BookingCard'
 import CancellationTerms from '@/components/listings/detail/CancellationTerms'
-import GuaranteeCard from '@/components/listings/detail/GuaranteeCard'
 import ListingDescription from '@/components/listings/detail/ListingDescription'
 import ListingGallery from '@/components/listings/detail/ListingGallery'
 import ListingHeader from '@/components/listings/detail/ListingHeader'
@@ -129,12 +128,7 @@ export default function ListingDetailView({
               It used to sit below the price table on a phone, most of a screen
               further down. The fixed bar is the shortcut back to it.
 
-              The guarantee rides along rather than sitting at the foot of the
-              left column. It is the answer to the question the request button
-              raises - "what happens if this goes wrong" - so it belongs beside
-              the button, and it fills a column that was otherwise empty.
-
-              The wrapper spans the gallery and detail rows so the sticky group
+              The wrapper spans the gallery and detail rows so the sticky card
               inside has room to travel. */}
           <div className="order-3 lg:col-start-2 lg:row-start-2 lg:row-end-4">
             <div className="flex flex-col gap-4 lg:sticky lg:top-24">
@@ -147,11 +141,6 @@ export default function ListingDetailView({
                 existingConversationId={existingConversationId}
                 contactActionsPending={contactActionsPending}
                 initialQuote={initialQuote}
-              />
-
-              <GuaranteeCard
-                capMinor={listing.guarantee_cap_minor}
-                itemValueMinor={listing.item_value_minor}
               />
             </div>
           </div>

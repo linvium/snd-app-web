@@ -27,6 +27,7 @@ import { useAuthSession } from '@/context/AuthContext'
 import { useSignOut } from '@/hooks/auth'
 import { useUnreadMessageCount } from '@/hooks/messages'
 import {
+  MANAGER_BILLING,
   MANAGER_FAVORITES,
   MANAGER_LISTINGS,
   MANAGER_REQUESTS,
@@ -39,6 +40,7 @@ const ACCOUNT_MENU_ITEMS = [
   { href: MANAGER_LISTINGS, label: 'Moji oglasi' },
   { href: MANAGER_REQUESTS, label: 'Zahtevi' },
   { href: MANAGER_FAVORITES, label: 'Omiljeni' },
+  { href: MANAGER_BILLING, label: 'Pretplata i krediti' },
   { href: MANAGER_SETTINGS, label: 'Opcije' },
 ] as const
 

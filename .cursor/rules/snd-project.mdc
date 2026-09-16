@@ -189,11 +189,11 @@ A feature is not done until tests exist. Do not ship a new feature, flow, or non
 
 ```typescript
 // ❌ BAD — feature lands, tests later
-export function coverageCopy(...) { /* ... */ }
+export function creditUnitPriceMinor(...) { /* ... */ }
 
 // ✅ GOOD — tests land with the feature
-// tests/listings-publish.test.ts
-it('shows the category guarantee cap', () => { /* ... */ })
+// tests/billing-helpers.test.ts
+it('makes a bigger credit pack cheaper per credit', () => { /* ... */ })
 ```
 
 Do not skip tests because the change is “small” if it adds or changes behaviour. Bugfix-only tweaks to existing covered code may extend the existing test instead of adding a new file.

@@ -6,7 +6,7 @@ import type { SndPageDocument } from '@/types/page'
  * One editorial page, rendered the same way in both places it appears: as the
  * whole document at /support/[slug], and inside the support sheet.
  *
- * Sharing the markup is the point — a reader who lands on the guarantee page
+ * Sharing the markup is the point — a reader who lands on the FAQ page
  * from Google and a reader who opened it from a booking should be reading the
  * identical thing, not two drifting versions of it.
  */

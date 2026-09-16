@@ -54,7 +54,7 @@ export default function MobileBookingBar({
           {dateLabel ? (
             <p className="m-0 flex items-center gap-1.5 truncate text-[13px] text-muted-foreground">
               <span className="truncate">{dateLabel}</span>
-              {quote.data ? ` · ${formatPriceMinor(quote.data.total_minor)}` : null}
+              {quote.data ? ` · ${formatPriceMinor(quote.data.rental_price_minor)}` : null}
               {panel === 'skeleton' ? <Skeleton className="h-3 w-14" /> : null}
             </p>
           ) : (

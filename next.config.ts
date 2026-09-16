@@ -20,8 +20,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/faq", destination: "/support/faq", permanent: true },
-      { source: "/garancija", destination: "/support/guarantee", permanent: true },
-      { source: "/guarantee", destination: "/support/guarantee", permanent: true },
+      {
+        source: "/support/payments-and-fees",
+        destination: "/support/plans-and-credits",
+        permanent: true,
+      },
       {
         source: "/kako-funkcionise",
         destination: "/support/how-it-works",

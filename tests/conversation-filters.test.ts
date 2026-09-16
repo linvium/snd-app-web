@@ -50,7 +50,6 @@ const rows: Row[] = [
 describe('bookingStatusPill', () => {
   it('maps every booking status the schema allows', () => {
     expect(bookingStatusPill('requested')).toEqual({ label: 'Zahtev čeka odgovor', tone: 'wait' })
-    expect(bookingStatusPill('accepted')?.tone).toBe('wait')
     expect(bookingStatusPill('booked')?.tone).toBe('ok')
     expect(bookingStatusPill('picked_up')?.tone).toBe('ok')
     expect(bookingStatusPill('returned')?.tone).toBe('done')
@@ -58,6 +57,11 @@ describe('bookingStatusPill', () => {
     expect(bookingStatusPill('cancelled_by_owner')?.tone).toBe('late')
     expect(bookingStatusPill(null)).toBeNull()
     expect(bookingStatusPill('nešto_novo')).toBeNull()
+  })
+
+  it('knows nothing about the payment states that no longer exist', () => {
+    expect(bookingStatusPill('accepted')).toBeNull()
+    expect(bookingStatusPill('payment_failed')).toBeNull()
   })
 })
 
@@ -73,17 +77,15 @@ describe('ticketStatusPill', () => {
     })
   })
 
-  it('names the move each side owes once the request is accepted', () => {
-    expect(ticketStatusPill('accepted', 'renter')?.label).toBe('Plati da rezervišeš')
-    expect(ticketStatusPill('accepted', 'owner')?.label).toBe('Čeka uplatu')
+  it('reads a booked reservation the same for both sides - nobody owes a payment', () => {
+    expect(ticketStatusPill('booked', 'renter')).toEqual({ label: 'Rezervisano', tone: 'ok' })
+    expect(ticketStatusPill('booked', 'owner')).toEqual({ label: 'Rezervisano', tone: 'ok' })
   })
 })
 
 describe('isOpenRequestStatus', () => {
-  it('is true while the reservation still needs somebody to move', () => {
+  it('is true only while the owner still has to answer', () => {
     expect(isOpenRequestStatus('requested')).toBe(true)
-    // Accepted but unpaid is still an open request: the renter owes the money.
-    expect(isOpenRequestStatus('accepted')).toBe(true)
     expect(isOpenRequestStatus('booked')).toBe(false)
     expect(isOpenRequestStatus(undefined)).toBe(false)
   })
@@ -142,14 +144,12 @@ describe('bookingSteps', () => {
     days_count: 2,
     status: 'requested',
     rental_price_minor: 2400,
-    total_minor: 2400,
     requested_at: '2026-08-19T17:10:00.000Z',
     accepted_at: null,
     booked_at: null,
     picked_up_at: null,
     returned_at: null,
     rated_at: null,
-    payment_link: null,
     viewer_has_reviewed: false,
     ...overrides,
   })
@@ -160,23 +160,22 @@ describe('bookingSteps', () => {
 
   it('marks the owner confirmation as the live step while requested', () => {
     const steps = bookingSteps(booking({ status: 'requested' }))
-    expect(steps.map((step) => step.state)).toEqual([
-      'done',
-      'current',
-      'todo',
-      'todo',
-      'todo',
-      'todo',
-    ])
+    expect(steps.map((step) => step.state)).toEqual(['done', 'current', 'todo', 'todo', 'todo'])
     expect(steps.map((step) => step.title)).toEqual([
       'Zahtev poslat',
       'Potvrda vlasnika',
-      'Rezervisano',
       'Preuzeto',
       'Vraćeno',
       'Ocenjeno',
     ])
     expect(steps[1].detail).toBe('Čeka odgovor')
+  })
+
+  it('has no payment step anywhere in the lifecycle', () => {
+    for (const status of ['requested', 'booked', 'picked_up', 'returned', 'rated']) {
+      const titles = bookingSteps(booking({ status })).map((step) => `${step.title} ${step.detail ?? ''}`)
+      expect(titles.join(' ')).not.toMatch(/plać|uplat/i)
+    }
   })
 
   it('addresses the owner on their own pending confirmation', () => {
@@ -185,60 +184,21 @@ describe('bookingSteps', () => {
     expect(steps[1].detail).toMatch(/^Ističe za |^Istekao$/)
   })
 
-  it('waits on payment once the booking is accepted', () => {
+  it('goes straight to booked once the owner accepts', () => {
     const steps = bookingSteps(
       booking({
-        status: 'accepted',
+        status: 'booked',
         accepted_at: '2026-08-19T18:00:00.000Z',
-        payment_link: {
-          token: 'a'.repeat(32),
-          status: 'pending',
-          amount_minor: 2400,
-          expires_at: '2026-08-22T18:00:00.000Z',
-          paid_at: null,
-        },
+        booked_at: '2026-08-19T18:00:00.000Z',
       })
     )
-    expect(steps.map((step) => step.state)).toEqual([
-      'done',
-      'done',
-      'current',
-      'todo',
-      'todo',
-      'todo',
-    ])
-    expect(steps[2].detail).toBe('Čeka plaćanje')
+    expect(steps.map((step) => step.state)).toEqual(['done', 'done', 'current', 'todo', 'todo'])
+    expect(steps[1].title).toBe('Rezervisano')
+    expect(steps[1].detail).not.toBe('Potvrđeno')
   })
 
-  it('only calls the link lapsed when there was one', () => {
-    expect(bookingSteps(booking({ status: 'accepted' }))[2].detail).toBe('Čeka plaćanje')
-    expect(
-      bookingSteps(
-        booking({
-          status: 'accepted',
-          payment_link: {
-            token: 'b'.repeat(32),
-            status: 'expired',
-            amount_minor: 2400,
-            expires_at: '2026-08-20T18:00:00.000Z',
-            paid_at: null,
-          },
-        })
-      )[2].detail
-    ).toBe('Link za plaćanje više ne važi')
-  })
-
-  it('advances through the paid reservation', () => {
-    expect(bookingSteps(booking({ status: 'booked' })).map((step) => step.state)).toEqual([
-      'done',
-      'done',
-      'done',
-      'current',
-      'todo',
-      'todo',
-    ])
+  it('advances through the reservation', () => {
     expect(bookingSteps(booking({ status: 'picked_up' })).map((step) => step.state)).toEqual([
-      'done',
       'done',
       'done',
       'done',
@@ -250,26 +210,20 @@ describe('bookingSteps', () => {
       'done',
       'done',
       'done',
-      'done',
       'current',
     ])
+    expect(bookingSteps(booking({ status: 'returned' }))[4].detail).toBe('Ostavite ocene')
   })
 
   it('stops at two steps when the request is closed', () => {
     const steps = bookingSteps(booking({ status: 'declined' }))
     expect(steps).toHaveLength(2)
     expect(steps[1].title).toBe('Zahtev je zatvoren')
+    expect(steps[1].detail).toBe('Odbijen')
   })
 
   it('completes every step on a rated rental', () => {
     const steps = bookingSteps(booking({ status: 'rated' }))
-    expect(steps.map((step) => step.state)).toEqual([
-      'done',
-      'done',
-      'done',
-      'done',
-      'done',
-      'done',
-    ])
+    expect(steps.map((step) => step.state)).toEqual(['done', 'done', 'done', 'done', 'done'])
   })
 })

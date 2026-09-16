@@ -5,7 +5,7 @@ export const CANCELLATION_POLICIES = ['flexible', 'medium', 'strict'] as const
 export type CancellationPolicy = (typeof CANCELLATION_POLICIES)[number]
 
 /** Bookings that hold a date range: the trigger mirrors these into `blocked_dates`. */
-export const ACTIVE_BOOKING_STATUSES = ['accepted', 'booked', 'picked_up'] as const
+export const ACTIVE_BOOKING_STATUSES = ['booked', 'picked_up'] as const
 
 export const TITLE_MIN = 3
 export const TITLE_MAX = 120

@@ -1,5 +1,3 @@
-import { OWNER_COMMISSION_RATE } from '@/lib/pricing/pricing.config'
-import { roundHalfUp } from '@/lib/pricing/pricing.helpers'
 import { formatDate } from '@/lib/search/search.helpers'
 import type { ConversationBookingSummary, ConversationListing } from '@/types/message'
 
@@ -84,30 +82,21 @@ export function pendingRequestBannerDetail(
 export interface OwnerReviewMoney {
   dailyMinor: number | null
   days: number | null
+  /** The whole sum: the renter pays it to the owner directly, with nothing deducted. */
   rentalMinor: number
-  depositMinor: number | null
-  feeMinor: number
-  feePercent: number
-  payoutMinor: number
 }
 
 export function ownerReviewMoney(
   booking: Pick<ConversationBookingSummary, 'days_count' | 'rental_price_minor'>,
-  listing: Pick<ConversationListing, 'price_1_day_minor' | 'item_value_minor'>
+  listing: Pick<ConversationListing, 'price_1_day_minor'>
 ): OwnerReviewMoney | null {
   const rentalMinor = booking.rental_price_minor ?? 0
   if (rentalMinor <= 0) return null
 
-  const feeMinor = roundHalfUp(rentalMinor * OWNER_COMMISSION_RATE)
-  const depositMinor = listing.item_value_minor && listing.item_value_minor > 0 ? listing.item_value_minor : null
   return {
     dailyMinor: listing.price_1_day_minor,
     days: booking.days_count,
     rentalMinor,
-    depositMinor,
-    feeMinor,
-    feePercent: Math.round(OWNER_COMMISSION_RATE * 100),
-    payoutMinor: Math.max(0, rentalMinor - feeMinor),
   }
 }
 

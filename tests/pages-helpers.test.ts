@@ -12,10 +12,10 @@ import type { SndPage } from '@/types/page'
 function page(overrides: Partial<SndPage> = {}): SndPage {
   return {
     id: '1',
-    slug: 'guarantee',
+    slug: 'plans-and-credits',
     category: 'support',
-    title: 'Garancija',
-    summary: 'Šta je pokriveno.',
+    title: 'Cenovnik',
+    summary: 'Šta se plaća.',
     content: '<p>Uvod.</p>',
     published_at: '2026-08-21T10:00:00.000Z',
     ...overrides,
@@ -24,9 +24,9 @@ function page(overrides: Partial<SndPage> = {}): SndPage {
 
 describe('parsePagePath', () => {
   it('reads a page href back into its category and slug', () => {
-    expect(parsePagePath('/support/guarantee')).toEqual({
+    expect(parsePagePath('/support/plans-and-credits')).toEqual({
       category: 'support',
-      slug: 'guarantee',
+      slug: 'plans-and-credits',
     })
     expect(parsePagePath('/legal/privacy')).toEqual({
       category: 'legal',
@@ -50,7 +50,7 @@ describe('parsePagePath', () => {
     expect(parsePagePath('/support/faq/extra')).toBeNull()
     expect(parsePagePath('https://snd.rs/support/faq')).toBeNull()
     expect(parsePagePath('mailto:podrska@snd.rs')).toBeNull()
-    expect(parsePagePath('/support/Guarantee')).toBeNull()
+    expect(parsePagePath('/support/FAQ')).toBeNull()
   })
 })
 
@@ -108,7 +108,7 @@ describe('buildPageDocument', () => {
 
 describe('pageMetaDescription', () => {
   it('prefers the summary', () => {
-    expect(pageMetaDescription(page())).toBe('Šta je pokriveno.')
+    expect(pageMetaDescription(page())).toBe('Šta se plaća.')
   })
 
   it('falls back to the body with the tags stripped', () => {
