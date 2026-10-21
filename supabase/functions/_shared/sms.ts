@@ -12,6 +12,8 @@ export interface SendSmsResult {
   ok: boolean
   providerMessageId: string | null
   error: string | null
+  /** Infobip's status name for the accepted message, e.g. PENDING_ACCEPTED. */
+  status?: string | null
 }
 
 interface InfobipMessageStatus {
@@ -78,7 +80,12 @@ export async function sendSms(to: string, text: string): Promise<SendSmsResult> 
       }
     }
 
-    return { ok: true, providerMessageId: first?.messageId ?? null, error: null }
+    return {
+      ok: true,
+      providerMessageId: first?.messageId ?? null,
+      error: null,
+      status: first?.status?.name ?? null,
+    }
   } catch (error) {
     return {
       ok: false,

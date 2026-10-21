@@ -68,5 +68,9 @@ Deno.serve(async (req) => {
     return hookError(500, result.error ?? 'send failed')
   }
 
+  // Accepted is not delivered: this is the id to look up in the Infobip portal.
+  console.log(
+    `send-sms: accepted for ***${phone.slice(-3)} id=${result.providerMessageId} status=${result.status}`
+  )
   return jsonResponse({}, 200)
 })
