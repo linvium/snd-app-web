@@ -6,41 +6,64 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { TextField } from '@/components/ui/text-field'
+import { AuthMethodTabs, type AuthMethod } from '@/components/auth/AuthMethodTabs'
+import { PhoneField } from '@/components/auth/PhoneField'
 import PasswordInput from '@/components/auth/PasswordInput'
 import PasswordStrength from '@/components/auth/PasswordStrength'
 import { useSignUp } from '@/hooks/auth'
-import { validateEmail, validatePassword } from '@/lib/auth'
+import { validateEmail, validatePassword, validatePhone } from '@/lib/auth'
+import { DEFAULT_PHONE_COUNTRY_CODE, normalizePhone } from '@/lib/profiles'
+import { pagePath } from '@/lib/pages/pages.paths'
+
+// Opened in a new tab so following them does not throw away the half-filled form.
+const TERMS_PATH = pagePath('legal', 'terms')
+const PRIVACY_PATH = pagePath('legal', 'privacy')
 
 export default function RegisterPage() {
   const signUp = useSignUp()
+  const [method, setMethod] = useState<AuthMethod>('email')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [countryCode, setCountryCode] = useState(DEFAULT_PHONE_COUNTRY_CODE)
   const [password, setPassword] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
-  const [emailError, setEmailError] = useState('')
+  const [identifierError, setIdentifierError] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [termsError, setTermsError] = useState('')
   const [showErrors, setShowErrors] = useState(false)
+
+  const handleMethodChange = (next: AuthMethod) => {
+    setMethod(next)
+    setIdentifierError('')
+    setShowErrors(false)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setShowErrors(true)
 
-    const nextEmailError = validateEmail(email)
+    const nextIdentifierError = method === 'phone' ? validatePhone(phone, countryCode) : validateEmail(email)
     const nextPasswordError = validatePassword(password)
     const nextTermsError = acceptedTerms ? '' : 'Moraš prihvatiti uslove korišćenja.'
-    setEmailError(nextEmailError)
+    setIdentifierError(nextIdentifierError)
     setPasswordError(nextPasswordError)
     setTermsError(nextTermsError)
-    if (nextEmailError || nextPasswordError || nextTermsError) return
+    if (nextIdentifierError || nextPasswordError || nextTermsError) return
 
-    signUp.mutate({ email, password })
+    signUp.mutate(
+      method === 'phone'
+        ? { method: 'phone', phone: normalizePhone(phone, countryCode), password }
+        : { method: 'email', email, password }
+    )
   }
 
   const formErrorMessage = (() => {
     if (!signUp.isError || !signUp.error) return ''
     const msg = (signUp.error as Error).message?.toLowerCase() || ''
     if (msg.includes('already registered') || msg.includes('already been registered')) {
-      return 'Nalog sa ovim emailom već postoji. Prijavi se ili resetuj lozinku.'
+      return method === 'phone'
+        ? 'Nalog sa ovim brojem telefona već postoji. Prijavi se ili resetuj lozinku.'
+        : 'Nalog sa ovim emailom već postoji. Prijavi se ili resetuj lozinku.'
     }
     return 'Registracija nije uspela. Pokušaj ponovo.'
   })()
@@ -51,24 +74,47 @@ export default function RegisterPage() {
         Napravi nalog
       </h1>
       <p className="mb-7 text-[15px] text-muted-foreground">
-        Treba ti samo email i lozinka. Ostalo možeš kasnije.
+        Treba ti samo {method === 'phone' ? 'broj telefona' : 'email'} i lozinka. Ostalo možeš
+        kasnije.
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <TextField
-          label="Email"
-          type="email"
-          name="email"
-          autoFocus
-          autoComplete="email"
-          value={email}
-          error={emailError}
-          onChange={(e) => {
-            setEmail(e.target.value)
-            if (showErrors || emailError) setEmailError(validateEmail(e.target.value))
-          }}
-          onBlur={() => setEmailError(validateEmail(email))}
-        />
+        <AuthMethodTabs value={method} onChange={handleMethodChange} disabled={signUp.isPending} />
+
+        {method === 'phone' ? (
+          <PhoneField
+            value={phone}
+            countryCode={countryCode}
+            onCountryCodeChange={(code) => {
+              setCountryCode(code)
+              if (showErrors || identifierError) setIdentifierError(validatePhone(phone, code))
+            }}
+            autoFocus
+            error={identifierError}
+            disabled={signUp.isPending}
+            onChange={(next) => {
+              setPhone(next)
+              if (showErrors || identifierError) setIdentifierError(validatePhone(next, countryCode))
+            }}
+            onBlur={() => setIdentifierError(validatePhone(phone, countryCode))}
+          />
+        ) : (
+          <TextField
+            label="Email"
+            type="email"
+            name="email"
+            autoFocus
+            autoComplete="email"
+            value={email}
+            error={identifierError}
+            disabled={signUp.isPending}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              if (showErrors || identifierError) setIdentifierError(validateEmail(e.target.value))
+            }}
+            onBlur={() => setIdentifierError(validateEmail(email))}
+          />
+        )}
 
         <PasswordInput
           label="Lozinka"
@@ -104,11 +150,21 @@ export default function RegisterPage() {
               className="cursor-pointer text-sm leading-[1.45] font-normal text-foreground"
             >
               Prihvatam{' '}
-              <Link href="/terms" className="font-medium text-brand-600">
+              <Link
+                href={TERMS_PATH}
+                target="_blank"
+                rel="noopener"
+                className="font-medium text-brand-600"
+              >
                 Uslove korišćenja
               </Link>{' '}
               i{' '}
-              <Link href="/privacy" className="font-medium text-brand-600">
+              <Link
+                href={PRIVACY_PATH}
+                target="_blank"
+                rel="noopener"
+                className="font-medium text-brand-600"
+              >
                 Politiku privatnosti
               </Link>
             </Label>

@@ -1,3 +1,5 @@
+import { DEFAULT_PHONE_COUNTRY_CODE, isValidPhone, normalizePhone } from '@/lib/profiles'
+
 export function getPasswordStrength(password: string): 'weak' | 'medium' | 'strong' {
   if (password.length < 8) return 'weak'
   const hasLetter = /[a-zA-Z]/.test(password)
@@ -24,5 +26,12 @@ export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export function validateEmail(value: string): string {
   if (!value.trim()) return 'Unesi email adresu.'
   if (!EMAIL_RE.test(value.trim())) return 'Unesi ispravnu email adresu.'
+  return ''
+}
+
+/** `value` is the raw local-part input (e.g. "641234567"), not yet normalized. */
+export function validatePhone(value: string, countryCode: string = DEFAULT_PHONE_COUNTRY_CODE): string {
+  if (!value.trim()) return 'Unesi broj telefona.'
+  if (!isValidPhone(normalizePhone(value, countryCode))) return 'Unesi ispravan broj telefona.'
   return ''
 }

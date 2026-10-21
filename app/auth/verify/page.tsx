@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { CheckIcon, Loader2Icon, MailIcon } from 'lucide-react'
+import { CheckIcon, Loader2Icon, MailIcon, PhoneIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import OtpInput from '@/components/auth/OtpInput'
 import { useResendOtp, useVerifyOtp } from '@/hooks/auth'
@@ -41,7 +41,10 @@ function StatusBanner({
 function VerificationForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const email = searchParams.get('email') || ''
+  // `identifier` replaces the old email-only `email` param; `email` is still
+  // read as a fallback so any stale/bookmarked link keeps working.
+  const identifier = searchParams.get('identifier') || searchParams.get('email') || ''
+  const channel = searchParams.get('channel') === 'phone' ? 'phone' : 'email'
   const flowType = searchParams.get('type') || 'register'
   const verifyOtp = useVerifyOtp()
   const resendOtp = useResendOtp()
@@ -62,8 +65,8 @@ function VerificationForm() {
   const isBusy = isVerifying || isRedirecting
 
   useEffect(() => {
-    if (!email) router.replace(backHref)
-  }, [email, backHref, router])
+    if (!identifier) router.replace(backHref)
+  }, [identifier, backHref, router])
 
   useEffect(() => {
     if (seconds <= 0) return
@@ -74,11 +77,11 @@ function VerificationForm() {
   const handleVerify = (token = otp) => {
     if (token.length !== 6 || isBusy) return
 
-    verifyOtp.mutate({
-      email,
-      token,
-      type: flowType === 'reset' ? 'recovery' : 'email',
-    })
+    verifyOtp.mutate(
+      channel === 'phone'
+        ? { phone: identifier, token, type: 'sms' }
+        : { email: identifier, token, type: flowType === 'reset' ? 'recovery' : 'email' }
+    )
   }
 
   useEffect(() => {
@@ -93,19 +96,18 @@ function VerificationForm() {
   }, [otp])
 
   const handleResend = () => {
-    if (seconds > 0 || !email || isBusy) return
+    if (seconds > 0 || !identifier || isBusy) return
     resendOtp.mutate(
-      {
-        email,
-        flowType: flowType === 'reset' ? 'reset' : 'register',
-      },
+      channel === 'phone'
+        ? { phone: identifier, flowType: flowType === 'reset' ? 'reset' : 'register' }
+        : { email: identifier, flowType: flowType === 'reset' ? 'reset' : 'register' },
       {
         onSuccess: () => setSeconds(60),
       }
     )
   }
 
-  if (!email) return null
+  if (!identifier) return null
 
   const errorMessage =
     verifyOtp.isError || resendOtp.isError
@@ -123,15 +125,19 @@ function VerificationForm() {
         className="mx-auto mb-5 grid size-12 place-items-center rounded-lg bg-brand-50 text-brand-600"
         aria-hidden
       >
-        <MailIcon className="size-7" strokeWidth={1.8} />
+        {channel === 'phone' ? (
+          <PhoneIcon className="size-7" strokeWidth={1.8} />
+        ) : (
+          <MailIcon className="size-7" strokeWidth={1.8} />
+        )}
       </div>
 
       <h1 className="mb-2 text-2xl font-normal tracking-[-0.02em] text-card-foreground">
-        Proveri sanduče
+        {channel === 'phone' ? 'Proveri poruke' : 'Proveri sanduče'}
       </h1>
       <p className="mb-7 text-[15px] leading-normal text-muted-foreground">
         Poslali smo 6-cifreni kod na{' '}
-        <strong className="font-semibold text-card-foreground">{email}</strong>.
+        <strong className="font-semibold text-card-foreground">{identifier}</strong>.
       </p>
 
       <form
@@ -182,7 +188,7 @@ function VerificationForm() {
           isBusy && 'pointer-events-none opacity-50'
         )}
       >
-        Pogrešna adresa?{' '}
+        {channel === 'phone' ? 'Pogrešan broj?' : 'Pogrešna adresa?'}{' '}
         <Link href={backHref} className="font-semibold text-brand-600">
           Idi nazad
         </Link>

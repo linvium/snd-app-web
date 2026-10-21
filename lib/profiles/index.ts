@@ -9,6 +9,10 @@ export {
   phoneLocalPart,
   normalizePhone,
   isValidSerbianPhone,
+  isValidBosnianPhone,
+  isValidPhone,
+  DEFAULT_PHONE_COUNTRY_CODE,
+  PHONE_COUNTRY_CODES,
 } from './profile.helpers'
 export { calculateProfileCompleteness } from './profile.completeness'
 // `profile.avatar.ts` stays off this barrel - it pulls Sharp, which cannot ship to the client.

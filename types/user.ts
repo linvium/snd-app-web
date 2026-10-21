@@ -1,7 +1,9 @@
 export interface SndUser {
   id: string
-  email: string
+  email: string | null
   email_verified_at: string | null
+  phone: string | null
+  phone_verified_at: string | null
   role: 'user' | 'admin'
   status: 'active' | 'suspended' | 'deleted'
   credit_balance_minor: number
@@ -85,14 +87,14 @@ export interface ProfileCompleteness {
 
 export function getDisplayName(
   profile: SndUserProfile | null | undefined,
-  email: string
+  email: string | null | undefined
 ): string {
   if (profile?.display_name) return profile.display_name
   if (profile?.first_name && profile?.last_name) {
     return `${profile.first_name} ${profile.last_name.charAt(0)}.`
   }
   if (profile?.first_name) return profile.first_name
-  const emailPrefix = email.split('@')[0] || 'Korisnik'
+  const emailPrefix = email?.split('@')[0] || 'Korisnik'
   return emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
 }
 
