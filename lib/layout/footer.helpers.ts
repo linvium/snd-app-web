@@ -23,6 +23,7 @@ export const FOOTER_COMPANY_LINKS = HEADER_UTILITY_LINKS
 export const FOOTER_LEGAL_LINKS = [
   { href: '/legal/terms', label: 'Uslovi korišćenja' },
   { href: '/legal/privacy', label: 'Politika privatnosti' },
+  { href: '/legal/advertising-rules', label: 'Pravila oglašavanja' },
   { href: '/support/cancellation-policy', label: 'Pravila otkazivanja' },
   { href: '/legal', label: 'Svi dokumenti' },
 ] as const
