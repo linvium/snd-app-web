@@ -104,14 +104,26 @@ export function phoneLocalPart(phone: string | null | undefined): string {
   return phone
 }
 
-/** Normalize Serbian phone to E.164 (+381…) */
-export function normalizePhone(raw: string): string {
+export const DEFAULT_PHONE_COUNTRY_CODE = '+381'
+
+/**
+ * Calling codes offered on the sign-in and sign-up forms. +387 is temporary;
+ * delete its entry to go back to Serbia only (the selector hides itself when
+ * one code is left).
+ */
+export const PHONE_COUNTRY_CODES = [
+  { code: '+381', label: 'Srbija' },
+  { code: '+387', label: 'BiH' },
+] as const
+
+/** Normalize a phone to E.164. Without a leading +, the given calling code is used. */
+export function normalizePhone(raw: string, countryCode: string = DEFAULT_PHONE_COUNTRY_CODE): string {
   let value = raw.trim().replace(/\s+/g, '')
   if (!value) return ''
   if (value.startsWith('0')) {
-    value = '+381' + value.slice(1)
+    value = countryCode + value.slice(1)
   } else if (!value.startsWith('+')) {
-    value = '+381' + value
+    value = countryCode + value
   }
   return value
 }
@@ -119,4 +131,14 @@ export function normalizePhone(raw: string): string {
 export function isValidSerbianPhone(e164: string): boolean {
   // +381 + 8–9 digits (landline / mobile), no leading 0 after country code
   return /^\+381[1-9]\d{7,8}$/.test(e164)
+}
+
+export function isValidBosnianPhone(e164: string): boolean {
+  // +387 + 7–9 digits (landline 8, mobile 8 or 9, e.g. 060 xxx xxxx), no leading 0 after country code
+  return /^\+387[1-9]\d{6,8}$/.test(e164)
+}
+
+/** Any calling code in PHONE_COUNTRY_CODES. */
+export function isValidPhone(e164: string): boolean {
+  return isValidSerbianPhone(e164) || isValidBosnianPhone(e164)
 }

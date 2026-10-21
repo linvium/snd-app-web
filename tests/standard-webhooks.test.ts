@@ -25,6 +25,15 @@ describe('verifyStandardWebhook', () => {
     ).resolves.toBe(true)
   })
 
+  it('accepts the secret exactly as the Supabase dashboard shows it (v1,whsec_...)', async () => {
+    const timestamp = nowSeconds()
+    const signature = sign('msg_1', timestamp, BODY)
+
+    await expect(
+      verifyStandardWebhook(BODY, { id: 'msg_1', timestamp, signature }, `v1,${SECRET}`)
+    ).resolves.toBe(true)
+  })
+
   it('accepts a secret without the whsec_ prefix', async () => {
     const timestamp = nowSeconds()
     const signature = sign('msg_1', timestamp, BODY)

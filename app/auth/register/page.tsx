@@ -12,7 +12,7 @@ import PasswordInput from '@/components/auth/PasswordInput'
 import PasswordStrength from '@/components/auth/PasswordStrength'
 import { useSignUp } from '@/hooks/auth'
 import { validateEmail, validatePassword, validatePhone } from '@/lib/auth'
-import { normalizePhone } from '@/lib/profiles'
+import { DEFAULT_PHONE_COUNTRY_CODE, normalizePhone } from '@/lib/profiles'
 import { pagePath } from '@/lib/pages/pages.paths'
 
 // Opened in a new tab so following them does not throw away the half-filled form.
@@ -24,6 +24,7 @@ export default function RegisterPage() {
   const [method, setMethod] = useState<AuthMethod>('email')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [countryCode, setCountryCode] = useState(DEFAULT_PHONE_COUNTRY_CODE)
   const [password, setPassword] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [identifierError, setIdentifierError] = useState('')
@@ -41,7 +42,7 @@ export default function RegisterPage() {
     e.preventDefault()
     setShowErrors(true)
 
-    const nextIdentifierError = method === 'phone' ? validatePhone(phone) : validateEmail(email)
+    const nextIdentifierError = method === 'phone' ? validatePhone(phone, countryCode) : validateEmail(email)
     const nextPasswordError = validatePassword(password)
     const nextTermsError = acceptedTerms ? '' : 'Moraš prihvatiti uslove korišćenja.'
     setIdentifierError(nextIdentifierError)
@@ -51,7 +52,7 @@ export default function RegisterPage() {
 
     signUp.mutate(
       method === 'phone'
-        ? { method: 'phone', phone: normalizePhone(phone), password }
+        ? { method: 'phone', phone: normalizePhone(phone, countryCode), password }
         : { method: 'email', email, password }
     )
   }
@@ -83,14 +84,19 @@ export default function RegisterPage() {
         {method === 'phone' ? (
           <PhoneField
             value={phone}
+            countryCode={countryCode}
+            onCountryCodeChange={(code) => {
+              setCountryCode(code)
+              if (showErrors || identifierError) setIdentifierError(validatePhone(phone, code))
+            }}
             autoFocus
             error={identifierError}
             disabled={signUp.isPending}
             onChange={(next) => {
               setPhone(next)
-              if (showErrors || identifierError) setIdentifierError(validatePhone(next))
+              if (showErrors || identifierError) setIdentifierError(validatePhone(next, countryCode))
             }}
-            onBlur={() => setIdentifierError(validatePhone(phone))}
+            onBlur={() => setIdentifierError(validatePhone(phone, countryCode))}
           />
         ) : (
           <TextField

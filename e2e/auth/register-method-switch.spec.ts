@@ -80,6 +80,23 @@ test.describe('register method switch', () => {
     await expect(page.getByText('+381641234567')).toBeVisible()
   })
 
+  test('a Bosnian number can be registered by choosing +387', async ({ page }) => {
+    await mockSignUp(page, { phone: '+38761123456' })
+
+    await page.goto('/auth/register')
+    await page.getByRole('tab', { name: 'Telefon' }).click()
+    await expect(page.getByLabel('Pozivni broj')).toHaveValue('+381')
+
+    await page.getByLabel('Pozivni broj').selectOption('+387')
+    await page.locator('#phone').fill('61123456')
+    await page.getByLabel('Lozinka', { exact: true }).fill('lozinka123')
+    await page.getByRole('checkbox').click()
+    await page.getByRole('button', { name: 'Napravi nalog' }).click()
+
+    await expect(page).toHaveURL(/\/auth\/verify/)
+    expect(new URL(page.url()).searchParams.get('identifier')).toBe('+38761123456')
+  })
+
   test('email sign-up still continues to the email verification screen', async ({ page }) => {
     await mockSignUp(page, { email: 'ana@example.com' })
 

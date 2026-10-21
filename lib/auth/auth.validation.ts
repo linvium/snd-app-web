@@ -1,4 +1,4 @@
-import { normalizePhone, isValidSerbianPhone } from '@/lib/profiles'
+import { DEFAULT_PHONE_COUNTRY_CODE, isValidPhone, normalizePhone } from '@/lib/profiles'
 
 export function getPasswordStrength(password: string): 'weak' | 'medium' | 'strong' {
   if (password.length < 8) return 'weak'
@@ -30,8 +30,8 @@ export function validateEmail(value: string): string {
 }
 
 /** `value` is the raw local-part input (e.g. "641234567"), not yet normalized. */
-export function validatePhone(value: string): string {
+export function validatePhone(value: string, countryCode: string = DEFAULT_PHONE_COUNTRY_CODE): string {
   if (!value.trim()) return 'Unesi broj telefona.'
-  if (!isValidSerbianPhone(normalizePhone(value))) return 'Unesi ispravan broj telefona.'
+  if (!isValidPhone(normalizePhone(value, countryCode))) return 'Unesi ispravan broj telefona.'
   return ''
 }

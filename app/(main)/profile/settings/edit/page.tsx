@@ -36,6 +36,9 @@ export default function EditProfilePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  // The phone the account signed up with is verified; changing it is not a profile edit.
+  const phoneLocked = Boolean(user?.phone_verified_at)
+  const lockedPhone = user?.phone ? `+${user.phone.replace(/^\+/, '')}` : ''
   const [savedMessage, setSavedMessage] = useState('')
   const previewUrlRef = useRef<string | null>(null)
 
@@ -75,7 +78,7 @@ export default function EditProfilePage() {
     if (about.length > 1000) next.about = 'Tekst o meni ne može biti duži od 1000 karaktera.'
 
     const trimmedPhone = phone.trim()
-    if (trimmedPhone) {
+    if (!phoneLocked && trimmedPhone) {
       const normalized = normalizePhone(trimmedPhone)
       if (!isValidSerbianPhone(normalized)) {
         next.phone = 'Unesi ispravan broj telefona.'
@@ -106,7 +109,7 @@ export default function EditProfilePage() {
     setSavedMessage('')
     if (!validate()) return
 
-    const normalizedPhone = phone.trim() ? normalizePhone(phone) : ''
+    const normalizedPhone = !phoneLocked && phone.trim() ? normalizePhone(phone) : ''
 
     try {
       if (avatarFile) {
@@ -116,7 +119,7 @@ export default function EditProfilePage() {
         first_name: firstName.trim() || null,
         last_name: lastName.trim() || null,
         display_name: displayName.trim() || null,
-        phone: normalizedPhone || null,
+        ...(phoneLocked ? {} : { phone: normalizedPhone || null }),
         about: about.trim() || null,
         primary_location_id: primaryLocationId || null,
       })
@@ -199,26 +202,35 @@ export default function EditProfilePage() {
           <Label htmlFor="phone" className="text-sm font-medium text-foreground">
             Telefon
           </Label>
-          <div className="flex gap-2">
-            <span
-              aria-hidden
-              className="inline-flex h-11 shrink-0 items-center rounded-md border border-input bg-muted px-3 text-[15px] font-semibold text-foreground"
-            >
-              +381
-            </span>
-            <Input
-              id="phone"
-              name="phone"
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel-national"
-              value={phone}
-              placeholder="641234567"
-              aria-invalid={errors.phone ? true : undefined}
-              onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ''))}
-              className="flex-1"
-            />
-          </div>
+          {phoneLocked ? (
+            <>
+              <Input id="phone" name="phone" type="tel" value={lockedPhone} readOnly disabled />
+              <p className="m-0 text-[13px] text-muted-foreground">
+                Ovaj broj si potvrdio pri registraciji i ne može se menjati.
+              </p>
+            </>
+          ) : (
+            <div className="flex gap-2">
+              <span
+                aria-hidden
+                className="inline-flex h-11 shrink-0 items-center rounded-md border border-input bg-muted px-3 text-[15px] font-semibold text-foreground"
+              >
+                +381
+              </span>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                value={phone}
+                placeholder="641234567"
+                aria-invalid={errors.phone ? true : undefined}
+                onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ''))}
+                className="flex-1"
+              />
+            </div>
+          )}
           {errors.phone ? (
             <p className="m-0 text-[13px] text-destructive">{errors.phone}</p>
           ) : null}

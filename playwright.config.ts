@@ -38,6 +38,8 @@ export default defineConfig({
         '**/favorites/list.spec.ts',
         '**/dashboard/actions.spec.ts',
         '**/profile/edit.spec.ts',
+        '**/auth/verified-phone.spec.ts',
+        '**/auth/onboarding.spec.ts',
         '**/billing/overview.spec.ts',
       ],
     },

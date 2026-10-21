@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { validateEmail, validatePassword, validatePhone } from '@/lib/auth/auth.validation'
+import { normalizePhone } from '@/lib/profiles'
 
 describe('validatePhone', () => {
   it('asks for a number when the input is empty', () => {
@@ -38,6 +39,38 @@ describe('validatePhone', () => {
 
   it('rejects a foreign country code', () => {
     expect(validatePhone('+49301234567')).toBe('Unesi ispravan broj telefona.')
+  })
+
+  it('accepts a Bosnian number when +387 is selected', () => {
+    expect(validatePhone('61123456', '+387')).toBe('')
+    expect(validatePhone('061123456', '+387')).toBe('')
+    expect(validatePhone('+38761123456')).toBe('')
+  })
+
+  it('accepts a 9-digit Bosnian mobile number (060 range)', () => {
+    expect(validatePhone('603603835', '+387')).toBe('')
+    expect(validatePhone('0603603835', '+387')).toBe('')
+  })
+
+  it('rejects Bosnian numbers that are too short or too long', () => {
+    expect(validatePhone('12345', '+387')).toBe('Unesi ispravan broj telefona.')
+    expect(validatePhone('6036038351', '+387')).toBe('Unesi ispravan broj telefona.')
+  })
+})
+
+describe('normalizePhone', () => {
+  it('uses +381 unless another calling code is given', () => {
+    expect(normalizePhone('0641234567')).toBe('+381641234567')
+    expect(normalizePhone('641234567')).toBe('+381641234567')
+    expect(normalizePhone('061 123 456', '+387')).toBe('+38761123456')
+  })
+
+  it('keeps a number that already has its own + prefix', () => {
+    expect(normalizePhone('+38761123456', '+381')).toBe('+38761123456')
+  })
+
+  it('returns an empty string for empty input', () => {
+    expect(normalizePhone('  ', '+387')).toBe('')
   })
 })
 

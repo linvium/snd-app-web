@@ -10,7 +10,7 @@ import { PhoneField } from '@/components/auth/PhoneField'
 import PasswordInput from '@/components/auth/PasswordInput'
 import { useSignIn } from '@/hooks/auth'
 import { validateEmail, validatePhone } from '@/lib/auth'
-import { normalizePhone } from '@/lib/profiles'
+import { DEFAULT_PHONE_COUNTRY_CODE, normalizePhone } from '@/lib/profiles'
 
 function LoginForm() {
   const router = useRouter()
@@ -21,6 +21,7 @@ function LoginForm() {
   const [method, setMethod] = useState<AuthMethod>('email')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [countryCode, setCountryCode] = useState(DEFAULT_PHONE_COUNTRY_CODE)
   const [password, setPassword] = useState('')
   const [identifierError, setIdentifierError] = useState('')
   const [passwordError, setPasswordError] = useState('')
@@ -36,7 +37,7 @@ function LoginForm() {
     e.preventDefault()
     setShowErrors(true)
 
-    const nextIdentifierError = method === 'phone' ? validatePhone(phone) : validateEmail(email)
+    const nextIdentifierError = method === 'phone' ? validatePhone(phone, countryCode) : validateEmail(email)
     const nextPasswordError = password ? '' : 'Unesi lozinku.'
     setIdentifierError(nextIdentifierError)
     setPasswordError(nextPasswordError)
@@ -44,7 +45,7 @@ function LoginForm() {
 
     signIn.mutate(
       method === 'phone'
-        ? { method: 'phone', phone: normalizePhone(phone), password }
+        ? { method: 'phone', phone: normalizePhone(phone, countryCode), password }
         : { method: 'email', email, password },
       {
         onSuccess: () => {
@@ -76,14 +77,19 @@ function LoginForm() {
         {method === 'phone' ? (
           <PhoneField
             value={phone}
+            countryCode={countryCode}
+            onCountryCodeChange={(code) => {
+              setCountryCode(code)
+              if (showErrors || identifierError) setIdentifierError(validatePhone(phone, code))
+            }}
             autoFocus
             error={identifierError}
             disabled={signIn.isPending}
             onChange={(next) => {
               setPhone(next)
-              if (showErrors || identifierError) setIdentifierError(validatePhone(next))
+              if (showErrors || identifierError) setIdentifierError(validatePhone(next, countryCode))
             }}
-            onBlur={() => setIdentifierError(validatePhone(phone))}
+            onBlur={() => setIdentifierError(validatePhone(phone, countryCode))}
           />
         ) : (
           <TextField

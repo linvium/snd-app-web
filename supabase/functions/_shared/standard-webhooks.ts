@@ -60,9 +60,8 @@ export async function verifyStandardWebhook(
   const ts = Number(timestamp)
   if (!Number.isFinite(ts) || Math.abs(Date.now() / 1000 - ts) > TOLERANCE_SECONDS) return false
 
-  const secretBytes = base64ToBytes(
-    secret.startsWith('whsec_') ? secret.slice('whsec_'.length) : secret
-  )
+  // Supabase shows the secret as `v1,whsec_<base64>`; accept it pasted as-is.
+  const secretBytes = base64ToBytes(secret.replace(/^v1,/, '').replace(/^whsec_/, ''))
   const expected = await hmacSha256Base64(secretBytes, `${id}.${timestamp}.${rawBody}`)
 
   // `webhook-signature` can carry several space-separated `v1,<base64>` values.
