@@ -10,6 +10,11 @@ import PasswordInput from '@/components/auth/PasswordInput'
 import PasswordStrength from '@/components/auth/PasswordStrength'
 import { useSignUp } from '@/hooks/auth'
 import { validateEmail, validatePassword } from '@/lib/auth'
+import { pagePath } from '@/lib/pages/pages.paths'
+
+// Opened in a new tab so following them does not throw away the half-filled form.
+const TERMS_PATH = pagePath('legal', 'terms')
+const PRIVACY_PATH = pagePath('legal', 'privacy')
 
 export default function RegisterPage() {
   const signUp = useSignUp()
@@ -104,11 +109,21 @@ export default function RegisterPage() {
               className="cursor-pointer text-sm leading-[1.45] font-normal text-foreground"
             >
               Prihvatam{' '}
-              <Link href="/terms" className="font-medium text-brand-600">
+              <Link
+                href={TERMS_PATH}
+                target="_blank"
+                rel="noopener"
+                className="font-medium text-brand-600"
+              >
                 Uslove korišćenja
               </Link>{' '}
               i{' '}
-              <Link href="/privacy" className="font-medium text-brand-600">
+              <Link
+                href={PRIVACY_PATH}
+                target="_blank"
+                rel="noopener"
+                className="font-medium text-brand-600"
+              >
                 Politiku privatnosti
               </Link>
             </Label>
