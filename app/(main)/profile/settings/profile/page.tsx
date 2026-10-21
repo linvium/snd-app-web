@@ -79,7 +79,7 @@ export default function SettingsProfilePage() {
           ) : null}
         </h2>
 
-        <p className="mb-1 text-sm text-muted-foreground">{user.email}</p>
+        <p className="mb-1 text-sm text-muted-foreground">{user.email ?? user.phone}</p>
         {user.created_at ? (
           <p className="mb-4 text-[13px] text-muted-foreground/80">
             {formatMemberSince(user.created_at)}

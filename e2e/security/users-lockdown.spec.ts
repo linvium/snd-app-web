@@ -82,6 +82,38 @@ test.describe('users table from a signed-in client', () => {
     expect(data?.email_verified_at).toBeNull()
   })
 
+  test('cannot verify its own phone, on users or on its profile', async () => {
+    const onUsers = await supabase
+      .from('users')
+      .update({ phone_verified_at: new Date().toISOString() })
+      .eq('id', userId)
+      .select()
+    expect(onUsers.error?.code).toBe(PERMISSION_DENIED)
+
+    const onProfile = await supabase
+      .from('user_profiles')
+      .update({ phone_verified_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .select()
+    expect(onProfile.error?.code).toBe(PERMISSION_DENIED)
+
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('phone_verified_at')
+      .eq('user_id', userId)
+      .single()
+    expect(data?.phone_verified_at).toBeNull()
+  })
+
+  test('can still edit the rest of its own profile', async () => {
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({ about: 'Ažurirano iz testa.' })
+      .eq('user_id', userId)
+      .select()
+    expect(error).toBeNull()
+  })
+
   test('cannot insert or delete user rows', async () => {
     const insert = await supabase
       .from('users')

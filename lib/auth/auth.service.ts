@@ -11,23 +11,29 @@ import type {
 const getClient = () => createClient()
 
 export const authService = {
-  signUp: async ({ email, password }: SignUpInput) => {
+  signUp: async (input: SignUpInput) => {
     const supabase = getClient()
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim().toLowerCase(),
-      password,
-    })
+    const { data, error } =
+      input.method === 'phone'
+        ? await supabase.auth.signUp({ phone: input.phone, password: input.password })
+        : await supabase.auth.signUp({
+            email: input.email.trim().toLowerCase(),
+            password: input.password,
+          })
     if (error) throw error
-    // With Confirm email ON: data.user exists, data.session is null → OTP required
+    // With Confirm email/phone ON: data.user exists, data.session is null → OTP required
     return data
   },
 
-  signIn: async ({ email, password }: SignInInput) => {
+  signIn: async (input: SignInInput) => {
     const supabase = getClient()
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    })
+    const { data, error } =
+      input.method === 'phone'
+        ? await supabase.auth.signInWithPassword({ phone: input.phone, password: input.password })
+        : await supabase.auth.signInWithPassword({
+            email: input.email.trim().toLowerCase(),
+            password: input.password,
+          })
     if (error) throw error
     return data
   },
@@ -38,13 +44,12 @@ export const authService = {
     if (error) throw error
   },
 
-  verifyOtp: async ({ email, token, type }: VerifyOtpInput) => {
+  verifyOtp: async ({ email, phone, token, type }: VerifyOtpInput) => {
     const supabase = getClient()
-    const { data, error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type,
-    })
+    const { data, error } =
+      type === 'sms'
+        ? await supabase.auth.verifyOtp({ phone: phone!, token, type: 'sms' })
+        : await supabase.auth.verifyOtp({ email: email!, token, type })
     if (error) throw error
     return data
   },
@@ -63,20 +68,20 @@ export const authService = {
     return data
   },
 
-  resendOtp: async ({ email, flowType }: ResendOtpInput) => {
+  resendOtp: async ({ email, phone, flowType }: ResendOtpInput) => {
     const supabase = getClient()
-    const normalizedEmail = email.trim().toLowerCase()
 
     if (flowType === 'reset') {
+      // Phone-based password reset isn't supported yet — reset stays email-only.
+      const normalizedEmail = (email ?? '').trim().toLowerCase()
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail)
       if (error && !error.message.toLowerCase().includes('not found')) throw error
       return
     }
 
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: normalizedEmail,
-    })
+    const { error } = phone
+      ? await supabase.auth.resend({ type: 'sms', phone })
+      : await supabase.auth.resend({ type: 'signup', email: (email ?? '').trim().toLowerCase() })
     if (error) throw error
   },
 
