@@ -6,18 +6,10 @@ import { CrosshairIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PhoneField } from '@/components/auth/PhoneField'
 import { useAddLocation, useUpdateProfile } from '@/hooks/user'
+import { normalizePhone, isValidSerbianPhone } from '@/lib/profiles'
 import { cn } from '@/lib/utils'
-
-function normalizePhone(input: string): string | null {
-  const cleaned = input.trim().replace(/\s/g, '')
-  if (!cleaned) return null
-
-  if (cleaned.startsWith('0')) {
-    return '+381' + cleaned.slice(1)
-  }
-  return '+381' + cleaned
-}
 
 export default function WelcomeOnboardingPage() {
   const router = useRouter()
@@ -56,13 +48,11 @@ export default function WelcomeOnboardingPage() {
     setFormError('')
     setPhoneError('')
 
-    const digits = phoneInput.replace(/\D/g, '')
-    if (digits && digits.length < 6) {
+    const phone = phoneInput ? normalizePhone(phoneInput) : ''
+    if (phone && !isValidSerbianPhone(phone)) {
       setPhoneError('Unesi ispravan broj telefona.')
       return
     }
-
-    const phone = normalizePhone(phoneInput)
 
     try {
       if (phone) {
@@ -96,42 +86,17 @@ export default function WelcomeOnboardingPage() {
       </p>
 
       <div className="flex flex-col gap-5">
-        <div className="flex w-full flex-col gap-1.5">
-          <Label htmlFor="onboarding-phone" className="text-sm font-medium text-foreground">
-            Telefon
-          </Label>
-          <div
-            className={cn(
-              'flex h-11 items-center rounded-md border bg-card px-3.5 transition-colors',
-              'focus-within:border-brand-500 focus-within:ring-3 focus-within:ring-brand-100',
-              phoneError ? 'border-destructive ring-3 ring-destructive/20' : 'border-input'
-            )}
-          >
-            <span className="mr-1.5 shrink-0 select-none text-base text-muted-foreground">
-              +381
-            </span>
-            <input
-              id="onboarding-phone"
-              name="phone"
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel-national"
-              value={phoneInput}
-              disabled={isSaving}
-              placeholder="641234567"
-              onChange={(e) => {
-                setPhoneInput(e.target.value.replace(/[^\d]/g, ''))
-                if (phoneError) setPhoneError('')
-              }}
-              className="h-full min-w-0 flex-1 border-none bg-transparent p-0 text-base text-card-foreground outline-none disabled:pointer-events-none disabled:opacity-50"
-            />
-          </div>
-          {phoneError ? (
-            <p className="m-0 text-[13px] text-destructive">{phoneError}</p>
-          ) : (
-            <p className="m-0 text-[13px] text-muted-foreground">Ne prikazuje se javno.</p>
-          )}
-        </div>
+        <PhoneField
+          id="onboarding-phone"
+          value={phoneInput}
+          disabled={isSaving}
+          error={phoneError}
+          helperText="Ne prikazuje se javno."
+          onChange={(next) => {
+            setPhoneInput(next)
+            if (phoneError) setPhoneError('')
+          }}
+        />
 
         <div className="flex w-full flex-col gap-1.5">
           <Label htmlFor="onboarding-location" className="text-sm font-medium text-foreground">

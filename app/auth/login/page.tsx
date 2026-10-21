@@ -5,9 +5,12 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { TextField } from '@/components/ui/text-field'
+import { AuthMethodTabs, type AuthMethod } from '@/components/auth/AuthMethodTabs'
+import { PhoneField } from '@/components/auth/PhoneField'
 import PasswordInput from '@/components/auth/PasswordInput'
 import { useSignIn } from '@/hooks/auth'
-import { validateEmail } from '@/lib/auth'
+import { validateEmail, validatePhone } from '@/lib/auth'
+import { normalizePhone } from '@/lib/profiles'
 
 function LoginForm() {
   const router = useRouter()
@@ -15,24 +18,34 @@ function LoginForm() {
   const next = searchParams.get('next') || '/'
   const signIn = useSignIn()
 
+  const [method, setMethod] = useState<AuthMethod>('email')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
-  const [emailError, setEmailError] = useState('')
+  const [identifierError, setIdentifierError] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [showErrors, setShowErrors] = useState(false)
+
+  const handleMethodChange = (nextMethod: AuthMethod) => {
+    setMethod(nextMethod)
+    setIdentifierError('')
+    setShowErrors(false)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setShowErrors(true)
 
-    const nextEmailError = validateEmail(email)
+    const nextIdentifierError = method === 'phone' ? validatePhone(phone) : validateEmail(email)
     const nextPasswordError = password ? '' : 'Unesi lozinku.'
-    setEmailError(nextEmailError)
+    setIdentifierError(nextIdentifierError)
     setPasswordError(nextPasswordError)
-    if (nextEmailError || nextPasswordError) return
+    if (nextIdentifierError || nextPasswordError) return
 
     signIn.mutate(
-      { email, password },
+      method === 'phone'
+        ? { method: 'phone', phone: normalizePhone(phone), password }
+        : { method: 'email', email, password },
       {
         onSuccess: () => {
           router.push(next)
@@ -48,7 +61,7 @@ function LoginForm() {
     if (msg.includes('banned') || msg.includes('suspended') || msg.includes('disabled')) {
       return 'Nalog je privremeno blokiran.'
     }
-    return 'Pogrešan email ili lozinka.'
+    return method === 'phone' ? 'Pogrešan broj telefona ili lozinka.' : 'Pogrešan email ili lozinka.'
   })()
 
   return (
@@ -58,20 +71,37 @@ function LoginForm() {
       </h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <TextField
-          label="Email"
-          type="email"
-          name="email"
-          autoFocus
-          autoComplete="email"
-          value={email}
-          error={emailError}
-          onChange={(e) => {
-            setEmail(e.target.value)
-            if (showErrors || emailError) setEmailError(validateEmail(e.target.value))
-          }}
-          onBlur={() => setEmailError(validateEmail(email))}
-        />
+        <AuthMethodTabs value={method} onChange={handleMethodChange} disabled={signIn.isPending} />
+
+        {method === 'phone' ? (
+          <PhoneField
+            value={phone}
+            autoFocus
+            error={identifierError}
+            disabled={signIn.isPending}
+            onChange={(next) => {
+              setPhone(next)
+              if (showErrors || identifierError) setIdentifierError(validatePhone(next))
+            }}
+            onBlur={() => setIdentifierError(validatePhone(phone))}
+          />
+        ) : (
+          <TextField
+            label="Email"
+            type="email"
+            name="email"
+            autoFocus
+            autoComplete="email"
+            value={email}
+            error={identifierError}
+            disabled={signIn.isPending}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              if (showErrors || identifierError) setIdentifierError(validateEmail(e.target.value))
+            }}
+            onBlur={() => setIdentifierError(validateEmail(email))}
+          />
+        )}
 
         <PasswordInput
           label="Lozinka"
@@ -80,12 +110,14 @@ function LoginForm() {
           value={password}
           error={passwordError}
           trailingLink={
-            <Link
-              href="/auth/forgot-password"
-              className="text-[13px] font-medium text-brand-600"
-            >
-              Zaboravljena lozinka?
-            </Link>
+            method === 'email' ? (
+              <Link
+                href="/auth/forgot-password"
+                className="text-[13px] font-medium text-brand-600"
+              >
+                Zaboravljena lozinka?
+              </Link>
+            ) : undefined
           }
           onChange={(e) => {
             setPassword(e.target.value)

@@ -16,6 +16,10 @@ and do not need setting.
 | `EMAIL_FROM` | `send-email` | Falls back to `Stvar na dan <noreply@stvarnadan.rs>`. Must be a domain verified with Resend. |
 | `APP_URL` | `send-email`, `payment-checkout` | Falls back to `https://stvarnadan.rs`. Every `{{thread_url}}` and `{{billing_url}}` in a mail and both Stripe return URLs are built from it, so a staging project must set its own or its owners land on production. |
 | `PSP_WEBHOOK_SECRET` | `payment-confirm` | The generic webhook path is closed. Only needed for a PSP that has no adapter yet; send it in `x-psp-signature`. |
+| `SEND_SMS_HOOK_SECRET` | `send-sms` | Every call is rejected 401 "invalid signature", so no phone OTP can ever be delivered. This is the signing secret Supabase shows when you point Auth's Send SMS Hook at this function - not an Infobip value. |
+| `INFOBIP_API_KEY` | `send-sms` | Answers 500 "INFOBIP_BASE_URL or INFOBIP_API_KEY is not set" - Supabase's hook call fails, so registration/login stays stuck on "Pošalji ponovo" and no SMS goes out. |
+| `INFOBIP_BASE_URL` | `send-sms` | Same as `INFOBIP_API_KEY` - your Infobip account's base URL (e.g. `https://xxxxxx.api.infobip.com`). |
+| `INFOBIP_SMS_SENDER` | `send-sms` | Optional. Without it Infobip uses its default sender ID for the account. |
 | `PAYMENT_MANUAL_CONFIRM` | `payment-confirm` | The sandbox "mark as paid" path is closed, which is the correct state anywhere Stripe is configured. Setting it to `true` lets a signed-in owner settle their own order without paying - pair it with `NEXT_PUBLIC_PAYMENT_MANUAL_CONFIRM=true` on the web app, which skips Stripe and shows the button on `/profile/billing`. |
 
 ## Billing
@@ -125,3 +129,32 @@ curl -X POST "$SUPABASE_URL/functions/v1/send-email" \
 Editing copy is a database edit, not a deploy: update `subject`, `html_body` or
 `text_body` on the `email_templates` row. The available `{{variables}}` are
 listed on the row itself.
+
+## send-sms
+
+Supabase's [Send SMS Hook (HTTPS)](https://supabase.com/docs/guides/auth/auth-hooks/send-sms-hook) -
+Auth calls this itself whenever a phone sign-up or sign-in needs a 6-digit
+code delivered, with `{ user: { phone }, sms: { otp } }`. There is no end-user
+JWT on a hook call (`verify_jwt = false`); the only authentication is the
+[Standard Webhooks](https://www.standardwebhooks.com/) signature Supabase
+signs the request with, verified in `_shared/standard-webhooks.ts` - **not**
+the same scheme as `_shared/webhook.ts`, which is a bespoke format built only
+for the Didit webhook. The SMS itself goes out through Infobip
+(`_shared/sms.ts`).
+
+Only the `SMS` channel is enabled today. WhatsApp/Viber failover is designed
+into the channel shape but intentionally not wired up - the exact failover
+JSON field names must be confirmed against Infobip's current docs and
+`POST /resource-management/1/messages/validate` before enabling them, and
+WhatsApp additionally needs an approved authentication template.
+
+Dashboard wiring (no `supabase/config.toml` entry covers this):
+
+1. **Authentication → Sign In / Providers** - enable **Phone**.
+2. Same page, **Phone** - set the SMS provider to the custom **Send SMS Hook
+   (HTTPS)**, point it at
+   `https://<project-ref>.supabase.co/functions/v1/send-sms`, and copy the
+   signing secret it generates into `SEND_SMS_HOOK_SECRET` above.
+3. Turn **Confirm phone** ON - parity with "Confirm email" today, so
+   `signUp({ phone, password })` returns `session: null` until the OTP is
+   verified.

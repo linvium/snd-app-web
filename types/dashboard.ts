@@ -49,7 +49,7 @@ export interface DashboardIdentity {
   initials: string
   avatar_url: string | null
   user_id: string
-  email: string
+  email: string | null
   member_since: string | null
   kyc_status: KycDbStatus | null
   is_verified: boolean

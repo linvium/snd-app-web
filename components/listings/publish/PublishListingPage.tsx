@@ -20,7 +20,7 @@ export function PublishListingPage({
     return <PageLoading>Učitavanje…</PageLoading>
   }
 
-  if (!isLoading && !user?.email_verified_at) {
+  if (!isLoading && !user?.email_verified_at && !user?.phone_verified_at) {
     return (
       <div className="px-4 py-10">
         <EmailUnverifiedGate />

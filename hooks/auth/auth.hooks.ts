@@ -19,9 +19,11 @@ export function useSignUp() {
   return useMutation({
     mutationFn: (input: SignUpInput) => authService.signUp(input),
     onSuccess: (_data, variables) => {
-      // session is null when Confirm email = ON → user must enter OTP
+      // session is null when Confirm email/phone = ON → user must enter OTP
+      const identifier =
+        variables.method === 'phone' ? variables.phone : variables.email.trim().toLowerCase()
       router.push(
-        `/auth/verify?email=${encodeURIComponent(variables.email.trim().toLowerCase())}&type=register`
+        `/auth/verify?identifier=${encodeURIComponent(identifier)}&channel=${variables.method}&type=register`
       )
     },
   })
@@ -77,8 +79,11 @@ export function useVerifyOtp() {
 export function useResetPassword() {
   const router = useRouter()
 
+  // Phone-based password reset isn't supported yet — reset stays email-only.
   const redirectToVerification = (email: string) => {
-    router.push(`/auth/verify?email=${encodeURIComponent(email.trim().toLowerCase())}&type=reset`)
+    router.push(
+      `/auth/verify?identifier=${encodeURIComponent(email.trim().toLowerCase())}&channel=email&type=reset`
+    )
   }
 
   return useMutation({

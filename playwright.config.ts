@@ -58,6 +58,7 @@ export default defineConfig({
         '**/layout/header.spec.ts',
         '**/layout/footer.spec.ts',
         '**/auth/register-legal-links.spec.ts',
+        '**/auth/register-method-switch.spec.ts',
         '**/search/dates.spec.ts',
         '**/search/layout.spec.ts',
         '**/home/listings.spec.ts',

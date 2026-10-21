@@ -1,17 +1,16 @@
-export interface SignUpInput {
-  email: string
-  password: string
-}
+export type SignUpInput =
+  | { method: 'email'; email: string; password: string }
+  | { method: 'phone'; phone: string; password: string }
 
-export interface SignInInput {
-  email: string
-  password: string
-}
+export type SignInInput =
+  | { method: 'email'; email: string; password: string }
+  | { method: 'phone'; phone: string; password: string }
 
 export interface VerifyOtpInput {
-  email: string
+  type: 'email' | 'recovery' | 'sms'
+  email?: string
+  phone?: string
   token: string
-  type: 'email' | 'recovery'
 }
 
 export interface ResetPasswordInput {
@@ -23,6 +22,7 @@ export interface UpdatePasswordInput {
 }
 
 export interface ResendOtpInput {
-  email: string
   flowType: 'register' | 'reset'
+  email?: string
+  phone?: string
 }
